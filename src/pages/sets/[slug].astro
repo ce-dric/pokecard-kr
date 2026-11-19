@@ -1,0 +1,163 @@
+---
+import Base from "../../layouts/Base.astro";
+import AdSlot from "../../components/AdSlot.astro";
+import {
+  altText,
+  cardHref,
+  collector,
+  displayName,
+  formatDate,
+  formatWon,
+  imageHref,
+  rarityCounts,
+  sets,
+  typeCounts,
+  typeLabel,
+  usesJapaneseName,
+  withBase,
+  type CardSet,
+} from "../../lib/sets";
+
+export function getStaticPaths() {
+  return sets.map((set) => ({ params: { slug: set.slug }, props: { set } }));
+}
+
+interface Props {
+  set: CardSet;
+}
+const { set } = Astro.props;
+const title = `${set.nameKo} 카드 리스트 | ${set.productNameKo}`;
+const description = `${set.productNameKo} 카드 리스트 ${set.cardCount}종. 레어도, 타입별로 거르고 각 카드 페이지로 이동합니다. 한국 발매 ${formatDate(set.releaseDateKr)}.`;
+const listUrl = Astro.url.href;
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: title,
+  description,
+  inLanguage: "ko-KR",
+  url: listUrl,
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: set.cards.length,
+    itemListElement: set.cards.map((card, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: `${displayName(card)} ${collector(card)} ${card.rarity}`,
+      url: new URL(cardHref(set, card), Astro.site).href,
+    })),
+  },
+};
+const rarities = rarityCounts(set);
+const types = typeCounts(set);
+---
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <div class="wrap">
+    <p class="crumbs"><a href={withBase("")}>홈</a> / {set.nameKo}</p>
+    <h1>{set.nameKo} 카드 리스트</h1>
+    <p class="lede">
+      {set.productNameKo}에 수록된 {set.cardCount}장을 모았습니다. 번호는 한국 공식 카드 검색의 번호를 따릅니다.
+      065번부터 076번까지는 일본판 수록 순서와 다릅니다.
+    </p>
+    <div class="panel">
+      <dl class="facts">
+        <div><dt>한국 발매일</dt><dd>{formatDate(set.releaseDateKr)}</dd></div>
+        <div><dt>일본 발매일</dt><dd>{formatDate(set.releaseDateJp)}</dd></div>
+        <div><dt>팩</dt><dd>{set.cardsPerPack}장, {formatWon(set.packPriceKr)}</dd></div>
+        <div><dt>상자</dt><dd>{set.packsPerBox}팩, {formatWon(set.boxPriceKr)}</dd></div>
+        <div><dt>수록</dt><dd>{set.cardCount}종</dd></div>
+        <div><dt>확장 마크</dt><dd>{set.expansionMark} / 레귤레이션 {set.regulation}</dd></div>
+      </dl>
+      <ul class="links">
+        <li><a href={set.krProductUrl}>한국 공식 제품 페이지</a></li>
+        <li><a href={set.jpSetUrl}>일본 공식 세트 페이지</a></li>
+        <li><a href={withBase("rarity/")}>레어도 일람</a></li>
+      </ul>
+    </div>
+    <AdSlot id={`${set.id}-list`} />
+    <div class="filters" data-card-filters>
+      <div class="filter-row" data-group="rarity">
+        <span>레어도</span>
+        <button type="button" data-value="all" aria-pressed="true">전체</button>
+        {rarities.map((row) => (
+          <button type="button" data-value={row.code} aria-pressed="false">
+            {row.code} {row.label} {row.count}
+          </button>
+        ))}
+      </div>
+      <div class="filter-row" data-group="type">
+        <span>타입</span>
+        <button type="button" data-value="all" aria-pressed="true">전체</button>
+        {types.map((row) => (
+          <button type="button" data-value={row.code} aria-pressed="false">
+            {row.label} {row.count}
+          </button>
+        ))}
+      </div>
+      <p class="result-count" data-result-count>{set.cards.length}장</p>
+    </div>
+    <div class="grid">
+      {set.cards.map((card) => (
+        <article
+          class="tile"
+          data-card
+          data-rarity={card.rarity}
+          data-type={card.type || "none"}
+        >
+          <a href={cardHref(set, card)}>
+            <img
+              src={imageHref(set, card.thumb)}
+              alt={altText(set, card)}
+              width="280"
+              height="392"
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption>
+              <strong>
+                {displayName(card)}
+                {card.halfKo ? ` ${card.halfKo}` : ""}
+                {usesJapaneseName(card) && <em class="ja-fallback">일본판 기준</em>}
+              </strong>
+              <div class="meta">
+                <span>{collector(card)}</span>
+                <span class={`badge badge-${card.rarity}`}>{card.rarity}</span>
+                {card.typeKo && <span>{typeLabel[card.type || ""] || card.typeKo}</span>}
+              </div>
+            </figcaption>
+          </a>
+        </article>
+      ))}
+    </div>
+  </div>
+</Base>
+<script is:inline>
+  const root = document.querySelector("[data-card-filters]");
+  if (root) {
+    const state = { rarity: "all", type: "all" };
+    const cards = [...document.querySelectorAll("[data-card]")];
+    const count = root.querySelector("[data-result-count]");
+    function apply() {
+      let shown = 0;
+      for (const card of cards) {
+        const rarityOk = state.rarity === "all" || card.dataset.rarity === state.rarity;
+        const typeOk = state.type === "all" || card.dataset.type === state.type;
+        const visible = rarityOk && typeOk;
+        card.hidden = !visible;
+        if (visible) shown += 1;
+      }
+      if (count) count.textContent = shown + "장";
+    }
+    root.querySelectorAll(".filter-row").forEach((row) => {
+      const group = row.dataset.group;
+      row.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state[group] = button.dataset.value;
+          row.querySelectorAll("button").forEach((item) => {
+            item.setAttribute("aria-pressed", item === button ? "true" : "false");
+          });
+          apply();
+        });
+      });
+    });
+  }
+</script>

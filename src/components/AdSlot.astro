@@ -1,0 +1,10 @@
+---
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+---
+<aside class="ad-slot" data-ad-slot={id} aria-label="광고 자리">
+  <p>광고 자리</p>
+  <p class="ad-note">AdSense 코드는 아직 넣지 않았습니다.</p>
+</aside>
