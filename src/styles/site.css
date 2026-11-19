@@ -548,6 +548,7 @@ a.mast-aside:hover { color: var(--gold-2); }
 .rarity-SR { color: #ead392; }
 .rarity-SAR { color: #efb3c2; }
 .rarity-MUR { color: #f3aa9c; }
+.rarity-FUR { color: #9fd7e2; }
 
 .ja-fallback {
   margin-left: 0.28rem;
@@ -773,17 +774,6 @@ dl.specs a { text-decoration-thickness: 1px; }
   .pager { grid-template-columns: 1fr; }
   .pager .next { grid-column: 1; text-align: left; align-items: flex-start; }
   dl.specs { grid-template-columns: 5.6rem minmax(0, 1fr); }
-}
-
-@media (min-width: 960px) {
-  .set-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .set-list li:only-child { grid-column: 1 / -1; }
-  .set-list li:not(:only-child) .set-row {
-    height: 100%;
-    padding-right: 0.7rem;
-    border-right: 1px solid var(--rule);
-  }
-  .set-list li:not(:only-child):nth-child(3n) .set-row { border-right: 0; padding-right: 0.2rem; }
 }
 
 @media print {
