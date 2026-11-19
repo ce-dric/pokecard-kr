@@ -1090,7 +1090,8 @@ a.mast-aside:hover { color: var(--accent); }
 .rarity-ACE,
 .rarity-UR,
 .rarity-MUR,
-.rarity-FUR {
+.rarity-FUR,
+.rarity-BWR {
   color: var(--muted);
 }
 
@@ -1101,7 +1102,8 @@ a.mast-aside:hover { color: var(--accent); }
 .rarity-MUR,
 .rarity-UR,
 .rarity-MA,
-.rarity-FUR {
+.rarity-FUR,
+.rarity-BWR {
   color: var(--accent);
   border-color: color-mix(in oklch, var(--accent) 45%, transparent);
   background: color-mix(in oklch, var(--accent) 7%, transparent);
