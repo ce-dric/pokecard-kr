@@ -1,4 +1,5 @@
 import {
+  createPhotoLoad,
   defaultGuides,
   detectCardGuides,
   estimateCenteringGrade,
@@ -67,7 +68,7 @@ export function mountCenteringTool(doc) {
     }
     const ctx = canvas.getContext("2d");
     ctx.drawImage(side.bitmap, 0, 0, canvas.width, canvas.height);
-    if (side.guides) drawGuides(ctx, canvas, side.guides, state.drag);
+    if (side.guides) drawGuides(ctx, canvas, side.guides, state.drag || canvas.dataset.active || null);
   };
 
   const updateReadout = () => {
@@ -116,9 +117,14 @@ export function mountCenteringTool(doc) {
     }
   };
 
+  const clearSelection = () => {
+    state.drag = null;
+    delete canvas.dataset.active;
+  };
+
   const showSide = (sideName) => {
     state.side = sideName;
-    state.drag = null;
+    clearSelection();
     for (const button of root.querySelectorAll("[data-side]")) {
       button.setAttribute("aria-pressed", button.dataset.side === sideName ? "true" : "false");
     }
@@ -136,23 +142,26 @@ export function mountCenteringTool(doc) {
     return defaultGuides();
   };
 
+  const loadPhoto = createPhotoLoad();
+
   const loadFile = async (file) => {
     const sideName = state.side;
-    setStatus("사진을 읽는 중");
-    let bitmap;
-    try {
-      bitmap = await bitmapFromFile(file);
-    } catch {
-      setStatus("이 브라우저에서 열 수 없는 사진입니다. JPG나 PNG로 바꿔 주세요.");
+    if (state.side === sideName) setStatus("사진을 읽는 중");
+    const outcome = await loadPhoto(sideName, () => bitmapFromFile(file));
+    if (outcome.stale) return;
+    if (outcome.error || !outcome.bitmap) {
+      if (state.side === sideName) setStatus("이 브라우저에서 열 수 없는 사진입니다. JPG나 PNG로 바꿔 주세요.");
       return;
     }
-    const fitted = fitBitmap(bitmap, 1600);
+    const fitted = fitBitmap(outcome.bitmap, 1600);
     const side = state[sideName];
     release(side);
     side.bitmap = fitted;
     side.guides = applyGuides(fitted);
-    if (state.side === sideName) paint();
     updateReadout();
+    if (state.side !== sideName) return;
+    clearSelection();
+    paint();
     setStatus("안내선을 끌어 카드 가장자리와 안쪽 프레임에 맞춥니다.");
   };
 
@@ -177,6 +186,7 @@ export function mountCenteringTool(doc) {
   });
   root.querySelector('[data-action="clear"]').addEventListener("click", () => {
     release(current());
+    clearSelection();
     paint();
     updateReadout();
     setStatus("이 면의 사진을 지웠습니다. 기기에만 있던 사진이라 서버에는 없습니다.");
