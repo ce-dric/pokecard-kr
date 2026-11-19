@@ -111,7 +111,7 @@ if (mem.cardCount !== 19 || mem.cards.length !== 19) errors.push(`mem card count
 if (mem.printedTotal !== 17) errors.push(`mem printed total ${mem.printedTotal}`);
 if (mem.krProductUrl !== "https://pokemoncard.co.kr/card/968") errors.push("mem product url");
 if (mem.regulation !== "I, J") errors.push(`mem regulation ${mem.regulation}`);
-if (mem.packsPerBox !== 0 || mem.packPriceKr !== 17000 || mem.cardsPerPack !== 60) {
+if (mem.packsPerBox !== 1 || mem.packPriceKr !== 17000 || mem.cardsPerPack !== 60 || mem.boxPriceKr !== 0) {
   errors.push("mem deck product facts");
 }
 if (mem.cards.map((card) => card.number).join() !== memWanted.join()) errors.push("mem numbers");
@@ -169,10 +169,97 @@ for (const [code, count] of Object.entries(memExpected)) {
 const memFiles = readdirSync("public/images/cards/mem").filter((name) => name.endsWith(".webp"));
 if (memFiles.length !== 38) errors.push(`mem webp count ${memFiles.length}`);
 
+const meeFile = new URL("../src/data/sets/mee.json", import.meta.url);
+const meeRaw = readFileSync(meeFile, "utf8");
+if (meeRaw.includes("\u00b7")) errors.push("mee json contains a middle dot");
+const mee = JSON.parse(meeRaw);
+const meeNames = {
+  "001": "쥬피썬더",
+  "002": "로토무",
+  "003": "빠모",
+  "004": "빠모트",
+  "005": "빠르모트",
+  "006": "미라이돈",
+  "007": "켄타로스",
+  "008": "이브이",
+  "009": "이브이 ex",
+  "010": "딜리버드",
+  "011": "이상한사탕",
+  "012": "포켓패드",
+  "013": "하이퍼볼",
+  "014": "풍선",
+  "015": "가이",
+  "016": "릴리에의 결심",
+  "017": "보스의 지령",
+  "018": "빛나",
+  "019": "저지맨",
+  "020": "이브이",
+  LIG: "기본 번개 에너지",
+};
+if (mee.id !== "mee" || mee.slug !== "mega-starter-eevee") errors.push("mee id");
+if (mee.productNameKo !== "MEGA 스타터 세트 ex 「이브이 ex」") errors.push("mee product name");
+if (mee.krProductUrl !== "https://pokemoncard.co.kr/card/966") errors.push("mee product url");
+if (mee.releaseDateKr !== "2026-09-30" || mee.packPriceKr !== 17000) errors.push("mee release or price");
+if (mee.packsPerBox !== 1 || mee.cardsPerPack !== 60 || mee.boxPriceKr !== 0) {
+  errors.push("mee deck product facts");
+}
+if (mee.regulation !== "I, J") errors.push(`mee regulation ${mee.regulation}`);
+const meeJp = {
+  "011": ["ふしぎなアメ", "50423", "012"],
+  "012": ["ポケパッド", "50424", "013"],
+  "013": ["ハイパーボール", "50422", "011"],
+  "016": ["リーリエの決心", "50430", "019"],
+  "017": ["ボスの指令", "50429", "018"],
+  "018": ["ヒカリ", "50428", "017"],
+  "019": ["ジャッジマン", "50427", "016"],
+  LIG: [null, null, null],
+};
+for (const [number, [nameJa, jpCardId, jpNumber]] of Object.entries(meeJp)) {
+  const card = mee.cards.find((item) => item.number === number);
+  if (!card || card.nameJa !== nameJa || card.jpCardId !== jpCardId || card.jpNumber !== jpNumber) {
+    errors.push(`mee ${number} Japanese pairing`);
+  }
+}
+if (mee.cardCount !== 21 || mee.cards.length !== 21) errors.push(`mee card count ${mee.cards.length}`);
+if (mee.printedTotal !== 19) errors.push(`mee printed total ${mee.printedTotal}`);
+const meeNumbers = mee.cards.map((card) => card.number);
+const meeWanted = [...Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(3, "0")), "LIG"];
+if (meeNumbers.join() !== meeWanted.join()) errors.push("mee numbers are not 001-020 then LIG");
+for (const card of mee.cards) {
+  if (card.nameStatus !== "verified-kr" || card.nameKo !== meeNames[card.number]) {
+    errors.push(`mee ${card.number} name ${card.nameKo}`);
+  }
+  if (card.rarity !== "") errors.push(`mee ${card.number} rarity was not on the detail page`);
+  if (!card.category || !card.stage) errors.push(`mee ${card.number} missing category`);
+  const idSuffix = card.number === "LIG" ? "021" : card.number;
+  if (card.krCardId !== `BS2026007${idSuffix}`) errors.push(`mee ${card.number} card id`);
+  if (!card.krUrl.startsWith("https://pokemoncard.co.kr/cards/detail/BS2026007")) {
+    errors.push(`mee ${card.number} missing official url`);
+  }
+  if (card.number === "LIG") {
+    if (card.printedIn !== "" || card.category !== "energy" || card.type !== "electric") {
+      errors.push("mee LIG energy fields");
+    }
+  } else if (card.printedIn !== "019") {
+    errors.push(`mee ${card.number} printedIn`);
+  }
+  const full = join("public/images/cards/mee", card.image);
+  const thumb = join("public/images/cards/mee", card.thumb);
+  for (const path of [full, thumb]) {
+    try {
+      if (statSync(path).size < 1000) errors.push(`${path} too small`);
+    } catch {
+      errors.push(`missing ${path}`);
+    }
+  }
+}
+const meeFiles = readdirSync("public/images/cards/mee").filter((name) => name.endsWith(".webp"));
+if (meeFiles.length !== 42) errors.push(`mee webp count ${meeFiles.length}`);
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
 console.log(
-  `ok m6 ${set.cards.length} cards, ${files.length} webp; m6a ${m6a.cards.length} cards, ${m6aFiles.length} webp; mem ${mem.cards.length} cards, ${memFiles.length} webp`,
+  `ok m6 ${set.cards.length} cards, ${files.length} webp; m6a ${m6a.cards.length} cards, ${m6aFiles.length} webp; mem ${mem.cards.length} cards, ${memFiles.length} webp; mee ${mee.cards.length} cards, ${meeFiles.length} webp`,
 );

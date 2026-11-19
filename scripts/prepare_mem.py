@@ -784,7 +784,8 @@ def main() -> None:
     print("number diffs", number_diffs)
     # Product price, deck size, and dates are copied from the official product
     # pages, not from card text: pokemoncard.co.kr/card/968 and
-    # pokemon-card.com/ex/me/. packsPerBox 0 marks a constructed deck.
+    # pokemon-card.com/ex/me/. packsPerBox 1 means one constructed deck.
+    # Pages show pack and box rows only when packsPerBox is greater than 1.
     payload = {
         "id": "mem",
         "slug": "sprigatito-meowscarada",
@@ -800,7 +801,7 @@ def main() -> None:
         "packPriceKr": 17000,
         "boxPriceKr": 0,
         "cardsPerPack": 60,
-        "packsPerBox": 0,
+        "packsPerBox": 1,
         "printedTotal": printed_total,
         "cardCount": len(cards),
         "krProductUrl": "https://pokemoncard.co.kr/card/968",
