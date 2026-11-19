@@ -1,0 +1,33 @@
+---
+import gameCss from "./game.css?raw";
+import Base from "../../layouts/Base.astro";
+
+const title = "대전 | 포켓몬 카드 한국판";
+const description =
+  "봇과 포켓몬 카드 대전을 하는 비공식 팬 페이지입니다. 배틀 엔진은 The Pokemon Company PTCG AI Battle Challenge 엔진입니다.";
+---
+
+<Base title={title} description={description}>
+  <div class="wrap ptcg-page">
+    <Fragment set:html={`<style>${gameCss}</style>`} />
+    <header class="mast">
+      <p class="crumbs">비공식 팬 페이지</p>
+      <div class="mast-row">
+        <h1>대전</h1>
+      </div>
+      <p class="lede">봇과 한 판 둡니다. 엔진이 보여 주는 선택지만 누를 수 있습니다.</p>
+    </header>
+    <div data-ptcg>
+      <p class="ptcg-wait">덱을 고르면 대전이 시작됩니다.</p>
+    </div>
+    <p class="ptcg-credit">
+      배틀 엔진은 The Pokemon Company PTCG AI Battle Challenge의 엔진입니다. 이 페이지는 비공식 팬 페이지이며, 포켓몬 공식 사이트가 아닙니다.
+    </p>
+  </div>
+</Base>
+
+<script>
+  import { mountGame } from "../../lib/ptcg/ui.ts";
+
+  mountGame(document.querySelector("[data-ptcg]"));
+</script>

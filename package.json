@@ -7,7 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "node scripts/check-data.mjs",
-    "test": "node --test src/lib/opinions.test.mjs src/lib/external-links.test.mjs src/lib/centering.test.mjs"
+    "test": "node --experimental-strip-types --test src/lib/opinions.test.mjs src/lib/external-links.test.mjs src/lib/centering.test.mjs src/lib/ptcg/bot.test.ts src/lib/ptcg/cards.test.ts src/lib/ptcg/game.test.ts"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.0",
