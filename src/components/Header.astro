@@ -1,4 +1,5 @@
 ---
+import { HITS_NAV_LABEL } from "../lib/hits.mjs";
 import { setHref, sets, withBase } from "../lib/sets";
 
 const path = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
@@ -20,6 +21,7 @@ const isHome = path === homePath;
           </a>
         );
       })}
+      <a href={withBase("hits/")} aria-current={path.includes("/hits/") ? "page" : undefined}>{HITS_NAV_LABEL}</a>
       <a href={withBase("rarity/")} aria-current={path.includes("/rarity/") ? "page" : undefined}>레어도</a>
       <a href={withBase("glossary/")} aria-current={path.includes("/glossary/") ? "page" : undefined}>용어집</a>
       <a href={withBase("about/")} aria-current={path.includes("/about/") ? "page" : undefined}>소개</a>
