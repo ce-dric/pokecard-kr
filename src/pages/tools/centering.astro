@@ -1,0 +1,271 @@
+---
+import Base from "../../layouts/Base.astro";
+import { PSA_CENTERING_SOURCE, PSA_CENTERING_TABLE } from "../../lib/centering.mjs";
+import { withBase } from "../../lib/sets";
+
+const title = "카드 센터링 확인 | 포켓몬 카드 한국판";
+const description =
+  "카드 사진의 좌우, 상하 테두리 비율을 브라우저에서 계산하고 PSA 센터링 기준으로 추정 등급을 보여 줍니다. 사진은 서버로 보내지 않습니다.";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "카드 센터링 확인",
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Web",
+  inLanguage: "ko-KR",
+  url: Astro.url.href,
+  description,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" },
+};
+---
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <div class="wrap centering" data-centering>
+    <header class="mast">
+      <p class="crumbs"><a href={withBase("")}>홈</a> / 센터링</p>
+      <div class="mast-row">
+        <h1>카드 센터링 확인</h1>
+      </div>
+      <p class="lede">
+        카드 사진을 이 브라우저 안에서만 읽습니다. 사진은 서버로 보내지 않습니다.
+        바깥 선과 안쪽 선을 맞추면 좌우, 상하 비율과 추정 등급이 나옵니다. 새로고침하면 사진도 지워집니다.
+      </p>
+    </header>
+
+    <div class="centering-layout">
+      <section aria-label="사진과 안내선">
+        <div class="centering-sides" role="group" aria-label="측정할 면">
+          <button type="button" data-side="front" aria-pressed="true">앞면</button>
+          <button type="button" data-side="back" aria-pressed="false">뒷면</button>
+        </div>
+        <div class="centering-actions">
+          <button type="button" data-pick="file">앨범에서 고르기</button>
+          <button type="button" data-pick="camera">카메라</button>
+          <button type="button" data-action="redetect">가장자리 다시 찾기</button>
+          <button type="button" data-action="clear">이 면 지우기</button>
+        </div>
+        <input data-input="file" type="file" accept="image/*" hidden aria-label="앨범에서 사진 고르기" />
+        <input data-input="camera" type="file" accept="image/*" capture="environment" hidden aria-label="카메라로 사진 찍기" />
+        <p class="centering-status" data-status>앞면 사진을 고르면 안내선이 나타납니다.</p>
+        <div class="centering-stage" data-stage>
+          <canvas data-canvas hidden tabindex="0" aria-label="카드 사진과 센터링 안내선. 선을 끌거나, 선을 고른 뒤 방향키로 움직입니다."></canvas>
+          <p class="centering-empty" data-empty>사진이 여기에 표시됩니다. 카드가 화면과 나란하면 비율이 더 정확합니다.</p>
+        </div>
+        <p class="centering-help">바깥 금색 선은 카드 가장자리, 안쪽 파란 선은 그림 프레임입니다. 선을 끌어 고칩니다.</p>
+      </section>
+
+      <section class="centering-result" aria-live="polite">
+        <h2>측정</h2>
+        <dl class="centering-readout">
+          <div>
+            <dt>좌우</dt>
+            <dd>
+              <span data-readout="lr">측정 전</span>
+              <span class="centering-sub" data-readout="lr-words"></span>
+            </dd>
+          </div>
+          <div>
+            <dt>상하</dt>
+            <dd>
+              <span data-readout="tb">측정 전</span>
+              <span class="centering-sub" data-readout="tb-words"></span>
+            </dd>
+          </div>
+          <div>
+            <dt>이 면</dt>
+            <dd data-readout="side">측정 전</dd>
+          </div>
+          <div>
+            <dt>종합 추정</dt>
+            <dd class="centering-grade" data-readout="overall">측정 전</dd>
+          </div>
+        </dl>
+        <p class="centering-detail" data-readout="detail"></p>
+        <p class="centering-disclaimer">
+          추정 등급은 센터링만 계산한 값입니다. 모서리, 표면, 광택, 인쇄는 보지 않으며 PSA 감정 결과가 아닙니다.
+          눈매력에 따라 PSA가 적은 차이를 허용하는 경우는 넣지 않았습니다.
+          기준은 <a href={PSA_CENTERING_SOURCE} target="_blank" rel="noopener noreferrer">PSA Grading Standards<span class="sr-only"> 새 창</span></a>에 공개된 허용치입니다.
+        </p>
+      </section>
+    </div>
+
+    <section class="centering-table-wrap">
+      <h2>PSA 센터링 허용치</h2>
+      <p>
+        숫자는 <a href={PSA_CENTERING_SOURCE} target="_blank" rel="noopener noreferrer">PSA Grading Standards<span class="sr-only"> 새 창</span></a>에
+        공개된 센터링 허용치입니다. 표의 55/45는 더 넓은 쪽이 55를 넘지 않는다는 뜻입니다.
+        4와 5, 그리고 2와 3은 허용치가 같아서 추정은 그 가운데 높은 등급을 보여 줍니다.
+        1.5는 2, 3과 같은 90/10이라 따로 나누지 않습니다.
+      </p>
+      <div class="centering-scroll">
+        <table class="centering-table">
+          <caption>PSA가 공개한 센터링 허용치. 추정에만 사용합니다.</caption>
+          <thead>
+            <tr>
+              <th scope="col">등급</th>
+              <th scope="col">앞면</th>
+              <th scope="col">뒷면</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PSA_CENTERING_TABLE.map((row) => (
+              <tr>
+                <th scope="row">{row.grade} {row.label}</th>
+                <td>{row.front == null ? "하한 없음" : `${row.front}/${100 - row.front} 이내`}</td>
+                <td>{row.back == null ? "하한 없음" : `${row.back}/${100 - row.back} 이내`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</Base>
+<script>
+  import { mountCenteringTool } from "../../lib/centering-page.js";
+  mountCenteringTool(document);
+</script>
+<style>
+  .centering-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.8fr);
+    gap: 1.1rem 1.5rem;
+    align-items: start;
+  }
+
+  .centering-sides,
+  .centering-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .centering-actions { margin-top: 0.45rem; }
+
+  .centering button {
+    border: 1px solid var(--rule-strong);
+    background: transparent;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .centering button:hover { border-color: var(--gold); }
+
+  .centering button[aria-pressed="true"] {
+    color: var(--gold-2);
+    border-color: var(--gold);
+  }
+
+  .centering-status,
+  .centering-help,
+  .centering-detail,
+  .centering-disclaimer,
+  .centering-table-wrap p {
+    margin: 0.55rem 0 0;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .centering-help { font-size: 13px; }
+
+  .centering-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 16rem;
+    margin-top: 0.7rem;
+    border: 1px solid var(--rule);
+    background: #0e1511;
+  }
+
+  .centering-stage canvas:not([hidden]) {
+    display: block;
+    max-width: 100%;
+    touch-action: none;
+  }
+
+  .centering-empty {
+    margin: 0;
+    padding: 1.2rem;
+    color: var(--faint);
+    text-align: center;
+  }
+
+  .centering-result h2,
+  .centering-table-wrap h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.15rem;
+    font-synthesis: none;
+  }
+
+  .centering-table-wrap { margin-top: 1.4rem; }
+
+  .centering-readout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem 0.9rem;
+    margin: 0.7rem 0 0;
+  }
+
+  .centering-readout div {
+    min-width: 0;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .centering-readout dt {
+    color: var(--faint);
+    font-size: 12px;
+  }
+
+  .centering-readout dd {
+    margin: 0.18rem 0 0;
+    font-family: var(--mono);
+    font-size: 1.15rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .centering-sub {
+    display: block;
+    margin-top: 0.15rem;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 12px;
+  }
+
+  .centering-grade { color: var(--gold-2); }
+
+  .centering-scroll { overflow-x: auto; margin-top: 0.7rem; }
+
+  .centering-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .centering-table caption {
+    caption-side: bottom;
+    padding-top: 0.4rem;
+    color: var(--faint);
+    font-size: 12px;
+    text-align: left;
+  }
+
+  .centering-table th,
+  .centering-table td {
+    padding: 0.38rem 0.45rem;
+    border-bottom: 1px solid var(--rule);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .centering-table th { font-weight: 500; }
+
+  @media (max-width: 760px) {
+    .centering-layout { grid-template-columns: 1fr; }
+    .centering-stage { min-height: 12rem; }
+    .centering button { flex: 1 1 9rem; }
+  }
+</style>
