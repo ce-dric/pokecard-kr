@@ -4,8 +4,8 @@ import AdSlot from "../components/AdSlot.astro";
 import CardTile from "../components/CardTile.astro";
 import { formatWon, setHref, sets, withBase, type CardSet } from "../lib/sets";
 
-const set = sets[0];
-const spotlight = set.cards.filter(
+const storm = sets.find((item) => item.id === "m6") ?? sets[0];
+const spotlight = storm.cards.filter(
   (card) => card.nameKo === "메가레쿠쟈 ex" && (card.rarity === "SAR" || card.rarity === "MUR"),
 );
 const groups: { series: string; items: CardSet[] }[] = [];
@@ -16,8 +16,9 @@ for (const item of sets) {
 }
 const cardTotal = sets.reduce((sum, item) => sum + item.cardCount, 0);
 const title = "포켓몬 카드 한국판 카드 리스트";
-const description =
-  "한국판 포켓몬 카드 게임 세트별 카드 리스트. MEGA 확장팩 스톰에메랄다 113종을 카드마다 한 페이지로 정리했습니다.";
+const description = `한국판 포켓몬 카드 게임 세트별 카드 리스트. ${sets
+  .map((item) => `${item.nameKo} ${item.cardCount}종`)
+  .join(", ")}을 카드마다 한 페이지로 정리했습니다.`;
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -51,7 +52,7 @@ const jsonLd = {
       </div>
       <p class="lede">
         세트마다, 카드마다 검색될 수 있는 페이지를 만듭니다. 첫 세트는 2026년 8월 21일 발매된
-        <a href={setHref(set)}>MEGA 확장팩 「스톰에메랄다」</a>입니다.
+        <a href={setHref(storm)}>MEGA 확장팩 「스톰에메랄다」</a>입니다.
         스톰에메랄다 카드 리스트와 메가레쿠쟈 ex SAR처럼 카드 이름과 레어도로 찾을 수 있습니다.
       </p>
     </header>
@@ -90,7 +91,7 @@ const jsonLd = {
         <a href={withBase("rarity/")}>레어도 일람</a>
       </div>
       <div class="grid grid-spot">
-        {spotlight.map((card) => <CardTile set={set} card={card} eager />)}
+        {spotlight.map((card) => <CardTile set={storm} card={card} eager />)}
       </div>
     </section>
   </div>

@@ -58,7 +58,7 @@ export const sets: CardSet[] = Object.values(modules)
   .map((mod) => mod.default)
   .sort((a, b) => b.releaseDateKr.localeCompare(a.releaseDateKr));
 
-export const rarityOrder = ["C", "U", "R", "RR", "AR", "SR", "SAR", "MUR"] as const;
+export const rarityOrder = ["C", "U", "R", "RR", "AR", "SR", "SAR", "MUR", "FUR"] as const;
 
 export const rarityLabel: Record<string, string> = {
   C: "커먼",
@@ -69,6 +69,7 @@ export const rarityLabel: Record<string, string> = {
   SR: "슈퍼레어",
   SAR: "스페셜아트레어",
   MUR: "메가울트라레어",
+  FUR: "FUR",
 };
 
 export const typeLabel: Record<string, string> = {
@@ -122,6 +123,7 @@ export function cardHeading(card: Card): string {
 }
 
 export function collector(card: Card): string {
+  if (!card.printedIn) return card.number;
   return `${card.number}/${card.printedIn}`;
 }
 
