@@ -175,10 +175,13 @@ function optionTarget(obs: Observation, option: Option) {
   const you = obs.current.yourIndex;
   const owner = option.playerIndex ?? you;
   const player = obs.current.players[owner];
-  if (!player) return undefined;
   if (option.type === 7) return obs.current.players[you]?.hand?.[option.index ?? -1];
   if (option.area === 12) return obs.current.looking?.[option.index ?? -1];
+  // Stadium is one shared list. Ability and discard options omit playerIndex.
+  if (option.area === 7) return obs.current.stadium?.[option.index ?? -1];
+  if (!player) return undefined;
   if (option.area === 2 && owner === you) return player.hand?.[option.index ?? -1];
+  if (option.area === 3) return player.discard?.[option.index ?? -1];
   if (option.area === 4) return player.active?.[option.index ?? -1] || undefined;
   if (option.area === 5) return player.bench?.[option.index ?? -1];
   return undefined;
