@@ -1,0 +1,146 @@
+---
+import Base from "../../layouts/Base.astro";
+import AdSlot from "../../components/AdSlot.astro";
+import {
+  glossary,
+  glossaryGroups,
+  glossaryHaystack,
+  glossaryHref,
+  termsInGroup,
+} from "../../lib/glossary";
+import { withBase } from "../../lib/sets";
+
+const title = "포켓몬 카드 용어집 | 포켓몬 카드 한국판";
+const description =
+  "포켓몬 카드 커뮤니티 용어와 레어도 기호. 이로치, 실드전, 사르, 힛과 C, RR, SAR, UR, FUR, ex, MEGA를 한국어와 영어로 찾습니다.";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "DefinedTermSet",
+  name: "포켓몬 카드 용어집",
+  description,
+  inLanguage: "ko-KR",
+  url: Astro.url.href,
+  hasDefinedTerm: glossary.map((term) => ({
+    "@type": "DefinedTerm",
+    name: term.term,
+    description: term.summary,
+    url: new URL(glossaryHref(term.slug), Astro.site).href,
+  })),
+};
+---
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <div class="wrap">
+    <header class="mast">
+      <p class="crumbs"><a href={withBase("")}>홈</a> / 용어집</p>
+      <div class="mast-row">
+        <h1>포켓몬 카드 용어집</h1>
+        <p class="mast-aside">{glossary.length}개</p>
+      </div>
+      <p class="lede">
+        커뮤니티에서 쓰는 말과, 이 사이트 카드에 적힌 레어도 기호를 모았습니다.
+        포켓몬 공식 용어 사전이 아닙니다. 확인하지 못한 뜻과 가격, 봉입률은 적지 않습니다.
+      </p>
+    </header>
+    <div class="glossary-search" role="search">
+      <label for="glossary-q">찾기</label>
+      <input
+        id="glossary-q"
+        type="search"
+        data-glossary-q
+        placeholder="한국어, 다른 이름, 영어"
+        autocomplete="off"
+        aria-controls="glossary-results"
+      />
+    </div>
+    <p class="result-count" data-glossary-count aria-live="polite">{glossary.length}개</p>
+    <AdSlot id="glossary-index" />
+    <div id="glossary-results">
+      {glossaryGroups.map((group) => {
+        const terms = termsInGroup(group.id);
+        if (!terms.length) return null;
+        return (
+          <section class="catalog" data-glossary-group>
+            <div class="catalog-head">
+              <h2>{group.label}</h2>
+            </div>
+            <ul class="set-list glossary-list">
+              {terms.map((term) => (
+                <li data-glossary-item data-haystack={glossaryHaystack(term)}>
+                  <a class="set-row" href={glossaryHref(term.slug)}>
+                    <span class="set-main">
+                      <span class="set-title">{term.term}</span>
+                      <span class="set-product">
+                        {[term.english, ...term.aliases].filter(Boolean).join(", ")}
+                      </span>
+                    </span>
+                    <span class="set-go" aria-hidden="true">&gt;</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </div>
+    <p class="empty" data-glossary-empty hidden>해당하는 용어가 없습니다.</p>
+  </div>
+</Base>
+<style>
+  .glossary-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    margin: 0.15rem 0 0.2rem;
+  }
+  .glossary-search label {
+    color: var(--faint);
+    font-size: 12px;
+  }
+  .glossary-search input[type="search"] {
+    flex: 1 1 14rem;
+    min-width: 0;
+    border: 1px solid var(--rule-strong);
+    border-radius: 0;
+    background: transparent;
+    padding: 0.32rem 0.5rem;
+  }
+  .glossary-search input[type="search"]:hover,
+  .glossary-search input[type="search"]:focus-visible {
+    border-color: var(--gold);
+  }
+  .glossary-list :global(.set-row) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "main go";
+    align-items: center;
+  }
+  .glossary-list :global(.set-product) {
+    white-space: normal;
+  }
+</style>
+<script>
+  import { haystackMatches } from "../../lib/glossary-search.js";
+
+  const input = document.querySelector<HTMLInputElement>("[data-glossary-q]");
+  const items = [...document.querySelectorAll<HTMLElement>("[data-glossary-item]")];
+  const groups = [...document.querySelectorAll<HTMLElement>("[data-glossary-group]")];
+  const count = document.querySelector("[data-glossary-count]");
+  const empty = document.querySelector<HTMLElement>("[data-glossary-empty]");
+
+  function apply() {
+    const query = input?.value ?? "";
+    let shown = 0;
+    for (const item of items) {
+      const match = haystackMatches(item.dataset.haystack ?? "", query);
+      item.hidden = !match;
+      if (match) shown += 1;
+    }
+    for (const group of groups) {
+      group.hidden = !group.querySelector("[data-glossary-item]:not([hidden])");
+    }
+    if (count) count.textContent = `${shown}개`;
+    if (empty) empty.hidden = shown !== 0;
+  }
+
+  input?.addEventListener("input", apply);
+</script>
