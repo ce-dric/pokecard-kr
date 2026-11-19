@@ -40,9 +40,77 @@ function esc(value: string): string {
 
 function imageSrc(path: string | null): string | null {
   if (!path || !/^(?:images\/cards\/[a-z0-9-]+\/[A-Za-z0-9.-]+|game\/cards\/\d+(?:-thumb)?\.webp)$/.test(path)) return null;
-  const base = import.meta.env.BASE_URL || "/";
+  const base = import.meta.env?.BASE_URL || "/";
   const root = base.endsWith("/") ? base : `${base}/`;
-  return new URL(path, window.location.origin + root).href;
+  const origin = typeof window === "undefined" ? "http://localhost" : window.location.origin;
+  return new URL(path, origin + root).href;
+}
+
+interface Control {
+  tagName: string;
+  closest(selector: string): Control | null;
+  getAttribute(name: string): string | null;
+}
+
+function asControl(target: unknown): Control | null {
+  if (!target || typeof target !== "object") return null;
+  if (!("tagName" in target) || typeof target.tagName !== "string") return null;
+  if (!("closest" in target) || typeof target.closest !== "function") return null;
+  if (!("getAttribute" in target) || typeof target.getAttribute !== "function") return null;
+  return target as Control;
+}
+
+function closestButton(target: Control, selector: string): Control | null {
+  const node = target.closest(selector);
+  if (!node || node.tagName.toLowerCase() !== "button") return null;
+  return node;
+}
+
+export type BoardAction =
+  | { type: "zoom"; full: string; alt: string }
+  | { type: "option"; index: number }
+  | { type: "close" };
+
+export function actionFromPointer(event: { target: unknown; stopPropagation(): void }): BoardAction | null {
+  const target = asControl(event.target);
+  if (!target) return null;
+  const zoom = closestButton(target, "[data-zoom-open]");
+  if (zoom) {
+    event.stopPropagation();
+    return {
+      type: "zoom",
+      full: zoom.getAttribute("data-full") || "",
+      alt: zoom.getAttribute("data-alt") || "",
+    };
+  }
+  const option = closestButton(target, "[data-option]");
+  if (!option) return null;
+  const index = Number(option.getAttribute("data-option"));
+  if (!Number.isInteger(index)) return null;
+  return { type: "option", index };
+}
+
+export function actionFromKey(event: {
+  key: string;
+  target: unknown;
+  preventDefault(): void;
+  stopPropagation(): void;
+}): BoardAction | null {
+  if (event.key === "Escape") return { type: "close" };
+  if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return null;
+  const target = asControl(event.target);
+  if (!target) return null;
+  const zoom = closestButton(target, "[data-zoom-open]");
+  if (!zoom) return null;
+  const full = zoom.getAttribute("data-full") || "";
+  if (!full) return null;
+  event.preventDefault();
+  event.stopPropagation();
+  return { type: "zoom", full, alt: zoom.getAttribute("data-alt") || "" };
+}
+
+function zoomButton(src: string, full: string, label: string, width: number, height: number): string {
+  return `<button type="button" class="ptcg-zoom-image" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대"><img src="${esc(src)}" alt="" width="${width}" height="${height}" loading="lazy" decoding="async" /></button>`;
 }
 
 function cardHtml(card: FaceCard, caption: boolean): string {
@@ -54,12 +122,14 @@ function cardHtml(card: FaceCard, caption: boolean): string {
   const energies = card.energies
     .map((energy) => `<i class="swatch ${ENERGY_CLASS[energy] || "swatch-colorless"}"></i>`)
     .join("");
-  const body = src
-    ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
-    : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
+  const body =
+    src && full
+      ? zoomButton(src, full, name, 120, 168)
+      : src
+        ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
+        : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
   const meta = caption ? `<span class="ptcg-caption">${name}${hp ? ` ${esc(hp)}` : ""}</span>${energies ? `<span class="ptcg-energies">${energies}</span>` : ""}` : "";
-  if (!src || !full) return `<div class="ptcg-card">${body}${meta}</div>`;
-  return `<button type="button" class="ptcg-card" data-zoom-open data-full="${esc(full)}" data-alt="${name}" aria-label="${name} 확대">${body}${meta}</button>`;
+  return `<div class="ptcg-card">${body}${meta}</div>`;
 }
 
 function slots(count: number): string {
@@ -85,12 +155,12 @@ function sideHtml(title: string, side: GameView["you"], showHand: boolean): stri
 function optionHtml(option: GameView["options"][number]): string {
   const src = imageSrc(option.image);
   const full = imageSrc(option.fullImage || option.image);
-  const select = `<button type="button" data-option="${option.index}">${
-    src ? `<img src="${esc(src)}" alt="" width="72" height="100" loading="lazy" decoding="async" />` : ""
-  }<span>${esc(option.label)}</span></button>`;
+  const label = esc(option.label);
+  const select = `<button type="button" data-option="${option.index}"><span>${label}</span></button>`;
   if (!src || !full) return select;
-  const zoom = `<button type="button" class="ptcg-enlarge" data-zoom-open data-full="${esc(full)}" data-alt="${esc(option.label)}" aria-label="${esc(option.label)} 확대">확대</button>`;
-  return `<div class="ptcg-option">${select}${zoom}</div>`;
+  const image = zoomButton(src, full, label, 72, 100);
+  const zoom = `<button type="button" class="ptcg-enlarge" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대">확대</button>`;
+  return `<div class="ptcg-option">${image}${select}${zoom}</div>`;
 }
 
 function viewHtml(view: GameView, note: string): string {
@@ -113,6 +183,10 @@ function viewHtml(view: GameView, note: string): string {
     ${sideHtml("상대", view.opp, false)}
     <h2 class="ptcg-log-title">기록</h2>
     <ol class="ptcg-log">${log}</ol>`;
+}
+
+export function boardHtml(view: GameView, note = ""): string {
+  return viewHtml(view, note);
 }
 
 export function mountGame(root: Element | null): void {
@@ -215,9 +289,9 @@ export function mountGame(root: Element | null): void {
     if (!(dialog instanceof HTMLDialogElement)) {
       root.insertAdjacentHTML(
         "beforeend",
-        `<dialog class="ptcg-zoom" data-zoom>
+        `<dialog class="ptcg-zoom" data-zoom aria-label="카드 확대">
           <button type="button" data-zoom-close>닫기</button>
-          <img data-zoom-image alt="" width="480" height="670" decoding="async" />
+          <img data-zoom-image alt="" width="480" height="670" tabindex="-1" decoding="async" />
           <p class="caption">이미지 출처: 포켓몬 공식</p>
         </dialog>`,
       );
@@ -232,20 +306,30 @@ export function mountGame(root: Element | null): void {
     if (image instanceof HTMLImageElement) {
       image.src = full;
       image.alt = alt;
+      image.tabIndex = -1;
     }
     if (typeof dialog.showModal === "function" && !dialog.open) dialog.showModal();
-    const close = dialog.querySelector("[data-zoom-close]");
-    if (close instanceof HTMLButtonElement) close.focus();
+    if (image instanceof HTMLImageElement) image.focus();
   };
 
-  root.addEventListener("click", (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const zoomButton = target.closest("[data-zoom-open]");
-    if (zoomButton instanceof HTMLButtonElement) {
-      openZoom(zoomButton.dataset.full || "", zoomButton.dataset.alt || "");
+  root.addEventListener("keydown", (event) => {
+    const action = actionFromKey(event);
+    if (action?.type === "close") {
+      const dialog = root.querySelector("[data-zoom]");
+      if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
       return;
     }
+    if (action?.type === "zoom") openZoom(action.full, action.alt);
+  });
+
+  root.addEventListener("click", (event) => {
+    const action = actionFromPointer(event);
+    if (action?.type === "zoom") {
+      openZoom(action.full, action.alt);
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof Element)) return;
     const deckButton = target.closest("[data-deck]");
     if (deckButton instanceof HTMLButtonElement) {
       const group = deckButton.dataset.deck;
@@ -268,9 +352,10 @@ export function mountGame(root: Element | null): void {
       return;
     }
     if (busy || !latest || latest.phase !== "choose") return;
-    const optionButton = target.closest("[data-option]");
-    if (optionButton instanceof HTMLButtonElement) {
-      const index = Number(optionButton.dataset.option);
+    if (action?.type === "option") {
+      const index = action.index;
+      const optionButton = target.closest("[data-option]");
+      if (!(optionButton instanceof HTMLButtonElement)) return;
       if (latest.maxCount === 1 && latest.minCount >= 1) {
         busy = true;
         ensureWorker().postMessage({ type: "choose", indices: [index] } satisfies WorkerIn);

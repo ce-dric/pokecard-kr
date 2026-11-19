@@ -126,20 +126,28 @@
   display: flex;
   gap: 0.35rem;
   overflow-x: auto;
-  padding-bottom: 0.15rem;
+  padding: 2px 2px 0.15rem;
 }
 
 .ptcg-card { width: 4.7rem; flex: 0 0 auto; }
 
-button.ptcg-card {
+.ptcg-zoom-image {
+  display: block;
+  width: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
+  line-height: 0;
   text-align: left;
   cursor: pointer;
+}
+
+.ptcg-zoom-image:focus-visible {
+  outline: 1px solid var(--gold-2);
+  outline-offset: 1px;
 }
 
 .ptcg-card img,
@@ -199,15 +207,16 @@ button.ptcg-card {
   width: 4.6rem;
 }
 
-.ptcg-options button:has(img) {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.2rem;
+.ptcg-options .ptcg-zoom-image {
   width: 100%;
-  padding: 0.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
+.ptcg-options button[data-option] { width: 100%; }
+
+.ptcg-options .ptcg-zoom-image img,
 .ptcg-options button img {
   display: block;
   width: 100%;
@@ -215,6 +224,7 @@ button.ptcg-card {
   aspect-ratio: 63 / 88;
   object-fit: cover;
   background: #18241d;
+  border: 1px solid var(--rule-strong);
 }
 
 .ptcg-options button span {
@@ -282,6 +292,7 @@ button.ptcg-card {
   .ptcg-zone { grid-template-columns: 1fr; }
   .ptcg-card { width: 4.2rem; }
   .ptcg-option { width: 4.2rem; }
-  .ptcg-options button,
-  .ptcg-enlarge { min-height: 2.4rem; }
+  .ptcg-options button[data-option],
+  .ptcg-enlarge,
+  .ptcg-zoom [data-zoom-close] { min-height: 2.75rem; }
 }
