@@ -56,6 +56,12 @@ python3 scripts/prepare_m6.py
 
 스크립트는 공식 이미지를 받아 WebP로 줄이고, 구석에 `세드릭`과 `blog.naver.com/mdsd12`를 넣습니다. 결과 이미지는 `public/images/cards/<세트id>/`에 둡니다. 빌드 때는 다시 받지 않습니다.
 
+MEGA 스타터 세트 ex 「이브이 ex」(`mee.json`)도 같은 방식입니다. 이름, 번호, 레어도는 [공식 카드 상세](https://pokemoncard.co.kr/cards/detail/BS2026007001) `BS2026007001`부터 상세가 열리는 카드만 사용하고, 제품 정보는 [제품 페이지](https://pokemoncard.co.kr/card/966)를 따릅니다. 레어도 칸이 비어 있으면 비워 둡니다.
+
+```bash
+python3 scripts/prepare_mee.py
+```
+
 ## 세트를 추가하는 방법
 
 1. `src/data/sets/m6.json`을 보고 `src/data/sets/<세트id>.json`을 만듭니다.
