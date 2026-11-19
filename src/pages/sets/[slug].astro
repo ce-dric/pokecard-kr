@@ -63,8 +63,17 @@ const printed = String(set.printedTotal).padStart(3, "0");
     <dl class="facts">
       <div><dt>한국 발매</dt><dd>{formatDate(set.releaseDateKr)}</dd></div>
       <div><dt>일본 발매</dt><dd>{formatDate(set.releaseDateJp)}</dd></div>
-      <div><dt>팩</dt><dd>{set.cardsPerPack}장, {formatWon(set.packPriceKr)}</dd></div>
-      <div><dt>상자</dt><dd>{set.packsPerBox}팩, {formatWon(set.boxPriceKr)}</dd></div>
+      {set.packsPerBox > 0 ? (
+        <>
+          <div><dt>팩</dt><dd>{set.cardsPerPack}장, {formatWon(set.packPriceKr)}</dd></div>
+          <div><dt>상자</dt><dd>{set.packsPerBox}팩, {formatWon(set.boxPriceKr)}</dd></div>
+        </>
+      ) : (
+        <>
+          <div><dt>가격</dt><dd>{formatWon(set.packPriceKr)}</dd></div>
+          <div><dt>덱</dt><dd>{set.cardsPerPack}장</dd></div>
+        </>
+      )}
       <div><dt>수록</dt><dd>{set.cardCount}종 ({printed}까지, 시크릿 포함)</dd></div>
       <div><dt>확장 마크</dt><dd>{set.expansionMark} / 레귤레이션 {set.regulation}</dd></div>
     </dl>
