@@ -75,8 +75,14 @@ const jsonLd = {
                 <span class="set-stats">
                   <span>{item.releaseDateKr.replaceAll("-", ".")}</span>
                   <span>{item.cardCount}장</span>
-                  <span>팩 {formatWon(item.packPriceKr)}</span>
-                  <span>상자 {formatWon(item.boxPriceKr)}</span>
+                  {item.packsPerBox > 1 ? (
+                    <>
+                      <span>팩 {formatWon(item.packPriceKr)}</span>
+                      <span>상자 {formatWon(item.boxPriceKr)}</span>
+                    </>
+                  ) : (
+                    <span>덱 {formatWon(item.packPriceKr)}</span>
+                  )}
                 </span>
                 <span class="set-go" aria-hidden="true">&gt;</span>
               </a>

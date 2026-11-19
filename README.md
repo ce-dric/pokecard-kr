@@ -56,6 +56,18 @@ python3 scripts/prepare_m6.py
 
 스크립트는 공식 이미지를 받아 WebP로 줄이고, 구석에 `세드릭`과 `blog.naver.com/mdsd12`를 넣습니다. 결과 이미지는 `public/images/cards/<세트id>/`에 둡니다. 빌드 때는 다시 받지 않습니다.
 
+MEGA 스타터 세트 ex 「이브이 ex」(`mee.json`)도 같은 방식입니다. 이름, 번호, 레어도는 [공식 카드 상세](https://pokemoncard.co.kr/cards/detail/BS2026007001) `BS2026007001`부터 상세가 열리는 카드만 사용하고, 제품 정보는 [제품 페이지](https://pokemoncard.co.kr/card/966)를 따릅니다. 레어도 칸이 비어 있으면 비워 둡니다.
+
+```bash
+python3 scripts/prepare_mee.py
+```
+
+MEGA 스타터 세트 ex 「조로아&조로아크 ex」(`mez.json`)도 같은 방식입니다. 이름, 번호, 레어도는 [공식 카드 상세](https://pokemoncard.co.kr/cards/detail/BS2026008001) `BS2026008001`부터 상세가 열리는 카드만 사용하고, 제품 정보는 [제품 페이지](https://pokemoncard.co.kr/card/967)를 따릅니다. 레어도 칸이 비어 있으면 비워 둡니다.
+
+```bash
+python3 scripts/prepare_mez.py
+```
+
 ## 세트를 추가하는 방법
 
 1. `src/data/sets/m6.json`을 보고 `src/data/sets/<세트id>.json`을 만듭니다.
@@ -65,6 +77,45 @@ python3 scripts/prepare_m6.py
 5. `npm run check`를 그 세트에 맞게 확장한 뒤 `npm run build`로 확인합니다.
 
 홈의 "스톰에메랄다" 메뉴는 첫 세트용 고정 링크입니다. 세트가 늘면 `src/components/Header.astro`의 링크를 데이터 기준으로 바꾸는 것이 좋습니다.
+
+## 여론 한 줄
+
+카드 페이지와 팩 페이지의 "여론 한 줄"은 `src/data/community/opinions.json` 만 읽습니다. 이 파일은 X와 커뮤니티 글을 볼 수 있는 외부 수집기가 요약해서 커밋합니다. 사이트 빌드와 GitHub Actions는 검색 API를 호출하지 않고, 비밀 키를 페이지에 넣지 않습니다. 항목이 없으면 그 칸은 렌더하지 않으며, 없는 문장을 만들지 않습니다.
+
+카드 키는 `{세트id}-{번호}` 입니다. 스톰에메랄다 110번은 `m6-110`, 30th CELEBRATION 124번은 `m6a-124` 입니다. 두 세트 모두 같은 칸을 쓰며, 없는 항목은 비웁니다.
+
+```json
+{
+  "updatedAt": "2026-11-19T08:00:00.000Z",
+  "sets": {
+    "m6": {
+      "summary": "한 줄 요약",
+      "sentiment": "positive",
+      "sampleSize": 12,
+      "posts": [
+        {
+          "source": "x",
+          "text": "80자 이하로 줄인 인용",
+          "url": "https://x.com/example/status/1",
+          "date": "2026-11-19"
+        }
+      ]
+    }
+  },
+  "cards": {
+    "m6-110": {
+      "summary": "한 줄 요약",
+      "sentiment": "mixed",
+      "sampleSize": 4,
+      "posts": []
+    }
+  }
+}
+```
+
+`sentiment` 는 `positive`, `mixed`, `negative`, `neutral` 중 하나입니다. 화면에서는 호평, 엇갈림, 불만, 중립으로 보여 줍니다. `sampleSize` 는 요약에 쓴 표본 수이고, 화면에는 "표본 N건"으로 적습니다. `posts` 는 3개에서 5개까지 보여 주며, `source` 는 `x`, `naver_cafe`, `dc`, `other` 만 받습니다. 인용은 80자를 넘기면 잘라 냅니다. 링크는 새 창이고 `rel="nofollow noopener"` 입니다. 블로그와 뉴스는 대표 인용으로 쓰지 않습니다.
+
+화면 확인용 목 데이터는 `src/data/community/opinions.preview.json` 입니다. 페이지는 이 파일을 읽지 않습니다.
 
 ## GitHub Pages
 

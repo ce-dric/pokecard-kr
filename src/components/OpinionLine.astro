@@ -1,0 +1,54 @@
+---
+interface Post {
+  sourceLabel: string;
+  text: string;
+  url: string;
+  dateLabel: string;
+}
+
+interface Opinion {
+  summary: string;
+  sentiment: string;
+  sentimentLabel: string;
+  sampleLabel: string;
+  stamp: string;
+  posts: Post[];
+}
+
+interface Props {
+  opinion: Opinion;
+}
+
+const { opinion } = Astro.props;
+---
+
+<section class="opinion" id="public-opinion" aria-labelledby="public-opinion-title">
+  <div class="opinion-head">
+    <h2 id="public-opinion-title">여론 한 줄</h2>
+    {opinion.sentimentLabel && (
+      <p class:list={["opinion-tone", `tone-${opinion.sentiment}`]}>{opinion.sentimentLabel}</p>
+    )}
+  </div>
+  {opinion.summary && <p class="opinion-summary">{opinion.summary}</p>}
+  {(opinion.sampleLabel || opinion.stamp) && (
+    <p class="opinion-meta">
+      {opinion.sampleLabel && <span>{opinion.sampleLabel}</span>}
+      {opinion.stamp && <span>{opinion.stamp}</span>}
+    </p>
+  )}
+  {opinion.posts.length > 0 && (
+    <ol class="opinion-list">
+      {opinion.posts.map((post) => (
+        <li>
+          <a href={post.url} target="_blank" rel="nofollow noopener">
+            {post.text}
+            <span class="sr-only"> (새 창)</span>
+          </a>
+          <p class="opinion-source">
+            {[post.sourceLabel, post.dateLabel].filter(Boolean).join(", ")}
+          </p>
+        </li>
+      ))}
+    </ol>
+  )}
+</section>

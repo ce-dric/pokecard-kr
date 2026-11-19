@@ -46,17 +46,22 @@ const jsonLd = {
               스톰에메랄다는 한국 공식 카드 페이지의 표기와 일본 공식 레어도가 같은 카드만 세었습니다.
             </p>
           )}
-          <ul class="rarity-index">
-            {rows.map((row) => (
-              <li>
-                <a href={`#${set.id}-${row.code}`}>
-                  <span class={`rarity rarity-${row.code}`}>{row.code}</span>
-                  <span class="rarity-name">{row.label === row.code ? "" : row.label}</span>
-                  <span class="num">{row.count}장</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          {rows.length === 0 && (
+            <p class="lede">한국 공식 상세에 레어도 표기가 없어 이 세트는 나누지 않습니다.</p>
+          )}
+          {rows.length > 0 && (
+            <ul class="rarity-index">
+              {rows.map((row) => (
+                <li>
+                  <a href={`#${set.id}-${row.code}`}>
+                    <span class={`rarity rarity-${row.code}`}>{row.code}</span>
+                    <span class="rarity-name">{row.label === row.code ? "" : row.label}</span>
+                    <span class="num">{row.count}장</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
           {rows.map((row) => (
             <section class="rarity-block" id={`${set.id}-${row.code}`}>
               <h2>
