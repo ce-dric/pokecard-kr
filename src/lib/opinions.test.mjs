@@ -23,7 +23,9 @@ test("quotes stay within 80 characters", () => {
 test("a missing opinion renders nothing", () => {
   const file = { updatedAt: "2026-11-19T08:00:00.000Z", sets: {}, cards: {} };
   assert.equal(presentSetOpinion(file, "m6"), null);
+  assert.equal(presentSetOpinion(file, "m6a"), null);
   assert.equal(presentCardOpinion(file, "m6", "110"), null);
+  assert.equal(presentCardOpinion(file, "m6a", "124"), null);
   assert.equal(presentCardOpinion(null, "m6", "110"), null);
   assert.equal(presentSetOpinion({ sets: { m6: { summary: "  ", posts: [] } } }, "m6"), null);
 });
@@ -105,11 +107,17 @@ test("the shipped file is empty and the preview fixture is separate", () => {
   assert.equal(JSON.stringify(live).includes("summary"), false);
 
   const preview = JSON.parse(readFileSync(join(here, "../data/community/opinions.preview.json"), "utf8"));
-  const pack = presentSetOpinion(preview, "m6");
+  for (const setId of ["m6", "m6a"]) {
+    const pack = presentSetOpinion(preview, setId);
+    assert.ok(pack.summary);
+    assert.ok(pack.posts.length >= 3 && pack.posts.length <= 5);
+  }
   const card = presentCardOpinion(preview, "m6", "110");
-  assert.ok(pack.summary);
-  assert.ok(pack.posts.length >= 3 && pack.posts.length <= 5);
+  const celebration = presentCardOpinion(preview, "m6a", "124");
+  assert.equal(cardOpinionId("m6a", "124"), "m6a-124");
   assert.ok(card.posts.length >= 3 && card.posts.length <= 5);
+  assert.ok(celebration.summary);
+  assert.equal(presentCardOpinion(preview, "m6a", "001"), null);
   assert.equal(JSON.stringify(preview).includes("·"), false);
 
   const cardPage = readFileSync(join(here, "../pages/cards/[slug]/[number].astro"), "utf8");
@@ -120,6 +128,12 @@ test("the shipped file is empty and the preview fixture is separate", () => {
   assert.equal(component.includes("·"), false);
   assert.match(cardPage, /OpinionLine/);
   assert.match(setPage, /OpinionLine/);
+  assert.match(setPage, /cardHref/);
+  assert.match(setPage, /collector/);
+  const css = readFileSync(join(here, "../styles/site.css"), "utf8");
+  assert.match(css, /\.sr-only/);
+  assert.match(css, /\.opinion/);
+  assert.equal(css.includes("min-width: 960px"), false);
   assert.equal(cardPage.includes("opinions.preview"), false);
   assert.equal(setPage.includes("opinions.preview"), false);
 

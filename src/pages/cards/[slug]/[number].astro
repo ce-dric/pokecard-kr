@@ -105,8 +105,11 @@ const jsonLd = {
           {usesJapaneseName(card) && <span class="ja-fallback">일본판 기준</span>}
         </h1>
         <p class="lede">
-          {set.productNameKo} {collector(card)} {card.rarity}
-          {rarityLabel[card.rarity] || ""} {heading}.
+          {set.productNameKo} {collector(card)}{" "}
+          {card.rarity
+            ? `${card.rarity}${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? ` ${rarityLabel[card.rarity]}` : ""}`
+            : ""}{" "}
+          {heading}.
           카드 종류는 {card.categoryKo}{card.tags.length ? `, ${card.tags.join(", ")}` : ""}입니다.
         </p>
         <dl class="specs">
@@ -125,11 +128,15 @@ const jsonLd = {
           {card.jpNumber && card.jpNumber !== card.number && (
             <>
               <dt>일본판 번호</dt>
-              <dd>{card.jpNumber}/{card.printedIn}</dd>
+              <dd>{card.printedIn ? `${card.jpNumber}/${card.printedIn}` : card.jpNumber}</dd>
             </>
           )}
           <dt>레어도</dt>
-          <dd>{card.rarity} {rarityLabel[card.rarity] || ""}</dd>
+          <dd>
+            {card.rarity
+              ? `${card.rarity}${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? ` ${rarityLabel[card.rarity]}` : ""}`
+              : "표기 없음"}
+          </dd>
           <dt>종류</dt>
           <dd>{card.categoryKo}</dd>
           {card.type && (
@@ -156,7 +163,11 @@ const jsonLd = {
         <ul class="text-links">
           <li><a href={official} rel="noopener noreferrer">한국 공식 카드 페이지</a></li>
           {card.jpUrl && <li><a href={card.jpUrl} rel="noopener noreferrer">일본 공식 카드 페이지</a></li>}
-          <li><a href={withBase(`rarity/#${card.rarity}`)}>{card.rarity} 레어도 목록</a></li>
+          {card.rarity && (
+            <li>
+              <a href={withBase(`rarity/#${set.id}-${card.rarity}`)}>{card.rarity} 레어도 목록</a>
+            </li>
+          )}
         </ul>
         <AdSlot id={`${set.id}-${card.number}`} />
         {related.length > 0 && (

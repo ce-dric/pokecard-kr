@@ -2,7 +2,6 @@
 import Base from "../layouts/Base.astro";
 import { sets, withBase } from "../lib/sets";
 
-const set = sets[0];
 const title = "소개 | 포켓몬 카드 한국판";
 const description =
   "한국판 포켓몬 카드 게임의 세트별 카드 리스트 사이트입니다. 이름과 번호는 한국 공식 카드 검색에서 확인한 정보만 사용합니다.";
@@ -21,10 +20,14 @@ const description =
       포켓몬코리아나 주식회사 포켓몬의 공식 사이트가 아닙니다.
     </p>
     <h2>지금 수록된 세트</h2>
-    <p>
-      <a href={withBase(`sets/${set.slug}/`)}>{set.productNameKo}</a>.
-      한국 공식 제품 페이지에는 카드 목록이 없고, 카드 검색의 개별 카드 페이지에 이름과 번호가 있습니다.
-    </p>
+    <ul class="note-list">
+      {sets.map((item) => (
+        <li>
+          <a href={withBase(`sets/${item.slug}/`)}>{item.productNameKo}</a>
+        </li>
+      ))}
+    </ul>
+    <p>한국 공식 제품 페이지에는 카드 목록이 없고, 카드 검색의 개별 카드 페이지에 이름과 번호가 있습니다.</p>
     <h2>이름과 번호</h2>
     <ul class="note-list">
       <li>한국 이름은 pokemoncard.co.kr 카드 상세에 적힌 것만 사용합니다.</li>

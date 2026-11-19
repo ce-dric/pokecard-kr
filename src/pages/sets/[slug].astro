@@ -6,6 +6,8 @@ import OpinionLine from "../../components/OpinionLine.astro";
 import { presentSetOpinion } from "../../lib/opinions.mjs";
 import opinions from "../../data/community/opinions.json";
 import {
+  cardHref,
+  collector,
   displayName,
   formatDate,
   formatWon,
@@ -40,8 +42,8 @@ const jsonLd = {
     itemListElement: set.cards.map((card, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      name: `${displayName(card)} ${card.number}/${card.printedIn} ${card.rarity}`,
-      url: new URL(withBase(`cards/${set.slug}/${card.number}/`), Astro.site).href,
+      name: `${displayName(card)} ${collector(card)} ${card.rarity}`,
+      url: new URL(cardHref(set, card), Astro.site).href,
     })),
   },
 };
@@ -60,7 +62,7 @@ const opinion = presentSetOpinion(opinions, set.id);
       </div>
       <p class="lede">
         {set.productNameKo}에 수록된 {set.cardCount}장을 모았습니다. 번호는 한국 공식 카드 검색의 번호를 따릅니다.
-        065번부터 076번까지는 일본판 수록 순서와 다릅니다.
+        {set.id === "m6" && " 065번부터 076번까지는 일본판 수록 순서와 다릅니다."}
       </p>
     </header>
     <dl class="facts">
@@ -85,7 +87,7 @@ const opinion = presentSetOpinion(opinions, set.id);
           <button type="button" data-value="all" aria-pressed="true">전체</button>
           {rarities.map((row) => (
             <button type="button" data-value={row.code} aria-pressed="false">
-              {row.code} {row.label} {row.count}
+              {row.code}{row.label !== row.code ? ` ${row.label}` : ""} {row.count}
             </button>
           ))}
         </div>

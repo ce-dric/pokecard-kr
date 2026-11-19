@@ -14,13 +14,20 @@ const { title, description, image, jsonLd } = Astro.props;
 const canonical = Astro.url.href;
 const ogImage = image ? absoluteUrl(image) : absoluteUrl(import.meta.env.BASE_URL + "og-default.svg");
 const json = jsonLd ? JSON.stringify(jsonLd).replace(/</g, "\\u003c") : "";
+const GA_MEASUREMENT_ID = "G-PG0T8974W3";
 ---
 <!doctype html>
 <html lang="ko">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="google-site-verification" content="Y5bftvQG707VH6gChuqkD09uDjByVr4F5Yk9_tZb93A" />
     <meta name="theme-color" content="#121a16" />
+    <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}></script>
+    <script is:inline set:html={`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_MEASUREMENT_ID}');`}></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

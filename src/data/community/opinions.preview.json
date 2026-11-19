@@ -25,6 +25,31 @@
           "date": "2026-11-17"
         }
       ]
+    },
+    "m6a": {
+      "summary": "30주년 팩은 추억 카드 이야기가 많고, 시세는 특정 카드에 모여 있습니다.",
+      "sentiment": "mixed",
+      "sampleSize": 11,
+      "posts": [
+        {
+          "source": "x",
+          "text": "30주년 팩을 연 글은 예전 카드 이름이 자주 나옵니다.",
+          "url": "https://x.com/preview/status/m6a",
+          "date": "2026-11-19"
+        },
+        {
+          "source": "naver_cafe",
+          "text": "카페에서는 교환보다 특정 카드 시세 질문이 보입니다.",
+          "url": "https://cafe.naver.com/preview/m6a",
+          "date": "2026-11-18"
+        },
+        {
+          "source": "dc",
+          "text": "갤러리 반응은 몇 장에 모여 있습니다.",
+          "url": "https://gall.dcinside.com/preview/m6a",
+          "date": "2026-11-17"
+        }
+      ]
     }
   },
   "cards": {
@@ -56,6 +81,31 @@
           "text": "다른 커뮤니티에서도 이름이 몇 번 보입니다.",
           "url": "https://example.com/preview/110",
           "date": "2026-11-16"
+        }
+      ]
+    },
+    "m6a-124": {
+      "summary": "뜨아거 ex SAR는 뽑기 후기와 시세 언급이 함께 보입니다.",
+      "sentiment": "positive",
+      "sampleSize": 6,
+      "posts": [
+        {
+          "source": "x",
+          "text": "뜨아거 ex SAR를 뽑은 글은 반응이 좋아 보입니다.",
+          "url": "https://x.com/preview/status/m6a124",
+          "date": "2026-11-19"
+        },
+        {
+          "source": "naver_cafe",
+          "text": "카페 시세 글이 이 카드에 이어지고 있습니다.",
+          "url": "https://cafe.naver.com/preview/m6a124",
+          "date": "2026-11-18"
+        },
+        {
+          "source": "dc",
+          "text": "갤러리에서는 가격 이야기가 짧게 오갑니다.",
+          "url": "https://gall.dcinside.com/preview/m6a124",
+          "date": "2026-11-17"
         }
       ]
     }
