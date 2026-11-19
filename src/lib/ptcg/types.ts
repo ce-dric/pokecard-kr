@@ -69,6 +69,7 @@ export interface Observation {
     result: number;
     energyAttached: boolean;
     stadium: CardRef[];
+    looking?: CardRef[];
     players: PlayerView[];
   };
 }
@@ -105,12 +106,19 @@ export interface CardLink {
   image: string | null;
 }
 
+export interface FallbackImage {
+  thumb: string;
+  full: string;
+  page: string;
+}
+
 export interface MappedCard {
   id: number;
   setCode: string;
   number: string;
   nameJa: string | null;
   link: CardLink | null;
+  picture: FallbackImage | null;
 }
 
 export interface CardMapping {
@@ -118,6 +126,8 @@ export interface CardMapping {
     repo: string;
     commit: string;
     csv: string;
+    matches: Record<string, number>;
+    linked: Record<string, number>;
   };
   cards: Record<string, MappedCard>;
 }

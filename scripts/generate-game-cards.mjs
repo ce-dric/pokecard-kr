@@ -65,6 +65,8 @@ const idCol = header.indexOf("カード ID");
 const nameCol = header.indexOf("カード名");
 const codeCol = header.indexOf("エキスパンションマーク");
 const numberCol = header.indexOf("コレクション番号");
+const stageCol = header.findIndex((name) => name.startsWith("ポケモンの進化の段階"));
+const hpCol = header.indexOf("HP");
 if (idCol < 0 || codeCol < 0 || numberCol < 0) {
   throw new Error("JP card CSV is missing id, set code, or number columns");
 }
@@ -78,20 +80,34 @@ for (const cells of table.slice(1)) {
     setCode: (cells[codeCol] || "").trim(),
     number: (cells[numberCol] || "").trim(),
     nameJa: clean((cells[nameCol] || "").trim()),
+    stage: stageCol < 0 ? "" : (cells[stageCol] || "").trim(),
+    hp: hpCol < 0 ? "" : (cells[hpCol] || "").trim(),
   });
 }
 
+const ENERGY = new Set(["GRA", "FIR", "WAT", "LIG", "PSY", "FIG", "DAR", "MET"]);
+const PUBLISHED = ["m6", "m6a", "mee", "mem", "mez"];
 const index = new Map();
+const sets = [];
 const setDir = new URL("./src/data/sets/", root);
 for (const name of readdirSync(setDir).filter((file) => file.endsWith(".json")).sort()) {
   const set = JSON.parse(readFileSync(new URL(name, setDir), "utf8"));
+  sets.push(set);
   for (const card of set.cards) {
-    if (!card.jpNumber) continue;
-    const key = `${set.expansionMark}\0${normNumber(card.jpNumber)}`;
-    const list = index.get(key) || [];
-    list.push({ set, card });
-    index.set(key, list);
+    const keys = [];
+    if (card.jpNumber) keys.push(`${set.expansionMark}\0${normNumber(card.jpNumber)}`);
+    // Basic energies are stored with a blank expansion mark and the type code as the number.
+    if (!card.jpNumber && card.category === "energy" && ENERGY.has(card.number)) keys.push(`\0${card.number}`);
+    for (const key of keys) {
+      const list = index.get(key) || [];
+      list.push({ set, card });
+      index.set(key, list);
+    }
   }
+}
+
+function engineKey(row) {
+  return `${row.setCode}\0${normNumber(row.number)}`;
 }
 
 function pickLink(matches) {
@@ -113,26 +129,93 @@ function pickLink(matches) {
   };
 }
 
-const decks = JSON.parse(readFileSync(new URL("./src/lib/ptcg/decks.json", root), "utf8"));
+function samePrinting(left, right) {
+  const name = (value) => String(value || "").replaceAll("【", "").replaceAll("】", "").replace(/\s+/g, "");
+  return name(left.nameJa) !== "" && name(left.nameJa) === name(right.nameJa) && left.stage === right.stage && left.hp === right.hp;
+}
+
+function preferredId(id) {
+  const row = engineById.get(id);
+  if (!row || index.has(engineKey(row))) return id;
+  let chosen = null;
+  for (const other of engineById.values()) {
+    if (other.id === id || !samePrinting(row, other) || !index.has(engineKey(other))) continue;
+    if (!chosen || other.id < chosen.id) chosen = other;
+  }
+  return chosen ? chosen.id : id;
+}
+
+const deckPath = new URL("./src/lib/ptcg/decks.json", root);
+const decks = JSON.parse(readFileSync(deckPath, "utf8"));
+let swapped = 0;
+const nextDecks = decks.map((deck) => {
+  const cards = deck.cards.map((id) => preferredId(id));
+  const counts = new Map();
+  for (const id of cards) counts.set(id, (counts.get(id) || 0) + 1);
+  if ([...counts.values()].some((count) => count > 4)) return deck;
+  const changes = cards.filter((id, index) => id !== deck.cards[index]).length;
+  if (!changes) return deck;
+  swapped += changes;
+  return { ...deck, cards };
+});
+if (swapped) writeFileSync(deckPath, `${JSON.stringify(nextDecks, null, 2)}\n`);
+
+const starterIds = new Set(["mee", "mem", "mez"]);
+for (const set of sets) {
+  if (!starterIds.has(set.id)) continue;
+  const missing = set.cards.filter((card) => {
+    const key = card.jpNumber
+      ? `${set.expansionMark}\0${normNumber(card.jpNumber)}`
+      : card.category === "energy" && ENERGY.has(card.number)
+        ? `\0${card.number}`
+        : "";
+    if (!key) return true;
+    return ![...engineById.values()].some((row) => engineKey(row) === key);
+  });
+  console.log(`starter ${set.id}: engine misses ${missing.length} of ${set.cards.length} printed cards`);
+}
+
 const wanted = new Set();
-for (const deck of decks) for (const id of deck.cards) wanted.add(id);
+for (const deck of nextDecks) for (const id of deck.cards) wanted.add(id);
 for (const row of engineById.values()) {
-  const key = `${row.setCode}\0${normNumber(row.number)}`;
-  if (index.has(key)) wanted.add(row.id);
+  if (index.has(engineKey(row))) wanted.add(row.id);
+}
+
+const dest = new URL("./src/data/game-cards.json", root);
+let previous = { cards: {} };
+try {
+  previous = JSON.parse(readFileSync(dest, "utf8"));
+} catch {
+  previous = { cards: {} };
 }
 
 const cards = {};
 for (const id of [...wanted].sort((a, b) => a - b)) {
   const row = engineById.get(id) || { id, setCode: "", number: "", nameJa: null };
-  const key = `${row.setCode}\0${normNumber(row.number)}`;
-  const matches = index.get(key);
+  const matches = index.get(engineKey(row));
+  const prior = previous.cards?.[String(id)];
+  const picture = !matches && prior && prior.setCode === row.setCode && prior.number === row.number ? prior.picture || null : null;
   cards[String(id)] = {
     id,
     setCode: row.setCode,
     number: row.number,
     nameJa: row.nameJa,
     link: matches ? pickLink(matches) : null,
+    picture,
   };
+}
+
+const matches = Object.fromEntries(PUBLISHED.map((id) => [id, 0]));
+for (const row of engineById.values()) {
+  const found = index.get(engineKey(row)) || [];
+  for (const setId of new Set(found.map((item) => item.set.id))) {
+    if (setId in matches) matches[setId] += 1;
+  }
+}
+const linked = Object.fromEntries(PUBLISHED.map((id) => [id, 0]));
+for (const card of Object.values(cards)) {
+  const setId = card.link?.setId;
+  if (setId && setId in linked) linked[setId] += 1;
 }
 
 const output = {
@@ -140,10 +223,13 @@ const output = {
     repo: "https://github.com/nikephorosphokas99/ptcg-ai-sim",
     commit: COMMIT,
     csv: CSV_PATH,
+    matches,
+    linked,
   },
   cards,
 };
-const dest = new URL("./src/data/game-cards.json", root);
 writeFileSync(dest, `${JSON.stringify(output, null, 2)}\n`);
-const linked = Object.values(cards).filter((card) => card.link).length;
-console.log(`wrote ${Object.keys(cards).length} cards, ${linked} linked to our sets`);
+const withPicture = Object.values(cards).filter((card) => card.picture).length;
+const textOnly = Object.values(cards).filter((card) => !card.link && !card.picture).length;
+console.log(`wrote ${Object.keys(cards).length} cards; linked ${JSON.stringify(linked)}; match ${JSON.stringify(matches)}`);
+console.log(`deck slots rewritten ${swapped}; jp pictures kept ${withPicture}; text fallback ${textOnly}`);

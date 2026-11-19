@@ -131,6 +131,17 @@
 
 .ptcg-card { width: 4.7rem; flex: 0 0 auto; }
 
+button.ptcg-card {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .ptcg-card img,
 .ptcg-textcard,
 .ptcg-back,
@@ -179,9 +190,82 @@
 
 .ptcg-back { background: repeating-linear-gradient(135deg, #1c2921, #1c2921 6px, #24362c 6px, #24362c 12px); }
 
-.ptcg-options { margin: 0.4rem 0 0.8rem; }
+.ptcg-options { margin: 0.4rem 0 0.8rem; align-items: flex-end; }
+
+.ptcg-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 4.6rem;
+}
+
+.ptcg-options button:has(img) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.25rem;
+}
+
+.ptcg-options button img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  background: #18241d;
+}
+
+.ptcg-options button span {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.ptcg-enlarge {
+  width: 100%;
+  min-height: 1.8rem;
+  padding: 0.15rem 0.3rem;
+  font-size: 11px;
+}
 
 .ptcg-options button:disabled { opacity: 0.45; cursor: default; }
+
+.ptcg-zoom {
+  width: min(280px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  margin: auto;
+  padding: 0.7rem;
+  overflow: auto;
+  border: 1px solid var(--gold);
+  background: #141910;
+  color: var(--ink);
+}
+
+.ptcg-zoom::backdrop { background: rgba(8, 10, 8, 0.72); }
+
+.ptcg-zoom img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.45rem;
+  background: #0c1210;
+}
+
+.ptcg-zoom .caption {
+  margin: 0.35rem 0 0;
+  color: var(--faint);
+  font-size: 11.5px;
+}
+
+.ptcg-zoom [data-zoom-close] {
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: inherit;
+  padding: 0.28rem 0.55rem;
+  cursor: pointer;
+}
 
 .ptcg-log {
   max-height: 14rem;
@@ -197,4 +281,7 @@
 @media (max-width: 720px) {
   .ptcg-zone { grid-template-columns: 1fr; }
   .ptcg-card { width: 4.2rem; }
+  .ptcg-option { width: 4.2rem; }
+  .ptcg-options button,
+  .ptcg-enlarge { min-height: 2.4rem; }
 }
