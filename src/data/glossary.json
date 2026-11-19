@@ -226,7 +226,7 @@
       "이 사이트는 한국 공식 상세에 레어도가 적힌 카드만 레어도 일람에 넣습니다. 상세에 표기가 없으면 기호를 비워 둡니다.",
       "레어도가 다르면 같은 포켓몬이라도 다른 카드입니다. 레어도 순서와 시세가 항상 같지는 않아서, 이 페이지는 가격을 적지 않습니다."
     ],
-    "related": ["c", "sar", "ur", "fur"],
+    "related": ["c", "sar", "ace", "ur", "fur"],
     "links": { "rarityIndex": true }
   },
   {
@@ -283,6 +283,20 @@
     "links": { "rarities": ["RR"] }
   },
   {
+    "slug": "ace",
+    "term": "ACE",
+    "english": "ACE SPEC",
+    "aliases": [],
+    "group": "rarity",
+    "summary": "ACE SPEC 카드에 적힌 레어도 기호입니다. 이 사이트는 ACE로만 적습니다.",
+    "definition": [
+      "한국 공식 상세의 번호 줄에 ACE가 적힌 카드입니다. 카드 문구에는 ACE SPEC 카드는 덱에 1장만 넣을 수 있다고 되어 있습니다.",
+      "일본 공식 카드 페이지에는 같은 카드의 레어도 그림이 없는 경우가 있습니다. 이 사이트는 한국 공식 상세의 ACE를 그대로 둡니다."
+    ],
+    "related": ["rarity", "rr"],
+    "links": { "rarities": ["ACE"] }
+  },
+  {
     "slug": "ar",
     "term": "AR",
     "english": "Art Rare",
@@ -328,10 +342,10 @@
     "english": "Ultra Rare",
     "aliases": ["유알", "Hyper Rare"],
     "group": "rarity",
-    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트에서는 울트라레어라고 적습니다.",
+    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트는 UR로만 적습니다.",
     "definition": [
       "영문판에서는 같은 갈래를 Hyper Rare라고 부르는 경우가 많습니다. 영문판의 Ultra Rare는 한글판과 일본판의 SR에 해당하는 경우가 많으니, 기호를 먼저 봐야 합니다.",
-      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다."
+      "이 사이트는 한국 공식 상세에 UR이 적힌 카드만 UR로 둡니다."
     ],
     "related": ["sr", "mur", "fur"],
     "links": { "rarities": ["UR"] }
@@ -363,16 +377,16 @@
     "links": { "rarities": ["FUR"] }
   },
   {
-    "slug": "ace",
-    "term": "ACE",
-    "english": "ACE SPEC",
-    "aliases": ["에이스스펙"],
+    "slug": "ma",
+    "term": "MA",
+    "english": "MA",
+    "aliases": [],
     "group": "rarity",
-    "summary": "ACE SPEC를 가리키는 레어도 기호입니다. 한국 공식 상세에 적힌 ACE를 그대로 둡니다.",
+    "summary": "한국 공식 상세에 MA로 적힌 레어도 기호입니다.",
     "definition": [
-      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다. 이 페이지는 그 기호의 공식 한글 상품명을 따로 정하지 않습니다."
+      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다. 이 페이지는 그 기호를 다른 한글로 풀어 적지 않습니다."
     ],
-    "related": ["rarity"],
-    "links": { "rarities": ["ACE"] }
+    "related": ["mega", "mur"],
+    "links": { "rarities": ["MA"] }
   }
 ]
