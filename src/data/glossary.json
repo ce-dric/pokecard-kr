@@ -328,12 +328,13 @@
     "english": "Ultra Rare",
     "aliases": ["유알", "Hyper Rare"],
     "group": "rarity",
-    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트의 수록 카드에는 없습니다.",
+    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트는 UR로만 적습니다.",
     "definition": [
       "영문판에서는 같은 갈래를 Hyper Rare라고 부르는 경우가 많습니다. 영문판의 Ultra Rare는 한글판과 일본판의 SR에 해당하는 경우가 많으니, 기호를 먼저 봐야 합니다.",
-      "이 사이트에 지금 수록된 카드에는 UR이 없습니다."
+      "이 사이트는 한국 공식 상세에 UR이 적힌 카드만 UR로 둡니다."
     ],
-    "related": ["sr", "mur", "fur"]
+    "related": ["sr", "mur", "fur"],
+    "links": { "rarities": ["UR"] }
   },
   {
     "slug": "mur",

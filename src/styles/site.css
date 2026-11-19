@@ -558,6 +558,8 @@ a.mast-aside:hover { color: var(--gold-2); }
 .rarity-SR { color: #ead392; }
 .rarity-SAR { color: #efb3c2; }
 .rarity-MA { color: #e6c36a; }
+.rarity-ACE { color: #d7c4f2; }
+.rarity-UR { color: #f3e7c2; }
 .rarity-MUR { color: #f3aa9c; }
 .rarity-FUR { color: #9fd7e2; }
 
