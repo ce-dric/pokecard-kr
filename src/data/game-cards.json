@@ -1,0 +1,359 @@
+{
+  "source": {
+    "repo": "https://github.com/nikephorosphokas99/ptcg-ai-sim",
+    "commit": "26fd4e3df0e5a9d943560c027ddada40320059cc",
+    "csv": "rl-train/engine/JP_Card_Data_R2_full.csv"
+  },
+  "cards": {
+    "1": {
+      "id": 1,
+      "setCode": "",
+      "number": "GRA",
+      "nameJa": "基本【草】エネルギー",
+      "link": null
+    },
+    "2": {
+      "id": 2,
+      "setCode": "",
+      "number": "FIR",
+      "nameJa": "基本【炎】エネルギー",
+      "link": null
+    },
+    "3": {
+      "id": 3,
+      "setCode": "",
+      "number": "WAT",
+      "nameJa": "基本【水】エネルギー",
+      "link": null
+    },
+    "5": {
+      "id": 5,
+      "setCode": "",
+      "number": "PSY",
+      "nameJa": "基本【超】エネルギー",
+      "link": null
+    },
+    "7": {
+      "id": 7,
+      "setCode": "",
+      "number": "DAR",
+      "nameJa": "基本【悪】エネルギー",
+      "link": null
+    },
+    "11": {
+      "id": 11,
+      "setCode": "SVN",
+      "number": "043/045",
+      "nameJa": "ミストエネルギー",
+      "link": null
+    },
+    "14": {
+      "id": 14,
+      "setCode": "MC",
+      "number": "737/742",
+      "nameJa": "スパイクエネルギー",
+      "link": null
+    },
+    "18": {
+      "id": 18,
+      "setCode": "M3",
+      "number": "078/080",
+      "nameJa": "グロウ【草】エネルギー",
+      "link": null
+    },
+    "20": {
+      "id": 20,
+      "setCode": "M3",
+      "number": "080/080",
+      "nameJa": "ロック【闘】エネルギー",
+      "link": null
+    },
+    "31": {
+      "id": 31,
+      "setCode": "SV5a",
+      "number": "018/066",
+      "nameJa": "イーユイ",
+      "link": null
+    },
+    "112": {
+      "id": 112,
+      "setCode": "MC",
+      "number": "358/742",
+      "nameJa": "マシマシラ",
+      "link": null
+    },
+    "117": {
+      "id": 117,
+      "setCode": "MC",
+      "number": "428/742",
+      "nameJa": "オーガポン いしずえのめんex",
+      "link": null
+    },
+    "119": {
+      "id": 119,
+      "setCode": "MC",
+      "number": "546/742",
+      "nameJa": "ドラメシヤ",
+      "link": null
+    },
+    "120": {
+      "id": 120,
+      "setCode": "MC",
+      "number": "547/742",
+      "nameJa": "ドロンチ",
+      "link": null
+    },
+    "121": {
+      "id": 121,
+      "setCode": "MC",
+      "number": "548/742",
+      "nameJa": "ドラパルトex",
+      "link": null
+    },
+    "140": {
+      "id": 140,
+      "setCode": "MC",
+      "number": "489/742",
+      "nameJa": "キチキギスex",
+      "link": null
+    },
+    "235": {
+      "id": 235,
+      "setCode": "M2a",
+      "number": "011/193",
+      "nameJa": "スボミー",
+      "link": null
+    },
+    "344": {
+      "id": 344,
+      "setCode": "MC",
+      "number": "045/742",
+      "nameJa": "イシズマイ",
+      "link": null
+    },
+    "345": {
+      "id": 345,
+      "setCode": "MC",
+      "number": "046/742",
+      "nameJa": "イワパレス",
+      "link": null
+    },
+    "721": {
+      "id": 721,
+      "setCode": "M1S",
+      "number": "016/063",
+      "nameJa": "カイオーガ",
+      "link": null
+    },
+    "722": {
+      "id": 722,
+      "setCode": "M1S",
+      "number": "017/063",
+      "nameJa": "ユキカブリ",
+      "link": null
+    },
+    "723": {
+      "id": 723,
+      "setCode": "M1S",
+      "number": "018/063",
+      "nameJa": "メガユキノオーex",
+      "link": null
+    },
+    "756": {
+      "id": 756,
+      "setCode": "M1S",
+      "number": "051/063",
+      "nameJa": "メガガルーラex",
+      "link": null
+    },
+    "1071": {
+      "id": 1071,
+      "setCode": "M3",
+      "number": "061/080",
+      "nameJa": "ニャースex",
+      "link": null
+    },
+    "1080": {
+      "id": 1080,
+      "setCode": "MC",
+      "number": "633/742",
+      "nameJa": "アンフェアスタンプ",
+      "link": null
+    },
+    "1086": {
+      "id": 1086,
+      "setCode": "MC",
+      "number": "648/742",
+      "nameJa": "なかよしポフィン",
+      "link": null
+    },
+    "1097": {
+      "id": 1097,
+      "setCode": "MC",
+      "number": "670/742",
+      "nameJa": "夜のタンカ",
+      "link": null
+    },
+    "1120": {
+      "id": 1120,
+      "setCode": "MC",
+      "number": "644/742",
+      "nameJa": "クラッシュハンマー",
+      "link": null
+    },
+    "1121": {
+      "id": 1121,
+      "setCode": "MC",
+      "number": "651/742",
+      "nameJa": "ハイパーボール",
+      "link": null
+    },
+    "1122": {
+      "id": 1122,
+      "setCode": "MC",
+      "number": "660/742",
+      "nameJa": "ポケギア3.0",
+      "link": null
+    },
+    "1123": {
+      "id": 1123,
+      "setCode": "MC",
+      "number": "663/742",
+      "nameJa": "ポケモンいれかえ",
+      "link": null
+    },
+    "1137": {
+      "id": 1137,
+      "setCode": "MA",
+      "number": "017/043",
+      "nameJa": "ツールスクラッパー",
+      "link": null
+    },
+    "1145": {
+      "id": 1145,
+      "setCode": "MBG",
+      "number": "015/021",
+      "nameJa": "メガシグナル",
+      "link": null
+    },
+    "1147": {
+      "id": 1147,
+      "setCode": "M2",
+      "number": "073/080",
+      "nameJa": "ジャンボアイス",
+      "link": null
+    },
+    "1152": {
+      "id": 1152,
+      "setCode": "M3",
+      "number": "070/080",
+      "nameJa": "ポケパッド",
+      "link": null
+    },
+    "1158": {
+      "id": 1158,
+      "setCode": "MC",
+      "number": "691/742",
+      "nameJa": "マキシマムベルト",
+      "link": null
+    },
+    "1159": {
+      "id": 1159,
+      "setCode": "MC",
+      "number": "687/742",
+      "nameJa": "ヒーローマント",
+      "link": null
+    },
+    "1182": {
+      "id": 1182,
+      "setCode": "MC",
+      "number": "724/742",
+      "nameJa": "ボスの指令",
+      "link": null
+    },
+    "1194": {
+      "id": 1194,
+      "setCode": "SV8a",
+      "number": "164/187",
+      "nameJa": "アクロマの執念",
+      "link": null
+    },
+    "1197": {
+      "id": 1197,
+      "setCode": "MC",
+      "number": "705/742",
+      "nameJa": "クセロシキのたくらみ",
+      "link": null
+    },
+    "1198": {
+      "id": 1198,
+      "setCode": "MC",
+      "number": "696/742",
+      "nameJa": "アカマツ",
+      "link": null
+    },
+    "1205": {
+      "id": 1205,
+      "setCode": "SV8",
+      "number": "102/106",
+      "nameJa": "シアノ",
+      "link": null
+    },
+    "1213": {
+      "id": 1213,
+      "setCode": "MC",
+      "number": "711/742",
+      "nameJa": "ジャッジマン",
+      "link": null
+    },
+    "1219": {
+      "id": 1219,
+      "setCode": "MC",
+      "number": "734/742",
+      "nameJa": "ロケット団のラムダ",
+      "link": null
+    },
+    "1225": {
+      "id": 1225,
+      "setCode": "MC",
+      "number": "718/742",
+      "nameJa": "トウコ",
+      "link": null
+    },
+    "1227": {
+      "id": 1227,
+      "setCode": "MC",
+      "number": "729/742",
+      "nameJa": "リーリエの決心",
+      "link": null
+    },
+    "1235": {
+      "id": 1235,
+      "setCode": "MC",
+      "number": "700/742",
+      "nameJa": "ウエートレス",
+      "link": null
+    },
+    "1246": {
+      "id": 1246,
+      "setCode": "SVN",
+      "number": "039/045",
+      "nameJa": "ジャミングタワー",
+      "link": null
+    },
+    "1257": {
+      "id": 1257,
+      "setCode": "M2a",
+      "number": "190/193",
+      "nameJa": "ロケット団のファクトリー",
+      "link": null
+    },
+    "1264": {
+      "id": 1264,
+      "setCode": "M2",
+      "number": "079/080",
+      "nameJa": "バトルコロシアム",
+      "link": null
+    }
+  }
+}
