@@ -5,6 +5,7 @@ import {
   GRADE_LABELS,
   PSA_CENTERING_SOURCE,
   PSA_CENTERING_TABLE,
+  createPhotoLoad,
   defaultGuides,
   detectCardGuides,
   estimateCenteringGrade,
@@ -214,22 +215,80 @@ test("off-center inner frames keep the drawn border ratio", () => {
   assert.equal(estimateCenteringGrade(measured).grade, 6);
 });
 
-test("a borderless photo uses the image edge as the card edge", () => {
+test("a borderless photo keeps the content edge instead of the image bounds", () => {
   const image = makeImage(200, 280, (x, y) => {
     const onArt = x >= 12 && x < 188 && y >= 14 && y < 266;
     if (onArt) return [24, 36, 90];
     return [244, 214, 64];
   });
   const guides = detectCardGuides(image);
-  assert.ok(guides.outerLeft <= 1 / 200);
-  assert.ok(guides.outerRight >= 199 / 200);
-  assert.ok(guides.outerTop <= 1 / 280);
-  assert.ok(guides.outerBottom >= 279 / 280);
-  assert.ok(Math.abs(guides.innerLeft - 12 / 200) <= 1 / 200);
-  assert.ok(Math.abs(guides.innerRight - 188 / 200) <= 1 / 200);
+  assert.ok(Math.abs(guides.outerLeft - 12 / 200) <= 1 / 200);
+  assert.ok(Math.abs(guides.outerRight - 188 / 200) <= 1 / 200);
+  assert.ok(Math.abs(guides.outerTop - 14 / 280) <= 1 / 280);
+  assert.ok(Math.abs(guides.outerBottom - 266 / 280) <= 1 / 280);
   const measured = measureGuides(guides);
   assert.equal(measured.horizontal.worse, 50);
   assert.equal(measured.vertical.worse, 50);
+});
+
+test("a tight even photo margin stays outside the card", () => {
+  const image = makeImage(200, 280, (x, y) => {
+    if (x >= 16 && x < 184 && y >= 22 && y < 258) return [240, 210, 60];
+    return [180, 180, 180];
+  });
+  const guides = detectCardGuides(image);
+  assert.ok(Math.abs(guides.outerLeft - 16 / 200) <= 1 / 200);
+  assert.ok(Math.abs(guides.outerRight - 184 / 200) <= 1 / 200);
+  assert.ok(Math.abs(guides.outerTop - 22 / 280) <= 1 / 280);
+  assert.ok(Math.abs(guides.outerBottom - 258 / 280) <= 1 / 280);
+  const measured = measureGuides(guides);
+  assert.equal(measured.horizontal.worse, 50);
+  assert.equal(measured.vertical.worse, 50);
+});
+
+test("a slower photo read cannot replace the newer one", async () => {
+  const load = createPhotoLoad();
+  let releaseOlder;
+  let releaseNewer;
+  const older = load("front", () => new Promise((resolve) => {
+    releaseOlder = resolve;
+  }));
+  const newer = load("front", () => new Promise((resolve) => {
+    releaseNewer = resolve;
+  }));
+  const closed = [];
+  const oldBitmap = { id: "old", close() { closed.push("old"); } };
+  const newBitmap = { id: "new", close() { closed.push("new"); } };
+  releaseNewer(newBitmap);
+  const kept = await newer;
+  releaseOlder(oldBitmap);
+  const dropped = await older;
+  assert.equal(kept.stale, false);
+  assert.equal(kept.bitmap, newBitmap);
+  assert.equal(dropped.stale, true);
+  assert.deepEqual(closed, ["old"]);
+});
+
+test("a replaced photo failure does not surface after a newer read", async () => {
+  const load = createPhotoLoad();
+  let failOlder;
+  let releaseNewer;
+  const older = load("back", () => new Promise((_, reject) => {
+    failOlder = reject;
+  }));
+  const newer = load("back", () => new Promise((resolve) => {
+    releaseNewer = resolve;
+  }));
+  const front = load("front", () => Promise.resolve({ id: "front" }));
+  releaseNewer({ id: "back" });
+  const kept = await newer;
+  const other = await front;
+  failOlder(new Error("unreadable"));
+  const dropped = await older;
+  assert.equal(kept.bitmap.id, "back");
+  assert.equal(other.bitmap.id, "front");
+  assert.equal(dropped.stale, true);
+  assert.equal(dropped.error, undefined);
 });
 
 test("a solid card with no inner frame stays centered until the user drags", () => {

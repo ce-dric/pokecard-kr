@@ -127,6 +127,25 @@ export function defaultGuides() {
   };
 }
 
+export function createPhotoLoad() {
+  const tickets = { front: 0, back: 0 };
+  return async function load(side, read) {
+    const ticket = (tickets[side] = (tickets[side] || 0) + 1);
+    let bitmap;
+    try {
+      bitmap = await read();
+    } catch (error) {
+      if (tickets[side] !== ticket) return { stale: true, side };
+      return { stale: false, side, error };
+    }
+    if (tickets[side] !== ticket) {
+      if (bitmap && typeof bitmap.close === "function") bitmap.close();
+      return { stale: true, side };
+    }
+    return { stale: false, side, bitmap };
+  };
+}
+
 export function moveGuide(guides, key, value) {
   const next = { ...guides };
   const vertical = key === "outerLeft" || key === "innerLeft" || key === "innerRight" || key === "outerRight";
@@ -242,15 +261,6 @@ function evenInner(box) {
   };
 }
 
-function looksLikePrintedBorder(box, width, height) {
-  const left = box.left / width;
-  const right = (width - box.right) / width;
-  const top = box.top / height;
-  const bottom = (height - box.bottom) / height;
-  if ([left, right, top, bottom].some((margin) => margin < 0.02 || margin > 0.16)) return false;
-  return Math.abs(left - right) <= 0.04 && Math.abs(top - bottom) <= 0.04;
-}
-
 function toFractions(width, height, outer, inner) {
   return {
     outerLeft: outer.left / width,
@@ -282,10 +292,6 @@ export function detectCardGuides(image) {
     top: consensusInnerEdge(data, width, height, outer, "top"),
     bottom: consensusInnerEdge(data, width, height, outer, "bottom"),
   };
-  const hits = Object.values(found).filter((value) => value != null).length;
-  if (hits === 0 && looksLikePrintedBorder(outer, width, height)) {
-    return toFractions(width, height, { left: 0, right: width, top: 0, bottom: height }, outer);
-  }
   const fallback = evenInner(outer);
   const inner = {
     left: found.left ?? fallback.left,
