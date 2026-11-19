@@ -1,0 +1,205 @@
+---
+import Base from "../../layouts/Base.astro";
+import AdSlot from "../../components/AdSlot.astro";
+import CardTile from "../../components/CardTile.astro";
+import {
+  describeHit,
+  existingOdds,
+  HITS_NAV_LABEL,
+  hitGroups,
+  hitNote,
+} from "../../lib/hits.mjs";
+import {
+  altText,
+  cardHref,
+  imageHref,
+  rarityLabel,
+  sets,
+  typeLabel,
+  withBase,
+  type CardSet,
+} from "../../lib/sets";
+
+export function getStaticPaths() {
+  return sets.map((set) => ({ params: { setId: set.id }, props: { set } }));
+}
+
+interface Props {
+  set: CardSet;
+}
+const { set } = Astro.props;
+const groups = hitGroups(set);
+const note = hitNote(set);
+const odds = existingOdds(set);
+const count = groups.reduce((sum, group) => sum + group.cards.length, 0);
+const summary = groups.map((group) => `${group.code} ${group.cards.length}장`).join(", ");
+const title = `${set.nameKo} ${HITS_NAV_LABEL} | ${set.productNameKo}`;
+const description = note
+  ? `${set.productNameKo}. ${note}`
+  : `${set.productNameKo} 힛카드 ${count}장. ${summary}. 이름과 레어도는 수록 데이터에 있는 것만 보여 줍니다.`;
+const payload = groups.flatMap((group) =>
+  group.cards.map((card) => ({
+    number: card.number,
+    href: cardHref(set, card),
+    image: imageHref(set, card.image),
+    alt: altText(set, card),
+    ...describeHit(card, { rarityLabels: rarityLabel, typeLabels: typeLabel }),
+  })),
+);
+const hitJson = JSON.stringify(payload).replace(/</g, "\\u003c");
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: title,
+  description,
+  inLanguage: "ko-KR",
+  url: Astro.url.href,
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: count,
+    itemListElement: payload.map((card, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: card.title,
+      url: new URL(card.href, Astro.site).href,
+    })),
+  },
+};
+
+function rarityText(code: string) {
+  const label = rarityLabel[code] || "";
+  return label && label !== code ? label : "";
+}
+---
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <div class="wrap">
+    <header class="mast">
+      <p class="crumbs">
+        <a href={withBase("")}>홈</a> /
+        <a href={withBase("hits/")}>{HITS_NAV_LABEL}</a> /
+        {set.nameKo}
+      </p>
+      <div class="mast-row">
+        <h1>{set.nameKo} 힛카드</h1>
+        <a class="mast-aside" href={withBase(`sets/${set.slug}/`)}>카드 리스트</a>
+      </div>
+      {note ? (
+        <p class="lede">{note}</p>
+      ) : (
+        <p class="lede">
+          {set.productNameKo}에서 공식 상세에 높은 레어도로 적힌 {count}장입니다.
+          카드를 누르면 이름과 레어도를 볼 수 있습니다.
+        </p>
+      )}
+    </header>
+    <AdSlot id={`${set.id}-hits`} />
+    {odds && (
+      <dl class="specs">
+        <dt>확률</dt>
+        <dd>{odds}</dd>
+      </dl>
+    )}
+    {groups.length > 0 && (
+      <>
+      <div data-hit-grid>
+        <ul class="rarity-index">
+          {groups.map((group) => (
+            <li>
+              <a href={`#${set.id}-${group.code}`}>
+                <span class={`rarity rarity-${group.code}`}>{group.code}</span>
+                <span class="rarity-name">{rarityText(group.code)}</span>
+                <span class="num">{group.cards.length}장</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        {groups.map((group, groupIndex) => (
+          <section class="rarity-block" id={`${set.id}-${group.code}`}>
+            <h2>
+              <span class={`rarity rarity-${group.code}`}>{group.code}</span>
+              {rarityText(group.code)}
+              <span class="rarity-count">{group.cards.length}장</span>
+            </h2>
+            <div class="grid grid-hits">
+              {group.cards.map((card, cardIndex) => (
+                <CardTile set={set} card={card} eager={groupIndex === 0 && cardIndex === 0} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+      <script type="application/json" data-hit-data set:html={hitJson} />
+      <dialog class="hit-dialog" data-hit-dialog aria-labelledby="hit-dialog-title">
+          <button class="hit-close" type="button" data-hit-close>닫기</button>
+          <div class="hit-dialog-body">
+            <figure class="card-visual">
+              <img data-hit-image alt="" width="640" height="894" decoding="async" />
+              <figcaption class="caption">이미지 출처: 포켓몬 공식</figcaption>
+            </figure>
+            <div>
+              <h2 id="hit-dialog-title" data-hit-title></h2>
+              <p class="ja-fallback" data-hit-fallback hidden>일본판 기준</p>
+              <dl class="specs" data-hit-specs></dl>
+              <p class="more-info"><a data-hit-page href={withBase(`sets/${set.slug}/`)}>카드 페이지</a></p>
+            </div>
+          </div>
+        </dialog>
+        <script is:inline>
+          const dialog = document.querySelector("[data-hit-dialog]");
+          const dataNode = document.querySelector("[data-hit-data]");
+          const grid = document.querySelector("[data-hit-grid]");
+          if (dialog && dataNode && grid) {
+            const cards = JSON.parse(dataNode.textContent);
+            const byNumber = new Map(cards.map((card) => [card.number, card]));
+            const image = dialog.querySelector("[data-hit-image]");
+            const title = dialog.querySelector("[data-hit-title]");
+            const fallback = dialog.querySelector("[data-hit-fallback]");
+            const specs = dialog.querySelector("[data-hit-specs]");
+            const pageLink = dialog.querySelector("[data-hit-page]");
+            let last = null;
+            function openCard(card, anchor) {
+              image.src = card.image;
+              image.alt = card.alt || "";
+              title.textContent = card.title;
+              fallback.hidden = !card.japaneseFallback;
+              specs.replaceChildren();
+              for (const fact of card.facts) {
+                const term = document.createElement("dt");
+                term.textContent = fact.label;
+                const detail = document.createElement("dd");
+                detail.textContent = fact.value;
+                specs.append(term, detail);
+              }
+              pageLink.href = card.href;
+              last = anchor;
+              if (typeof dialog.showModal === "function") {
+                dialog.showModal();
+                dialog.querySelector("[data-hit-close]").focus();
+              } else {
+                location.href = card.href;
+              }
+            }
+            grid.addEventListener("click", (event) => {
+              const anchor = event.target.closest("a");
+              if (!anchor || !grid.contains(anchor) || anchor.closest("dialog")) return;
+              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              const parts = new URL(anchor.href).pathname.split("/").filter(Boolean);
+              const number = decodeURIComponent(parts[parts.length - 1] || "");
+              const card = byNumber.get(number);
+              if (!card) return;
+              event.preventDefault();
+              openCard(card, anchor);
+            });
+            dialog.querySelector("[data-hit-close]").addEventListener("click", () => dialog.close());
+            dialog.addEventListener("click", (event) => {
+              if (event.target === dialog) dialog.close();
+            });
+            dialog.addEventListener("close", () => {
+              if (last) last.focus();
+            });
+          }
+        </script>
+      </>
+    )}
+  </div>
+</Base>
