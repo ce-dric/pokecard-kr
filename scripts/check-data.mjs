@@ -99,6 +99,76 @@ for (const [code, count] of Object.entries(m6aExpected)) {
 const m6aFiles = readdirSync("public/images/cards/m6a").filter((name) => name.endsWith(".webp"));
 if (m6aFiles.length !== 278) errors.push(`m6a webp count ${m6aFiles.length}`);
 
+const memFile = new URL("../src/data/sets/mem.json", import.meta.url);
+const mem = JSON.parse(readFileSync(memFile, "utf8"));
+const memExpected = { "": 19 };
+const memCounts = {};
+const memWanted = [
+  ...Array.from({ length: 18 }, (_, i) => String(i + 1).padStart(3, "0")),
+  "GRA",
+];
+if (mem.cardCount !== 19 || mem.cards.length !== 19) errors.push(`mem card count ${mem.cards.length}`);
+if (mem.printedTotal !== 17) errors.push(`mem printed total ${mem.printedTotal}`);
+if (mem.krProductUrl !== "https://pokemoncard.co.kr/card/968") errors.push("mem product url");
+if (mem.regulation !== "I, J") errors.push(`mem regulation ${mem.regulation}`);
+if (mem.packsPerBox !== 1 || mem.packPriceKr !== 17000 || mem.cardsPerPack !== 60 || mem.boxPriceKr !== 0) {
+  errors.push("mem deck product facts");
+}
+if (mem.cards.map((card) => card.number).join() !== memWanted.join()) errors.push("mem numbers");
+for (const card of mem.cards) {
+  memCounts[card.rarity] = (memCounts[card.rarity] || 0) + 1;
+  if (card.nameStatus !== "verified-kr" || !card.nameKo) {
+    errors.push(`mem ${card.number} missing verified Korean name`);
+  }
+  if (!card.category || !card.stage) errors.push(`mem ${card.number} missing category`);
+  if (`${card.nameKo}${card.number}${mem.productNameKo}${mem.nameKo}`.includes("·")) {
+    errors.push(`mem ${card.number} contains a middle dot`);
+  }
+  if (!card.krUrl.startsWith("https://pokemoncard.co.kr/cards/detail/BS2026009")) {
+    errors.push(`mem ${card.number} missing official url`);
+  }
+  if (card.rarity !== "") errors.push(`mem ${card.number} rarity is not blank`);
+  const full = join("public/images/cards/mem", card.image);
+  const thumb = join("public/images/cards/mem", card.thumb);
+  for (const path of [full, thumb]) {
+    try {
+      if (statSync(path).size < 1000) errors.push(`${path} too small`);
+    } catch {
+      errors.push(`missing ${path}`);
+    }
+  }
+}
+const memAnchors = {
+  "005": ["마스카나 ex", "マスカーニャex", "50456", "005", 320],
+  "010": ["이상한사탕", "ふしぎなアメ", "50462", "011", null],
+  "011": ["포켓패드", "ポケパッド", "50463", "012", null],
+  "012": ["하이퍼볼", "ハイパーボール", "50461", "010", null],
+  "015": ["릴리에의 결심", "リーリエの決心", "50468", "017", null],
+  "017": ["빛나", "ヒカリ", "50466", "015", null],
+  "018": ["나오하", "ニャオハ", "50469", "018", 70],
+  GRA: ["기본 풀 에너지", null, null, null, null],
+};
+for (const [number, [nameKo, nameJa, jpCardId, jpNumber, hp]] of Object.entries(memAnchors)) {
+  const card = mem.cards.find((item) => item.number === number);
+  if (
+    !card ||
+    card.nameKo !== nameKo ||
+    card.nameJa !== nameJa ||
+    card.jpCardId !== jpCardId ||
+    card.jpNumber !== jpNumber ||
+    card.hp !== hp
+  ) {
+    errors.push(`mem ${number} official pairing`);
+  }
+}
+for (const [code, count] of Object.entries(memExpected)) {
+  if (memCounts[code] !== count) {
+    errors.push(`mem rarity ${code || "(empty)"} is ${memCounts[code] ?? 0}, expected ${count}`);
+  }
+}
+const memFiles = readdirSync("public/images/cards/mem").filter((name) => name.endsWith(".webp"));
+if (memFiles.length !== 38) errors.push(`mem webp count ${memFiles.length}`);
+
 const meeFile = new URL("../src/data/sets/mee.json", import.meta.url);
 const meeRaw = readFileSync(meeFile, "utf8");
 if (meeRaw.includes("\u00b7")) errors.push("mee json contains a middle dot");
@@ -130,6 +200,9 @@ if (mee.id !== "mee" || mee.slug !== "mega-starter-eevee") errors.push("mee id")
 if (mee.productNameKo !== "MEGA 스타터 세트 ex 「이브이 ex」") errors.push("mee product name");
 if (mee.krProductUrl !== "https://pokemoncard.co.kr/card/966") errors.push("mee product url");
 if (mee.releaseDateKr !== "2026-09-30" || mee.packPriceKr !== 17000) errors.push("mee release or price");
+if (mee.packsPerBox !== 1 || mee.cardsPerPack !== 60 || mee.boxPriceKr !== 0) {
+  errors.push("mee deck product facts");
+}
 if (mee.regulation !== "I, J") errors.push(`mee regulation ${mee.regulation}`);
 const meeJp = {
   "011": ["ふしぎなアメ", "50423", "012"],
@@ -187,5 +260,6 @@ if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
-console.log(`ok m6 ${set.cards.length} cards, ${files.length} webp; m6a ${m6a.cards.length} cards, ${m6aFiles.length} webp`);
-console.log(`ok mee ${mee.cards.length} cards, ${meeFiles.length} webp`);
+console.log(
+  `ok m6 ${set.cards.length} cards, ${files.length} webp; m6a ${m6a.cards.length} cards, ${m6aFiles.length} webp; mem ${mem.cards.length} cards, ${memFiles.length} webp; mee ${mee.cards.length} cards, ${meeFiles.length} webp`,
+);
