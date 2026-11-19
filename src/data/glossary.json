@@ -1,0 +1,363 @@
+[
+  {
+    "slug": "irochi",
+    "term": "이로치",
+    "english": "shiny",
+    "aliases": ["색이 다른", "色違い"],
+    "group": "community",
+    "summary": "색이 보통과 다른 포켓몬을 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "일본어 色違い에서 온 커뮤니티 말이며, 카드에 찍히는 레어도 기호는 아닙니다.",
+      "색이 다른 포켓몬이 그려진 카드는 상품마다 다른 기호를 쓰기도 합니다. 이 사이트의 카드 데이터에는 이로치라는 구분이 없습니다."
+    ],
+    "related": []
+  },
+  {
+    "slug": "sealed",
+    "term": "실드전",
+    "english": "sealed play",
+    "aliases": ["sealed"],
+    "group": "community",
+    "summary": "개봉하지 않은 확장팩의 카드로 그 자리에서 덱을 만들어 대전하는 놀이 방법입니다.",
+    "definition": [
+      "미리 짜 둔 덱 대신, 그 자리에서 확장팩을 열어 나온 카드로 덱을 만듭니다.",
+      "포켓몬코리아 대회 안내에는 덱 40장, 프라이즈 4장이라고 적힌 행사가 있습니다. 팩 수와 기본 에너지, 참가상 카드는 행사마다 달라서 이 페이지는 하나의 숫자로 정하지 않습니다.",
+      "미개봉 상품을 가리키는 말과는 다릅니다. 미개봉은 포장 상태이고, 실드전은 대전 방법입니다."
+    ],
+    "related": ["unopened"],
+    "external": [
+      {
+        "label": "포켓몬코리아, 메가엘레이드 ex SAR GET BATTLE",
+        "href": "https://www.pokemonkorea.co.kr/PCG_Getbattle_M6/menu785"
+      }
+    ]
+  },
+  {
+    "slug": "hit",
+    "term": "힛",
+    "english": "hit",
+    "aliases": ["힛카드"],
+    "group": "community",
+    "summary": "팩이나 상자에서 건졌다고 여기는 카드를 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "영어 hit에서 온 말입니다.",
+      "어느 레어도부터 힛인지는 사람마다 다릅니다. 이 사이트는 기준을 정하지 않고, 특정 카드를 힛으로 지정하지 않습니다."
+    ],
+    "related": ["no-hit", "box-break"]
+  },
+  {
+    "slug": "no-hit",
+    "term": "노힛",
+    "english": "no hit",
+    "aliases": ["노히트"],
+    "group": "community",
+    "summary": "팩이나 상자를 열었는데 힛으로 볼 카드가 없을 때 쓰는 말입니다.",
+    "definition": [
+      "무엇을 힛으로 볼지는 사람마다 달라서, 노힛에도 정해 둔 레어도 기준은 없습니다."
+    ],
+    "related": ["hit"]
+  },
+  {
+    "slug": "box-break",
+    "term": "박스깡",
+    "english": "opening a box",
+    "aliases": [],
+    "group": "community",
+    "summary": "부스터 상자를 통째로 여는 일을 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "상자 하나를 열어 어떤 카드가 나왔는지 보는 일을 말합니다. 공식 상품 구분은 아닙니다."
+    ],
+    "related": ["pack-break", "hit", "unopened"]
+  },
+  {
+    "slug": "pack-break",
+    "term": "팩깡",
+    "english": "opening a pack",
+    "aliases": [],
+    "group": "community",
+    "summary": "팩 하나를 여는 일을 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "확장팩 한 봉지를 여는 일을 말합니다. 상자를 통째로 여는 박스깡과는 봉지만 다릅니다."
+    ],
+    "related": ["box-break"]
+  },
+  {
+    "slug": "unopened",
+    "term": "미개봉",
+    "english": "unopened",
+    "aliases": [],
+    "group": "community",
+    "summary": "포장을 열지 않은 팩이나 상자를 말합니다.",
+    "definition": [
+      "팩, 상자, 그 밖의 상품이 아직 포장된 상태입니다.",
+      "실드전과는 다릅니다. 실드전은 대전 방법이고, 미개봉은 상품 상태입니다."
+    ],
+    "related": ["opened", "sealed"]
+  },
+  {
+    "slug": "opened",
+    "term": "개봉",
+    "english": "opened",
+    "aliases": [],
+    "group": "community",
+    "summary": "포장을 연 상품을 말합니다.",
+    "definition": [
+      "팩이나 상자의 포장을 연 뒤의 상태입니다."
+    ],
+    "related": ["unopened"]
+  },
+  {
+    "slug": "pokeca",
+    "term": "포케카",
+    "english": "Pokemon card",
+    "aliases": ["ポケカ"],
+    "group": "community",
+    "summary": "포켓몬 카드를 줄여 부르는 커뮤니티 말입니다.",
+    "definition": [
+      "일본어 ポケカ에서 온 말입니다.",
+      "포카는 다른 뜻으로도 쓰이므로 이 말의 다른 이름으로 두지 않습니다."
+    ],
+    "related": []
+  },
+  {
+    "slug": "korean-print",
+    "term": "한판",
+    "english": "Korean print",
+    "aliases": ["한글판", "한국판"],
+    "group": "community",
+    "summary": "한글이 인쇄된 포켓몬 카드를 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "이 사이트는 한글판 카드 목록입니다. 아래에 수록된 세트가 있습니다."
+    ],
+    "related": ["japanese-print", "english-print"],
+    "links": { "allSets": true }
+  },
+  {
+    "slug": "japanese-print",
+    "term": "일판",
+    "english": "Japanese print",
+    "aliases": ["일본판"],
+    "group": "community",
+    "summary": "일본어가 인쇄된 포켓몬 카드를 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "이 사이트의 목록은 한글판 번호와 한글 이름 기준입니다. 카드 페이지에는 확인한 일본판 이름을 함께 적습니다."
+    ],
+    "related": ["korean-print", "english-print"],
+    "links": { "allSets": true }
+  },
+  {
+    "slug": "english-print",
+    "term": "영판",
+    "english": "English print",
+    "aliases": ["영어판", "영문판"],
+    "group": "community",
+    "summary": "영어가 인쇄된 포켓몬 카드를 커뮤니티에서 부르는 말입니다.",
+    "definition": [
+      "미국판이라고 부르기도 합니다. 영어 인쇄가 모두 미국 제품인 것은 아니라서, 이 페이지는 제조 국가를 적지 않습니다.",
+      "이 사이트에는 영문판 카드 목록이 없습니다."
+    ],
+    "related": ["korean-print", "japanese-print"]
+  },
+  {
+    "slug": "slab",
+    "term": "슬랩",
+    "english": "slab",
+    "aliases": [],
+    "group": "community",
+    "summary": "그레이딩을 마친 카드를 플라스틱 케이스에 넣은 것을 말합니다.",
+    "definition": [
+      "영어 slab에서 온 커뮤니티 말입니다. 어느 업체의 케이스인지는 이 말로 정해지지 않습니다.",
+      "이 사이트는 그레이딩 점수를 다루지 않습니다."
+    ],
+    "related": []
+  },
+  {
+    "slug": "secret",
+    "term": "시크릿",
+    "english": "secret rare",
+    "aliases": ["시크릿 레어"],
+    "group": "community",
+    "summary": "이 사이트에서 카드 번호가 세트의 기본 수록 수보다 큰 카드입니다.",
+    "definition": [
+      "레어도 기호 하나는 아닙니다. 번호가 그 세트에 적힌 기본 수록 수보다 크면 여기 모읍니다.",
+      "번호가 숫자가 아닌 카드는 넣지 않습니다. 기본 에너지처럼 번호가 글자인 카드는 이 목록에 없습니다."
+    ],
+    "related": ["ar", "sr", "sar", "mur", "fur"],
+    "links": { "abovePrinted": true }
+  },
+  {
+    "slug": "ex",
+    "term": "ex",
+    "english": "Pokemon ex",
+    "aliases": ["포켓몬 ex", "포켓몬ex"],
+    "group": "card",
+    "summary": "포켓몬 이름 뒤에 붙는 카드 구분입니다. 레어도 기호는 아닙니다.",
+    "definition": [
+      "이 사이트의 카드 데이터에서는 태그 포켓몬 ex 또는 메가진화 ex가 붙은 카드입니다.",
+      "기절했을 때 상대가 가져가는 프라이즈 매수는 카드마다 안내가 다를 수 있어 여기에는 적지 않습니다."
+    ],
+    "related": ["rr", "mega", "sar"],
+    "links": { "tags": ["포켓몬 ex", "메가진화 ex"] }
+  },
+  {
+    "slug": "mega",
+    "term": "MEGA",
+    "english": "MEGA",
+    "aliases": ["메가", "메가 시리즈"],
+    "group": "card",
+    "summary": "이 사이트에 수록된 세트의 시리즈 이름입니다.",
+    "definition": [
+      "세트 데이터의 시리즈 값이 MEGA인 상품입니다. 한글 상품명에는 MEGA 확장팩이라고 적혀 있습니다.",
+      "카드 목록은 한글 이름에 메가가 들어간 카드만 모았습니다. 메가진화 포켓몬이 아닌 카드도 이름에 메가가 있으면 들어갑니다."
+    ],
+    "related": ["ex", "mur"],
+    "links": { "setSeries": ["MEGA"], "nameIncludes": ["메가"] }
+  },
+  {
+    "slug": "rarity",
+    "term": "레어도",
+    "english": "rarity",
+    "aliases": ["희귀도"],
+    "group": "rarity",
+    "summary": "카드에 적힌 희귀도 기호입니다.",
+    "definition": [
+      "한글판과 일본판은 C, SAR처럼 알파벳으로 적는 경우가 많고, 영문판은 다른 이름이나 기호를 쓰기도 합니다.",
+      "이 사이트는 한국 공식 상세에 레어도가 적힌 카드만 레어도 일람에 넣습니다. 상세에 표기가 없으면 기호를 비워 둡니다.",
+      "레어도가 다르면 같은 포켓몬이라도 다른 카드입니다. 레어도 순서와 시세가 항상 같지는 않아서, 이 페이지는 가격을 적지 않습니다."
+    ],
+    "related": ["c", "sar", "ur", "fur"],
+    "links": { "rarityIndex": true }
+  },
+  {
+    "slug": "c",
+    "term": "C",
+    "english": "Common",
+    "aliases": ["커먼"],
+    "group": "rarity",
+    "summary": "Common을 가리키는 레어도 기호입니다. 이 사이트에서는 커먼이라고 적습니다.",
+    "definition": [
+      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다. 이 페이지는 그 기호의 공식 한글 상품명을 따로 정하지 않습니다."
+    ],
+    "related": ["u", "rarity"],
+    "links": { "rarities": ["C"] }
+  },
+  {
+    "slug": "u",
+    "term": "U",
+    "english": "Uncommon",
+    "aliases": ["언커먼"],
+    "group": "rarity",
+    "summary": "Uncommon을 가리키는 레어도 기호입니다. 이 사이트에서는 언커먼이라고 적습니다.",
+    "definition": [
+      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다. 이 페이지는 그 기호의 공식 한글 상품명을 따로 정하지 않습니다."
+    ],
+    "related": ["c", "r", "rarity"],
+    "links": { "rarities": ["U"] }
+  },
+  {
+    "slug": "r",
+    "term": "R",
+    "english": "Rare",
+    "aliases": ["레어"],
+    "group": "rarity",
+    "summary": "Rare를 가리키는 레어도 기호입니다. 이 사이트에서는 레어라고 적습니다.",
+    "definition": [
+      "카드 전반의 희귀도를 말하는 레어도와는 다릅니다. R은 카드에 찍힌 기호 하나입니다.",
+      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다."
+    ],
+    "related": ["rr", "rarity"],
+    "links": { "rarities": ["R"] }
+  },
+  {
+    "slug": "rr",
+    "term": "RR",
+    "english": "Double Rare",
+    "aliases": ["더블레어", "더블 레어"],
+    "group": "rarity",
+    "summary": "Double Rare를 가리키는 레어도 기호입니다. 이 사이트에서는 더블레어라고 적습니다.",
+    "definition": [
+      "ex와 같은 말은 아닙니다. ex는 이름에 붙는 구분이고, RR은 레어도 기호입니다."
+    ],
+    "related": ["ex", "r"],
+    "links": { "rarities": ["RR"] }
+  },
+  {
+    "slug": "ar",
+    "term": "AR",
+    "english": "Art Rare",
+    "aliases": ["아트레어", "아트 레어", "Illustration Rare", "에이알"],
+    "group": "rarity",
+    "summary": "Art Rare를 가리키는 레어도 기호입니다. 이 사이트에서는 아트레어라고 적습니다.",
+    "definition": [
+      "영문판에서는 Illustration Rare에 해당하는 경우가 많습니다."
+    ],
+    "related": ["sar", "secret"],
+    "links": { "rarities": ["AR"] }
+  },
+  {
+    "slug": "sr",
+    "term": "SR",
+    "english": "Super Rare",
+    "aliases": ["슈퍼레어", "슈퍼 레어", "에스알", "Ultra Rare"],
+    "group": "rarity",
+    "summary": "Super Rare를 가리키는 레어도 기호입니다. 이 사이트에서는 슈퍼레어라고 적습니다.",
+    "definition": [
+      "영문판의 Ultra Rare에 해당하는 경우가 많습니다. 한글판과 일본판의 UR과는 다른 기호입니다."
+    ],
+    "related": ["ur", "sar"],
+    "links": { "rarities": ["SR"] }
+  },
+  {
+    "slug": "sar",
+    "term": "사르",
+    "english": "Special Art Rare",
+    "aliases": ["SAR", "스페셜아트레어", "스페셜 아트 레어", "Special Illustration Rare"],
+    "group": "rarity",
+    "summary": "레어도 기호 SAR을 커뮤니티에서 줄여 부르는 말입니다.",
+    "definition": [
+      "SAR은 Special Art Rare입니다. 이 사이트 레어도 일람에서는 스페셜아트레어라고 적습니다.",
+      "영문판에서는 Special Illustration Rare에 해당하는 경우가 많습니다."
+    ],
+    "related": ["ar", "sr", "ex"],
+    "links": { "rarities": ["SAR"] }
+  },
+  {
+    "slug": "ur",
+    "term": "UR",
+    "english": "Ultra Rare",
+    "aliases": ["유알", "Hyper Rare"],
+    "group": "rarity",
+    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트의 수록 카드에는 없습니다.",
+    "definition": [
+      "영문판에서는 같은 갈래를 Hyper Rare라고 부르는 경우가 많습니다. 영문판의 Ultra Rare는 한글판과 일본판의 SR에 해당하는 경우가 많으니, 기호를 먼저 봐야 합니다.",
+      "이 사이트에 지금 수록된 카드에는 UR이 없습니다."
+    ],
+    "related": ["sr", "mur", "fur"]
+  },
+  {
+    "slug": "mur",
+    "term": "MUR",
+    "english": "Mega Ultra Rare",
+    "aliases": ["메가울트라레어", "메가 울트라 레어", "Mega Hyper Rare"],
+    "group": "rarity",
+    "summary": "Mega Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트에서는 메가울트라레어라고 적습니다.",
+    "definition": [
+      "영문판에서는 Mega Hyper Rare라고 부르기도 합니다."
+    ],
+    "related": ["mega", "ur"],
+    "links": { "rarities": ["MUR"] }
+  },
+  {
+    "slug": "fur",
+    "term": "FUR",
+    "english": "Futuristic Rare",
+    "aliases": ["퓨처리스틱 레어"],
+    "group": "rarity",
+    "summary": "Futuristic Rare를 가리키는 레어도 기호입니다. 이 사이트는 FUR로만 적습니다.",
+    "definition": [
+      "레어도 일람은 한국 공식 상세에 적힌 기호를 그대로 두므로, FUR를 다른 한글로 풀어 적지 않습니다."
+    ],
+    "related": ["ur", "ex"],
+    "links": { "rarities": ["FUR"] }
+  }
+]
