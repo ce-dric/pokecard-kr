@@ -562,6 +562,7 @@ a.mast-aside:hover { color: var(--gold-2); }
 .rarity-UR { color: #f3e7c2; }
 .rarity-MUR { color: #f3aa9c; }
 .rarity-FUR { color: #9fd7e2; }
+.rarity-BWR { color: #f5f7fa; }
 
 .ja-fallback {
   margin-left: 0.28rem;
