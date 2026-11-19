@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { exceedsCopyLimit } from "./copy-limit.mjs";
 
 const COMMIT = "26fd4e3df0e5a9d943560c027ddada40320059cc";
 const CSV_PATH = "rl-train/engine/JP_Card_Data_R2_full.csv";
@@ -145,14 +146,19 @@ function preferredId(id) {
   return chosen ? chosen.id : id;
 }
 
+function basicEnergyId(id) {
+  const row = engineById.get(id);
+  return Boolean(row && row.setCode === "" && ENERGY.has(row.number));
+}
+
 const deckPath = new URL("./src/lib/ptcg/decks.json", root);
 const decks = JSON.parse(readFileSync(deckPath, "utf8"));
 let swapped = 0;
 const nextDecks = decks.map((deck) => {
   const cards = deck.cards.map((id) => preferredId(id));
-  const counts = new Map();
-  for (const id of cards) counts.set(id, (counts.get(id) || 0) + 1);
-  if ([...counts.values()].some((count) => count > 4)) return deck;
+  // The engine allows any number of one basic energy. Counting those copies
+  // would discard every other remap in an energy-heavy deck.
+  if (exceedsCopyLimit(cards, basicEnergyId)) return deck;
   const changes = cards.filter((id, index) => id !== deck.cards[index]).length;
   if (!changes) return deck;
   swapped += changes;

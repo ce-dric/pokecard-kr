@@ -200,6 +200,9 @@ test("discard, stadium, and choices carry thumbnails", () => {
       option: [
         { type: 3, area: 2, index: 0, playerIndex: 0 },
         { type: 3, area: 12, index: 0, playerIndex: 0 },
+        { type: 3, area: 3, index: 0, playerIndex: 0 },
+        { type: 3, area: 3, index: 1, playerIndex: 1 },
+        { type: 10, area: 7, index: 0 },
       ],
     },
     logs: [],
@@ -212,16 +215,21 @@ test("discard, stadium, and choices carry thumbnails", () => {
       looking: [{ id: 1121, serial: 8 }],
       players: [
         { ...empty, handCount: 1, hand: [{ id: 721, serial: 1 }], discard: [{ id: 1121, serial: 2 }] },
-        { ...empty, hand: null, handCount: 5 },
+        { ...empty, hand: null, handCount: 5, discard: [{ id: 756, serial: 9 }, { id: 723, serial: 4 }] },
       ],
     },
   } as Observation;
   const view = buildView(obs, 0, [], { cards: new Map(), attacks: new Map() }, mapping, undefined);
   assert.equal(view.you.discard[0]?.image, "game/cards/1121-thumb.webp");
-  assert.equal(view.opp.discard.length, 0);
+  assert.equal(view.opp.discard[1]?.image, "game/cards/723-thumb.webp");
   assert.equal(view.options[0]?.image, "game/cards/721-thumb.webp");
   assert.equal(view.options[0]?.fullImage, "game/cards/721.webp");
   assert.equal(view.options[1]?.image, "game/cards/1121-thumb.webp");
+  assert.equal(view.options[2]?.image, "game/cards/1121-thumb.webp");
+  assert.equal(view.options[2]?.fullImage, "game/cards/1121.webp");
+  assert.equal(view.options[3]?.image, "game/cards/723-thumb.webp");
+  assert.equal(view.options[4]?.image, "game/cards/1264-thumb.webp");
+  assert.equal(view.options[4]?.label, "특성");
   assert.equal(view.stadium?.image, "game/cards/1264-thumb.webp");
   const page = readFileSync(new URL("src/lib/ptcg/ui.ts", root), "utf8");
   assert.match(page, /loading="lazy"/);
