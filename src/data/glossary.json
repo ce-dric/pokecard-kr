@@ -226,7 +226,7 @@
       "이 사이트는 한국 공식 상세에 레어도가 적힌 카드만 레어도 일람에 넣습니다. 상세에 표기가 없으면 기호를 비워 둡니다.",
       "레어도가 다르면 같은 포켓몬이라도 다른 카드입니다. 레어도 순서와 시세가 항상 같지는 않아서, 이 페이지는 가격을 적지 않습니다."
     ],
-    "related": ["c", "sar", "ur", "fur"],
+    "related": ["c", "sar", "ace", "ur", "fur"],
     "links": { "rarityIndex": true }
   },
   {
@@ -283,6 +283,20 @@
     "links": { "rarities": ["RR"] }
   },
   {
+    "slug": "ace",
+    "term": "ACE",
+    "english": "ACE SPEC",
+    "aliases": [],
+    "group": "rarity",
+    "summary": "ACE SPEC 카드에 적힌 레어도 기호입니다. 이 사이트는 ACE로만 적습니다.",
+    "definition": [
+      "한국 공식 상세의 번호 줄에 ACE가 적힌 카드입니다. 카드 문구에는 ACE SPEC 카드는 덱에 1장만 넣을 수 있다고 되어 있습니다.",
+      "일본 공식 카드 페이지에는 같은 카드의 레어도 그림이 없는 경우가 있습니다. 이 사이트는 한국 공식 상세의 ACE를 그대로 둡니다."
+    ],
+    "related": ["rarity", "rr"],
+    "links": { "rarities": ["ACE"] }
+  },
+  {
     "slug": "ar",
     "term": "AR",
     "english": "Art Rare",
@@ -328,12 +342,13 @@
     "english": "Ultra Rare",
     "aliases": ["유알", "Hyper Rare"],
     "group": "rarity",
-    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트의 수록 카드에는 없습니다.",
+    "summary": "Ultra Rare를 가리키는 레어도 기호입니다. 이 사이트는 UR로만 적습니다.",
     "definition": [
       "영문판에서는 같은 갈래를 Hyper Rare라고 부르는 경우가 많습니다. 영문판의 Ultra Rare는 한글판과 일본판의 SR에 해당하는 경우가 많으니, 기호를 먼저 봐야 합니다.",
-      "이 사이트에 지금 수록된 카드에는 UR이 없습니다."
+      "이 사이트는 한국 공식 상세에 UR이 적힌 카드만 UR로 둡니다."
     ],
-    "related": ["sr", "mur", "fur"]
+    "related": ["sr", "mur", "fur"],
+    "links": { "rarities": ["UR"] }
   },
   {
     "slug": "mur",
