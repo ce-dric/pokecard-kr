@@ -6,7 +6,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "node scripts/check-data.mjs"
+    "check": "node scripts/check-data.mjs",
+    "test": "node --test src/lib/community.test.mjs",
+    "reactions": "node scripts/fetch-reactions.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.0",

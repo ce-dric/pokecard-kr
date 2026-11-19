@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-19T08:00:00.000Z",
+  "note": "화면 확인용 목 데이터입니다. 배포 데이터는 네이버 검색 결과로 바뀝니다.",
+  "sets": {
+    "m6": {
+      "updatedAt": "2026-11-19T08:00:00.000Z",
+      "query": "스톰에메랄다 포켓몬카드 -포켓몬고 -유나이트 -애니메이션",
+      "mentions": 1284,
+      "sources": {
+        "blog": { "total": 860, "ok": true },
+        "cafe": { "total": 424, "ok": true },
+        "news": { "total": 6, "ok": true }
+      },
+      "posts": [
+        {
+          "source": "blog",
+          "title": "스톰에메랄다 박스 개봉 후기",
+          "description": "포켓몬카드 확장팩을 열고 나온 카드를 번호대로 적었습니다. 메가레쿠쟈 ex가 한 장 나왔습니다.",
+          "link": "https://blog.naver.com/preview-sample/storm-1",
+          "date": "2026-11-18",
+          "origin": "카드서랍"
+        },
+        {
+          "source": "blog",
+          "title": "스톰에메랄다 포켓몬카드 입문 정리",
+          "description": "팩 구성과 주요 카드를 짧게 정리했습니다. 자세한 목록은 원문에서 봐 주세요.",
+          "link": "https://blog.naver.com/preview-sample/storm-2",
+          "date": "2026-11-17",
+          "origin": "주말덱"
+        },
+        {
+          "source": "cafe",
+          "title": "스톰에메랄다 시세 이야기합니다",
+          "description": "포켓몬카드 카페에 올라온 박스 가격과 교환 글을 제목만 모아 봤습니다.",
+          "link": "https://cafe.naver.com/preview-sample/storm-3",
+          "date": "",
+          "origin": "포켓몬카드거래"
+        },
+        {
+          "source": "cafe",
+          "title": "스톰에메랄다 첫 박스 후기",
+          "description": "오늘 산 포켓몬카드 확장팩 후기입니다. 긴 본문 대신 한 줄 감상만 남겼습니다.",
+          "link": "https://cafe.naver.com/preview-sample/storm-4",
+          "date": "",
+          "origin": "동네카드모임"
+        },
+        {
+          "source": "news",
+          "title": "포켓몬카드 스톰에메랄다 출시",
+          "description": "확장팩 스톰에메랄다의 발매 소식을 짧게 전합니다.",
+          "link": "https://news.example.com/storm-emeralda",
+          "date": "2026-11-16",
+          "origin": ""
+        },
+        {
+          "source": "news",
+          "title": "스톰에메랄다 메가레쿠쟈 ex SAR 화제",
+          "description": "포켓몬카드 확장팩의 SAR 카드가 커뮤니티에서 언급되고 있습니다.",
+          "link": "https://news.example.com/rayquaza-sar",
+          "date": "2026-11-19",
+          "origin": "카드뉴스"
+        }
+      ],
+      "cards": {
+        "113": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 320,
+          "posts": [],
+          "sources": { "blog": { "total": 210, "ok": true }, "cafe": { "total": 110, "ok": true } }
+        },
+        "110": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "query": "메가레쿠쟈 ex SAR 포켓몬카드 스톰에메랄다 -포켓몬고 -유나이트 -애니메이션",
+          "mentions": 280,
+          "sources": { "blog": { "total": 190, "ok": true }, "cafe": { "total": 90, "ok": true } },
+          "posts": [
+            {
+              "source": "blog",
+              "title": "스톰에메랄다 메가레쿠쟈 ex SAR 개봉",
+              "description": "포켓몬카드 SAR를 뽑은 날의 짧은 기록입니다. 카드 설명 전체는 적지 않았습니다.",
+              "link": "https://blog.naver.com/preview-sample/ray-110-1",
+              "date": "2026-11-19",
+              "origin": "골드라인"
+            },
+            {
+              "source": "blog",
+              "title": "메가레쿠쟈 ex SAR 슬리브 후기, 스톰에메랄다",
+              "description": "포켓몬카드를 슬리브에 넣은 뒤의 감상만 남겼습니다.",
+              "link": "https://blog.naver.com/preview-sample/ray-110-2",
+              "date": "2026-11-18",
+              "origin": "슬리브노트"
+            },
+            {
+              "source": "cafe",
+              "title": "스톰에메랄다 메가레쿠쟈 ex SAR 교환",
+              "description": "포켓몬카드 카페 교환글입니다. 상태와 희망 카드만 적었습니다.",
+              "link": "https://cafe.naver.com/preview-sample/ray-110-3",
+              "date": "",
+              "origin": "카드교환방"
+            }
+          ]
+        },
+        "107": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 140,
+          "posts": [],
+          "sources": { "blog": { "total": 90, "ok": true }, "cafe": { "total": 50, "ok": true } }
+        },
+        "109": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 96,
+          "posts": [],
+          "sources": { "blog": { "total": 60, "ok": true }, "cafe": { "total": 36, "ok": true } }
+        },
+        "108": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 74,
+          "posts": [],
+          "sources": { "blog": { "total": 44, "ok": true }, "cafe": { "total": 30, "ok": true } }
+        },
+        "058": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 61,
+          "posts": [],
+          "sources": { "blog": { "total": 40, "ok": true }, "cafe": { "total": 21, "ok": true } }
+        },
+        "095": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 44,
+          "posts": [],
+          "sources": { "blog": { "total": 28, "ok": true }, "cafe": { "total": 16, "ok": true } }
+        },
+        "089": {
+          "updatedAt": "2026-11-19T08:00:00.000Z",
+          "mentions": 28,
+          "posts": [],
+          "sources": { "blog": { "total": 18, "ok": true }, "cafe": { "total": 10, "ok": true } }
+        }
+      }
+    }
+  }
+}

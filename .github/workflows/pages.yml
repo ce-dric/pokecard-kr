@@ -31,7 +31,36 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm test
       - run: npm run check
+      - name: Restore reaction cache
+        if: github.event_name != 'pull_request'
+        uses: actions/cache@v4
+        with:
+          path: .community-cache/reactions.json
+          key: community-reactions-${{ github.run_id }}
+          restore-keys: |
+            community-reactions-
+      - name: Use cached reactions
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p src/data/community .community-cache
+          if [ -f .community-cache/reactions.json ]; then
+            cp .community-cache/reactions.json src/data/community/reactions.json
+          fi
+      - name: Collect community reactions
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          NAVER_MAX_CALLS: "480"
+        run: node scripts/fetch-reactions.mjs
+      - name: Update reaction cache
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p .community-cache
+          cp src/data/community/reactions.json .community-cache/reactions.json
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
