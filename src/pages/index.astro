@@ -1,21 +1,20 @@
 ---
 import Base from "../layouts/Base.astro";
 import AdSlot from "../components/AdSlot.astro";
-import {
-  cardHref,
-  displayName,
-  formatDate,
-  formatWon,
-  rarityLabel,
-  setHref,
-  sets,
-  withBase,
-} from "../lib/sets";
+import CardTile from "../components/CardTile.astro";
+import { formatWon, setHref, sets, withBase, type CardSet } from "../lib/sets";
 
 const set = sets[0];
 const spotlight = set.cards.filter(
   (card) => card.nameKo === "메가레쿠쟈 ex" && (card.rarity === "SAR" || card.rarity === "MUR"),
 );
+const groups: { series: string; items: CardSet[] }[] = [];
+for (const item of sets) {
+  const found = groups.find((group) => group.series === item.series);
+  if (found) found.items.push(item);
+  else groups.push({ series: item.series, items: [item] });
+}
+const cardTotal = sets.reduce((sum, item) => sum + item.cardCount, 0);
 const title = "포켓몬 카드 한국판 카드 리스트";
 const description =
   "한국판 포켓몬 카드 게임 세트별 카드 리스트. MEGA 확장팩 스톰에메랄다 113종을 카드마다 한 페이지로 정리했습니다.";
@@ -44,35 +43,55 @@ const jsonLd = {
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
-    <p class="crumbs">한국판 카드 데이터베이스</p>
-    <h1>포켓몬 카드 한국판 카드 리스트</h1>
-    <p class="lede">
-      세트마다, 카드마다 검색될 수 있는 페이지를 만듭니다. 첫 세트는 2026년 8월 21일 발매된
-      <a href={setHref(set)}>MEGA 확장팩 「스톰에메랄다」</a>입니다.
-      스톰에메랄다 카드 리스트와 메가레쿠쟈 ex SAR처럼 카드 이름과 레어도로 찾을 수 있습니다.
-    </p>
-    <AdSlot id="home-top" />
-    <article class="panel">
-      <h2><a href={setHref(set)}>{set.productNameKo}</a></h2>
-      <p>
-        한국 발매 {formatDate(set.releaseDateKr)}. 1팩 {set.cardsPerPack}장 {formatWon(set.packPriceKr)},
-        1상자 {set.packsPerBox}팩 {formatWon(set.boxPriceKr)}. 수록 {set.cardCount}종
-        (번호 {String(set.printedTotal).padStart(3, "0")}까지, 시크릿 포함).
+    <header class="mast">
+      <p class="crumbs">한국판 카드 데이터베이스</p>
+      <div class="mast-row">
+        <h1>포켓몬 카드 한국판 카드 리스트</h1>
+        <p class="mast-aside">{sets.length}세트, {cardTotal}장</p>
+      </div>
+      <p class="lede">
+        세트마다, 카드마다 검색될 수 있는 페이지를 만듭니다. 첫 세트는 2026년 8월 21일 발매된
+        <a href={setHref(set)}>MEGA 확장팩 「스톰에메랄다」</a>입니다.
+        스톰에메랄다 카드 리스트와 메가레쿠쟈 ex SAR처럼 카드 이름과 레어도로 찾을 수 있습니다.
       </p>
-      <p><a href={setHref(set)}>스톰에메랄다 카드 리스트 보기</a></p>
-    </article>
-    <section>
-      <h2>많이 찾는 카드</h2>
-      <ul class="links">
-        {spotlight.map((card) => (
-          <li>
-            <a href={cardHref(set, card)}>
-              {displayName(card)} {card.rarity} {rarityLabel[card.rarity]} {card.number}/{card.printedIn}
-            </a>
-          </li>
-        ))}
-        <li><a href={withBase("rarity/")}>레어도별 목록</a></li>
-      </ul>
+    </header>
+    <AdSlot id="home-top" />
+    {groups.map((group) => (
+      <section class="catalog">
+        <div class="catalog-head">
+          <h2>{group.series}</h2>
+          <span>{group.items.length}세트</span>
+        </div>
+        <ul class="set-list">
+          {group.items.map((item) => (
+            <li>
+              <a class="set-row" href={setHref(item)}>
+                <span class="mark">{item.expansionMark}</span>
+                <span class="set-main">
+                  <span class="set-title">{item.nameKo}</span>
+                  <span class="set-product">{item.productNameKo}</span>
+                </span>
+                <span class="set-stats">
+                  <span>{item.releaseDateKr.replaceAll("-", ".")}</span>
+                  <span>{item.cardCount}장</span>
+                  <span>팩 {formatWon(item.packPriceKr)}</span>
+                  <span>상자 {formatWon(item.boxPriceKr)}</span>
+                </span>
+                <span class="set-go" aria-hidden="true">&gt;</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+    <section class="block">
+      <div class="block-head">
+        <h2>많이 찾는 카드</h2>
+        <a href={withBase("rarity/")}>레어도 일람</a>
+      </div>
+      <div class="grid grid-spot">
+        {spotlight.map((card) => <CardTile set={set} card={card} eager />)}
+      </div>
     </section>
   </div>
 </Base>
