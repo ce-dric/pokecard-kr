@@ -2,9 +2,9 @@
 import Base from "../../../layouts/Base.astro";
 import AdSlot from "../../../components/AdSlot.astro";
 import CardTile from "../../../components/CardTile.astro";
-import CommunityPulse from "../../../components/CommunityPulse.astro";
-import { presentCard } from "../../../lib/community.mjs";
-import reactions from "../../../data/community/reactions.json";
+import OpinionLine from "../../../components/OpinionLine.astro";
+import { presentCardOpinion } from "../../../lib/opinions.mjs";
+import opinions from "../../../data/community/opinions.json";
 import {
   altText,
   cardHeading,
@@ -36,7 +36,7 @@ interface Props {
   card: Card;
 }
 const { set, card } = Astro.props;
-const community = presentCard(reactions, set, card);
+const opinion = presentCardOpinion(opinions, set.id, card.number);
 const heading = cardHeading(card);
 const title = `${heading} ${card.rarity} ${collector(card)} | ${set.nameKo}`;
 const description = `${set.productNameKo} ${collector(card)} ${card.rarity} ${rarityLabel[card.rarity] || card.rarity} ${heading}. 번호, 레어도, 타입, 공식 카드 페이지를 한곳에서 확인합니다.`;
@@ -169,12 +169,7 @@ const jsonLd = {
         )}
       </div>
     </div>
-    <CommunityPulse
-      countLabel={community.countLabel}
-      stamp={community.stamp}
-      emptyLabel={community.emptyLabel}
-      groups={community.groups}
-    />
+    {opinion && <OpinionLine opinion={opinion} />}
     {(prev || next) && (
       <nav class="pager" aria-label="앞뒤 카드">
         {prev && (

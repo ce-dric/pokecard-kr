@@ -66,21 +66,44 @@ python3 scripts/prepare_m6.py
 
 홈의 "스톰에메랄다" 메뉴는 첫 세트용 고정 링크입니다. 세트가 늘면 `src/components/Header.astro`의 링크를 데이터 기준으로 바꾸는 것이 좋습니다.
 
-## 커뮤니티 반응
+## 여론 한 줄
 
-카드 페이지와 팩 페이지의 "최근 커뮤니티 반응"은 네이버 검색 결과의 제목, 짧은 요약, 링크만 보여 줍니다. 본문은 저장하지 않습니다.
+카드 페이지와 팩 페이지의 "여론 한 줄"은 `src/data/community/opinions.json` 만 읽습니다. 이 파일은 X와 커뮤니티 글을 볼 수 있는 외부 수집기가 요약해서 커밋합니다. 사이트 빌드와 GitHub Actions는 검색 API를 호출하지 않고, 비밀 키를 페이지에 넣지 않습니다. 항목이 없으면 그 칸은 렌더하지 않으며, 없는 문장을 만들지 않습니다.
 
-수집은 [NAVER API HUB](https://api.ncloud-docs.com/docs/naver-api-hub-overview) 검색 API를 사용합니다. 주소는 `https://naverapihub.apigw.ntruss.com` 이고, 카드마다 블로그(`/search/v1/blog`)와 카페글(`/search/v1/cafearticle`)을 봅니다. 팩은 여기에 뉴스(`/search/v1/news`)를 더하고, 그 뉴스 중 카드 이름이 들어간 기사는 해당 카드 페이지에도 보여 줍니다. 웹문서 검색은 쇼핑몰과 공식 페이지가 많이 섞여 커뮤니티 반응에서는 쓰지 않습니다.
+카드 키는 `{세트id}-{번호}` 입니다. 스톰에메랄다 110번은 `m6-110` 입니다.
 
-검색어에는 카드 이름, `포켓몬카드`, 팩 이름(예: 스톰에메랄다)을 넣고, 포켓몬고, 유나이트, 애니메이션은 제외합니다. 같은 이름의 상위 레어도(SR, SAR, MUR 등)는 검색어와 결과 필터로 기본 카드와 나눕니다. 메가레쿠쟈캡처럼 이름이 겹치는 카드는 결과에서 다시 걸러 냅니다.
+```json
+{
+  "updatedAt": "2026-11-19T08:00:00.000Z",
+  "sets": {
+    "m6": {
+      "summary": "한 줄 요약",
+      "sentiment": "positive",
+      "sampleSize": 12,
+      "posts": [
+        {
+          "source": "x",
+          "text": "80자 이하로 줄인 인용",
+          "url": "https://x.com/example/status/1",
+          "date": "2026-11-19"
+        }
+      ]
+    }
+  },
+  "cards": {
+    "m6-110": {
+      "summary": "한 줄 요약",
+      "sentiment": "mixed",
+      "sampleSize": 4,
+      "posts": []
+    }
+  }
+}
+```
 
-호출은 한 번 실행에 최대 480회입니다. 팩 검색을 먼저 하고, 남는 횟수로는 아직 안 모았거나 가장 오래된 카드부터 갱신합니다. 지금 세트 하나(113장)는 한 번에 모두 갱신됩니다. 세트가 늘어 한도를 넘으면 카드 일부는 다음 실행으로 넘기고, 실패한 카드는 이전 결과를 유지합니다. 키가 없거나 API가 실패해도 빌드는 기존 `src/data/community/reactions.json` 으로 계속됩니다.
+`sentiment` 는 `positive`, `mixed`, `negative`, `neutral` 중 하나입니다. 화면에서는 호평, 엇갈림, 불만, 중립으로 보여 줍니다. `sampleSize` 는 요약에 쓴 표본 수이고, 화면에는 "표본 N건"으로 적습니다. `posts` 는 3개에서 5개까지 보여 주며, `source` 는 `x`, `naver_cafe`, `dc`, `other` 만 받습니다. 인용은 80자를 넘기면 잘라 냅니다. 링크는 새 창이고 `rel="nofollow noopener"` 입니다. 블로그와 뉴스는 대표 인용으로 쓰지 않습니다.
 
-GitHub Actions 시크릿 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 이 필요합니다. 로컬에서 다시 모으려면 같은 값을 환경 변수로 두고 `npm run reactions` 를 실행합니다.
-
-예약 워크플로 `.github/workflows/community.yml` 은 6시간마다 수집한 뒤 사이트를 빌드하고 Pages에 배포합니다. 저장소 커밋은 수집 시각이 바뀐 뒤 최소 24시간이 지났을 때만 하므로, 배포는 자주 되어도 커밋은 하루 한 번 이하입니다. 직전 성공본은 Actions 캐시에 두어, 다음 실행이 실패해도 방금 모은 데이터를 잃지 않습니다. `main` 푸시 빌드도 키가 있으면 같은 수집을 시도하고, 실패해도 배포는 계속됩니다. 풀 리퀘스트에서는 API를 호출하지 않습니다.
-
-화면 확인용 목 데이터는 `src/data/community/preview.json` 입니다. 기본 빌드는 이 파일을 읽지 않습니다.
+화면 확인용 목 데이터는 `src/data/community/opinions.preview.json` 입니다. 페이지는 이 파일을 읽지 않습니다.
 
 ## GitHub Pages
 

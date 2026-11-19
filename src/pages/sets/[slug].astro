@@ -2,11 +2,10 @@
 import Base from "../../layouts/Base.astro";
 import AdSlot from "../../components/AdSlot.astro";
 import CardTile from "../../components/CardTile.astro";
-import CommunityPulse from "../../components/CommunityPulse.astro";
-import { presentPack } from "../../lib/community.mjs";
-import reactions from "../../data/community/reactions.json";
+import OpinionLine from "../../components/OpinionLine.astro";
+import { presentSetOpinion } from "../../lib/opinions.mjs";
+import opinions from "../../data/community/opinions.json";
 import {
-  cardHref,
   displayName,
   formatDate,
   formatWon,
@@ -49,11 +48,7 @@ const jsonLd = {
 const rarities = rarityCounts(set);
 const types = typeCounts(set);
 const printed = String(set.printedTotal).padStart(3, "0");
-const community = presentPack(reactions, set);
-const communityRanking = community.ranking.flatMap((row) => {
-  const card = set.cards.find((item) => item.number === row.number);
-  return card ? [{ ...row, href: cardHref(set, card) }] : [];
-});
+const opinion = presentSetOpinion(opinions, set.id);
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
@@ -82,13 +77,7 @@ const communityRanking = community.ranking.flatMap((row) => {
       <li><a href={withBase("rarity/")}>레어도 일람</a></li>
     </ul>
     <AdSlot id={`${set.id}-list`} />
-    <CommunityPulse
-      countLabel={community.countLabel}
-      stamp={community.stamp}
-      emptyLabel={community.emptyLabel}
-      groups={community.groups}
-      ranking={communityRanking}
-    />
+    {opinion && <OpinionLine opinion={opinion} />}
     <div class="filters" data-card-filters>
       <div class="filter-row" data-group="rarity">
         <span class="filter-label">레어도</span>
