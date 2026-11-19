@@ -232,6 +232,16 @@ a.mast-aside:hover { color: var(--gold-2); }
 
 .lede a { text-decoration-thickness: 1px; }
 
+.more-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.8rem;
+  margin: 0.28rem 0 0;
+  font-size: 12px;
+}
+
+.more-info a { text-decoration-thickness: 1px; }
+
 .prose { max-width: 40rem; }
 .prose p { margin: 0.3rem 0 0.7rem; }
 .prose h2 {

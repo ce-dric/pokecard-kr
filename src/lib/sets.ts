@@ -26,6 +26,11 @@ export interface Card {
   thumb: string;
 }
 
+export interface ExternalLink {
+  label: string;
+  href: string;
+}
+
 export interface CardSet {
   id: string;
   slug: string;
@@ -47,6 +52,7 @@ export interface CardSet {
   krProductUrl: string;
   jpSetUrl: string;
   notes: string[];
+  externalLinks?: ExternalLink[];
   cards: Card[];
 }
 
