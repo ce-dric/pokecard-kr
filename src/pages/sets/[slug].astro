@@ -4,6 +4,7 @@ import AdSlot from "../../components/AdSlot.astro";
 import CardTile from "../../components/CardTile.astro";
 import OpinionLine from "../../components/OpinionLine.astro";
 import { externalLinks } from "../../lib/external-links.mjs";
+import { HITS_NAV_LABEL, hitGroups, hitNote, hitsSetPath } from "../../lib/hits.mjs";
 import { presentSetOpinion } from "../../lib/opinions.mjs";
 import opinions from "../../data/community/opinions.json";
 import {
@@ -53,6 +54,11 @@ const types = typeCounts(set);
 const printed = String(set.printedTotal).padStart(3, "0");
 const opinion = presentSetOpinion(opinions, set.id);
 const infoLinks = externalLinks(set);
+const hitSections = hitGroups(set);
+const hitCount = hitSections.reduce((sum, group) => sum + group.cards.length, 0);
+const hitSummary = hitSections.map((group) => `${group.code} ${group.cards.length}장`).join(", ");
+const hitsNote = hitNote(set);
+const hitsHref = withBase(hitsSetPath(set));
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
@@ -95,7 +101,20 @@ const infoLinks = externalLinks(set);
       <li><a href={set.krProductUrl} rel="noopener noreferrer">한국 공식 제품 페이지</a></li>
       <li><a href={set.jpSetUrl} rel="noopener noreferrer">일본 공식 세트 페이지</a></li>
       <li><a href={withBase("rarity/")}>레어도 일람</a></li>
+      <li><a href={hitsHref}>{HITS_NAV_LABEL}</a></li>
     </ul>
+    <section class="block" aria-labelledby="set-hits">
+      <div class="block-head">
+        <h2 id="set-hits">{HITS_NAV_LABEL}</h2>
+        {hitCount > 0 && <a href={hitsHref}>{hitCount}장</a>}
+      </div>
+      {hitsNote ? (
+        <p class="lede">{hitsNote}</p>
+      ) : (
+        <p class="lede">{hitSummary}. 이 세트의 높은 레어도만 모아 두었습니다.</p>
+      )}
+      <p class="more-info"><a href={hitsHref}>{hitCount > 0 ? "이 세트의 힛카드" : "안내 보기"}</a></p>
+    </section>
     <AdSlot id={`${set.id}-list`} />
     {opinion && <OpinionLine opinion={opinion} />}
     <div class="filters" data-card-filters>
