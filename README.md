@@ -62,6 +62,12 @@ MEGA 스타터 세트 ex 「이브이 ex」(`mee.json`)도 같은 방식입니�
 python3 scripts/prepare_mee.py
 ```
 
+MEGA 스타터 세트 ex 「조로아&조로아크 ex」(`mez.json`)도 같은 방식입니다. 이름, 번호, 레어도는 [공식 카드 상세](https://pokemoncard.co.kr/cards/detail/BS2026008001) `BS2026008001`부터 상세가 열리는 카드만 사용하고, 제품 정보는 [제품 페이지](https://pokemoncard.co.kr/card/967)를 따릅니다. 레어도 칸이 비어 있으면 비워 둡니다.
+
+```bash
+python3 scripts/prepare_mez.py
+```
+
 ## 세트를 추가하는 방법
 
 1. `src/data/sets/m6.json`을 보고 `src/data/sets/<세트id>.json`을 만듭니다.
