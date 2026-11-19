@@ -2,7 +2,21 @@
   "source": {
     "repo": "https://github.com/nikephorosphokas99/ptcg-ai-sim",
     "commit": "26fd4e3df0e5a9d943560c027ddada40320059cc",
-    "csv": "rl-train/engine/JP_Card_Data_R2_full.csv"
+    "csv": "rl-train/engine/JP_Card_Data_R2_full.csv",
+    "matches": {
+      "m6": 0,
+      "m6a": 8,
+      "mee": 1,
+      "mem": 1,
+      "mez": 1
+    },
+    "linked": {
+      "m6": 0,
+      "m6a": 5,
+      "mee": 1,
+      "mem": 1,
+      "mez": 1
+    }
   },
   "cards": {
     "1": {
@@ -10,350 +24,652 @@
       "setCode": "",
       "number": "GRA",
       "nameJa": "基本【草】エネルギー",
-      "link": null
+      "link": {
+        "setId": "mem",
+        "slug": "sprigatito-meowscarada",
+        "number": "GRA",
+        "nameKo": "기본 풀 에너지",
+        "image": "images/cards/mem/GRA-thumb.webp"
+      },
+      "picture": null
     },
     "2": {
       "id": 2,
       "setCode": "",
       "number": "FIR",
       "nameJa": "基本【炎】エネルギー",
-      "link": null
+      "link": {
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "FIR",
+        "nameKo": "기본 불꽃 에너지",
+        "image": "images/cards/m6a/FIR-thumb.webp"
+      },
+      "picture": null
     },
     "3": {
       "id": 3,
       "setCode": "",
       "number": "WAT",
       "nameJa": "基本【水】エネルギー",
-      "link": null
+      "link": {
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "WAT",
+        "nameKo": "기본 물 에너지",
+        "image": "images/cards/m6a/WAT-thumb.webp"
+      },
+      "picture": null
+    },
+    "4": {
+      "id": 4,
+      "setCode": "",
+      "number": "LIG",
+      "nameJa": "基本【雷】エネルギー",
+      "link": {
+        "setId": "mee",
+        "slug": "mega-starter-eevee",
+        "number": "LIG",
+        "nameKo": "기본 번개 에너지",
+        "image": "images/cards/mee/LIG-thumb.webp"
+      },
+      "picture": null
     },
     "5": {
       "id": 5,
       "setCode": "",
       "number": "PSY",
       "nameJa": "基本【超】エネルギー",
-      "link": null
+      "link": {
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "PSY",
+        "nameKo": "기본 초 에너지",
+        "image": "images/cards/m6a/PSY-thumb.webp"
+      },
+      "picture": null
+    },
+    "6": {
+      "id": 6,
+      "setCode": "",
+      "number": "FIG",
+      "nameJa": "基本【闘】エネルギー",
+      "link": {
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "FIG",
+        "nameKo": "기본 격투 에너지",
+        "image": "images/cards/m6a/FIG-thumb.webp"
+      },
+      "picture": null
     },
     "7": {
       "id": 7,
       "setCode": "",
       "number": "DAR",
       "nameJa": "基本【悪】エネルギー",
-      "link": null
+      "link": {
+        "setId": "mez",
+        "slug": "mega-starter-zorua-zoroark",
+        "number": "DAR",
+        "nameKo": "기본 악 에너지",
+        "image": "images/cards/mez/DAR-thumb.webp"
+      },
+      "picture": null
+    },
+    "8": {
+      "id": 8,
+      "setCode": "",
+      "number": "MET",
+      "nameJa": "基本【鋼】エネルギー",
+      "link": {
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "MET",
+        "nameKo": "기본 강철 에너지",
+        "image": "images/cards/m6a/MET-thumb.webp"
+      },
+      "picture": null
     },
     "11": {
       "id": 11,
       "setCode": "SVN",
       "number": "043/045",
       "nameJa": "ミストエネルギー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/11-thumb.webp",
+        "full": "game/cards/11.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47218/regu/all"
+      }
     },
     "14": {
       "id": 14,
       "setCode": "MC",
       "number": "737/742",
       "nameJa": "スパイクエネルギー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/14-thumb.webp",
+        "full": "game/cards/14.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49453/regu/all"
+      }
     },
     "18": {
       "id": 18,
       "setCode": "M3",
       "number": "078/080",
       "nameJa": "グロウ【草】エネルギー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/18-thumb.webp",
+        "full": "game/cards/18.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49711/regu/all"
+      }
     },
     "20": {
       "id": 20,
       "setCode": "M3",
       "number": "080/080",
       "nameJa": "ロック【闘】エネルギー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/20-thumb.webp",
+        "full": "game/cards/20.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49713/regu/all"
+      }
     },
     "31": {
       "id": 31,
       "setCode": "SV5a",
       "number": "018/066",
       "nameJa": "イーユイ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/31-thumb.webp",
+        "full": "game/cards/31.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/45594/regu/all"
+      }
     },
     "112": {
       "id": 112,
       "setCode": "MC",
       "number": "358/742",
       "nameJa": "マシマシラ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/112-thumb.webp",
+        "full": "game/cards/112.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49074/regu/all"
+      }
     },
     "117": {
       "id": 117,
       "setCode": "MC",
       "number": "428/742",
       "nameJa": "オーガポン いしずえのめんex",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/117-thumb.webp",
+        "full": "game/cards/117.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49144/regu/all"
+      }
     },
     "119": {
       "id": 119,
       "setCode": "MC",
       "number": "546/742",
       "nameJa": "ドラメシヤ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/119-thumb.webp",
+        "full": "game/cards/119.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49262/regu/all"
+      }
     },
     "120": {
       "id": 120,
       "setCode": "MC",
       "number": "547/742",
       "nameJa": "ドロンチ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/120-thumb.webp",
+        "full": "game/cards/120.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49263/regu/all"
+      }
     },
     "121": {
       "id": 121,
       "setCode": "MC",
       "number": "548/742",
       "nameJa": "ドラパルトex",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/121-thumb.webp",
+        "full": "game/cards/121.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49264/regu/all"
+      }
     },
     "140": {
       "id": 140,
       "setCode": "MC",
       "number": "489/742",
       "nameJa": "キチキギスex",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/140-thumb.webp",
+        "full": "game/cards/140.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49205/regu/all"
+      }
     },
     "235": {
       "id": 235,
       "setCode": "M2a",
       "number": "011/193",
       "nameJa": "スボミー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/235-thumb.webp",
+        "full": "game/cards/235.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48533/regu/all"
+      }
     },
     "344": {
       "id": 344,
       "setCode": "MC",
       "number": "045/742",
       "nameJa": "イシズマイ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/344-thumb.webp",
+        "full": "game/cards/344.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48761/regu/all"
+      }
     },
     "345": {
       "id": 345,
       "setCode": "MC",
       "number": "046/742",
       "nameJa": "イワパレス",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/345-thumb.webp",
+        "full": "game/cards/345.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48762/regu/all"
+      }
     },
     "721": {
       "id": 721,
       "setCode": "M1S",
       "number": "016/063",
       "nameJa": "カイオーガ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/721-thumb.webp",
+        "full": "game/cards/721.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47812/regu/all"
+      }
     },
     "722": {
       "id": 722,
       "setCode": "M1S",
       "number": "017/063",
       "nameJa": "ユキカブリ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/722-thumb.webp",
+        "full": "game/cards/722.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47813/regu/all"
+      }
     },
     "723": {
       "id": 723,
       "setCode": "M1S",
       "number": "018/063",
       "nameJa": "メガユキノオーex",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/723-thumb.webp",
+        "full": "game/cards/723.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47814/regu/all"
+      }
     },
     "756": {
       "id": 756,
       "setCode": "M1S",
       "number": "051/063",
       "nameJa": "メガガルーラex",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/756-thumb.webp",
+        "full": "game/cards/756.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47847/regu/all"
+      }
     },
     "1071": {
       "id": 1071,
       "setCode": "M3",
       "number": "061/080",
       "nameJa": "ニャースex",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1071-thumb.webp",
+        "full": "game/cards/1071.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49694/regu/all"
+      }
     },
     "1080": {
       "id": 1080,
       "setCode": "MC",
       "number": "633/742",
       "nameJa": "アンフェアスタンプ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1080-thumb.webp",
+        "full": "game/cards/1080.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49349/regu/all"
+      }
     },
     "1086": {
       "id": 1086,
       "setCode": "MC",
       "number": "648/742",
       "nameJa": "なかよしポフィン",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1086-thumb.webp",
+        "full": "game/cards/1086.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49364/regu/all"
+      }
     },
     "1097": {
       "id": 1097,
       "setCode": "MC",
       "number": "670/742",
       "nameJa": "夜のタンカ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1097-thumb.webp",
+        "full": "game/cards/1097.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49386/regu/all"
+      }
     },
     "1120": {
       "id": 1120,
       "setCode": "MC",
       "number": "644/742",
       "nameJa": "クラッシュハンマー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1120-thumb.webp",
+        "full": "game/cards/1120.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49360/regu/all"
+      }
     },
     "1121": {
       "id": 1121,
       "setCode": "MC",
       "number": "651/742",
       "nameJa": "ハイパーボール",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1121-thumb.webp",
+        "full": "game/cards/1121.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49367/regu/all"
+      }
     },
     "1122": {
       "id": 1122,
       "setCode": "MC",
       "number": "660/742",
       "nameJa": "ポケギア3.0",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1122-thumb.webp",
+        "full": "game/cards/1122.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49376/regu/all"
+      }
     },
     "1123": {
       "id": 1123,
       "setCode": "MC",
       "number": "663/742",
       "nameJa": "ポケモンいれかえ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1123-thumb.webp",
+        "full": "game/cards/1123.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49379/regu/all"
+      }
     },
     "1137": {
       "id": 1137,
       "setCode": "MA",
       "number": "017/043",
       "nameJa": "ツールスクラッパー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1137-thumb.webp",
+        "full": "game/cards/1137.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47876/regu/all"
+      }
     },
     "1145": {
       "id": 1145,
       "setCode": "MBG",
       "number": "015/021",
       "nameJa": "メガシグナル",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1145-thumb.webp",
+        "full": "game/cards/1145.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48276/regu/all"
+      }
     },
     "1147": {
       "id": 1147,
       "setCode": "M2",
       "number": "073/080",
       "nameJa": "ジャンボアイス",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1147-thumb.webp",
+        "full": "game/cards/1147.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48413/regu/all"
+      }
     },
     "1152": {
       "id": 1152,
       "setCode": "M3",
       "number": "070/080",
       "nameJa": "ポケパッド",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1152-thumb.webp",
+        "full": "game/cards/1152.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49703/regu/all"
+      }
     },
     "1158": {
       "id": 1158,
       "setCode": "MC",
       "number": "691/742",
       "nameJa": "マキシマムベルト",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1158-thumb.webp",
+        "full": "game/cards/1158.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49407/regu/all"
+      }
     },
     "1159": {
       "id": 1159,
       "setCode": "MC",
       "number": "687/742",
       "nameJa": "ヒーローマント",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1159-thumb.webp",
+        "full": "game/cards/1159.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49403/regu/all"
+      }
     },
     "1182": {
       "id": 1182,
       "setCode": "MC",
       "number": "724/742",
       "nameJa": "ボスの指令",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1182-thumb.webp",
+        "full": "game/cards/1182.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49440/regu/all"
+      }
     },
     "1194": {
       "id": 1194,
       "setCode": "SV8a",
       "number": "164/187",
       "nameJa": "アクロマの執念",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1194-thumb.webp",
+        "full": "game/cards/1194.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/46825/regu/all"
+      }
     },
     "1197": {
       "id": 1197,
       "setCode": "MC",
       "number": "705/742",
       "nameJa": "クセロシキのたくらみ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1197-thumb.webp",
+        "full": "game/cards/1197.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49421/regu/all"
+      }
     },
     "1198": {
       "id": 1198,
       "setCode": "MC",
       "number": "696/742",
       "nameJa": "アカマツ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1198-thumb.webp",
+        "full": "game/cards/1198.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49412/regu/all"
+      }
     },
     "1205": {
       "id": 1205,
       "setCode": "SV8",
       "number": "102/106",
       "nameJa": "シアノ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1205-thumb.webp",
+        "full": "game/cards/1205.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/46442/regu/all"
+      }
     },
     "1213": {
       "id": 1213,
       "setCode": "MC",
       "number": "711/742",
       "nameJa": "ジャッジマン",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1213-thumb.webp",
+        "full": "game/cards/1213.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49427/regu/all"
+      }
     },
     "1219": {
       "id": 1219,
       "setCode": "MC",
       "number": "734/742",
       "nameJa": "ロケット団のラムダ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1219-thumb.webp",
+        "full": "game/cards/1219.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49450/regu/all"
+      }
     },
     "1225": {
       "id": 1225,
       "setCode": "MC",
       "number": "718/742",
       "nameJa": "トウコ",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1225-thumb.webp",
+        "full": "game/cards/1225.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49434/regu/all"
+      }
     },
     "1227": {
       "id": 1227,
       "setCode": "MC",
       "number": "729/742",
       "nameJa": "リーリエの決心",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1227-thumb.webp",
+        "full": "game/cards/1227.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49445/regu/all"
+      }
     },
     "1235": {
       "id": 1235,
       "setCode": "MC",
       "number": "700/742",
       "nameJa": "ウエートレス",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1235-thumb.webp",
+        "full": "game/cards/1235.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/49416/regu/all"
+      }
     },
     "1246": {
       "id": 1246,
       "setCode": "SVN",
       "number": "039/045",
       "nameJa": "ジャミングタワー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1246-thumb.webp",
+        "full": "game/cards/1246.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/47214/regu/all"
+      }
     },
     "1257": {
       "id": 1257,
       "setCode": "M2a",
       "number": "190/193",
       "nameJa": "ロケット団のファクトリー",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1257-thumb.webp",
+        "full": "game/cards/1257.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48712/regu/all"
+      }
     },
     "1264": {
       "id": 1264,
       "setCode": "M2",
       "number": "079/080",
       "nameJa": "バトルコロシアム",
-      "link": null
+      "link": null,
+      "picture": {
+        "thumb": "game/cards/1264-thumb.webp",
+        "full": "game/cards/1264.webp",
+        "page": "https://www.pokemon-card.com/card-search/details.php/card/48419/regu/all"
+      }
     }
   }
 }

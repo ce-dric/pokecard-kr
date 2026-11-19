@@ -63,12 +63,32 @@ export interface FaceCard {
   name: string;
   nameKo: string | null;
   image: string | null;
+  fullImage: string | null;
   hp: number | null;
   maxHp: number | null;
   energies: string[];
   kind: string | null;
   typeLabel: string | null;
 }
+
+function fullFromThumb(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.endsWith("-thumb.webp")) return path.replace(/-thumb\.webp$/, ".webp");
+  return path;
+}
+
+const EMPTY_FACE: FaceCard = {
+  hidden: true,
+  name: "뒷면",
+  nameKo: null,
+  image: null,
+  fullImage: null,
+  hp: null,
+  maxHp: null,
+  energies: [],
+  kind: null,
+  typeLabel: null,
+};
 
 export function cardFace(
   id: number,
@@ -77,14 +97,17 @@ export function cardFace(
   poke?: PokemonState | null,
 ): FaceCard {
   const data = cards.get(id);
-  const link = mapping.cards[String(id)]?.link;
+  const row = mapping.cards[String(id)];
+  const link = row?.link;
   const nameKo = link?.nameKo ? cleanText(link.nameKo) : null;
   const name = nameKo || (data?.name ? cleanText(data.name) : `카드 ${id}`);
   const energyType = data?.energyType;
+  const thumb = link?.image || row?.picture?.thumb || null;
   return {
     name,
     nameKo,
-    image: link?.image || null,
+    image: thumb,
+    fullImage: fullFromThumb(link?.image) || row?.picture?.full || null,
     hp: poke ? poke.hp : data?.cardType === 0 ? data.hp : null,
     maxHp: poke ? poke.maxHp : data?.cardType === 0 ? data.hp : null,
     energies: (poke?.energies || []).map((type) => SWATCH[type] || "colorless"),
@@ -98,7 +121,7 @@ function pokemonFace(
   cards: Map<number, CardData>,
   mapping: CardMapping,
 ): FaceCard {
-  if (!poke) return { hidden: true, name: "뒷면", nameKo: null, image: null, hp: null, maxHp: null, energies: [], kind: null, typeLabel: null };
+  if (!poke) return EMPTY_FACE;
   return cardFace(poke.id, cards, mapping, poke);
 }
 
@@ -118,6 +141,7 @@ export interface SideView {
   hand: FaceCard[] | null;
   handCount: number;
   prizeCount: number;
+  discard: FaceCard[];
   discardCount: number;
   deckCount: number;
   conditions: string[];
@@ -140,6 +164,7 @@ function sideView(
     hand,
     handCount: player.handCount,
     prizeCount: player.prize?.length || 0,
+    discard: (player.discard || []).map((card) => cardFace(card.id, cards, mapping)),
     discardCount: player.discard?.length || 0,
     deckCount: player.deckCount,
     conditions: conditions(player),
@@ -152,6 +177,7 @@ function optionTarget(obs: Observation, option: Option) {
   const player = obs.current.players[owner];
   if (!player) return undefined;
   if (option.type === 7) return obs.current.players[you]?.hand?.[option.index ?? -1];
+  if (option.area === 12) return obs.current.looking?.[option.index ?? -1];
   if (option.area === 2 && owner === you) return player.hand?.[option.index ?? -1];
   if (option.area === 4) return player.active?.[option.index ?? -1] || undefined;
   if (option.area === 5) return player.bench?.[option.index ?? -1];
@@ -290,6 +316,8 @@ export function resultText(result: number, you: number, reason: number | undefin
 export interface ChoiceOption {
   index: number;
   label: string;
+  image: string | null;
+  fullImage: string | null;
 }
 
 export interface GameView {
@@ -303,7 +331,7 @@ export interface GameView {
   opp: SideView;
   turn: number;
   resultText: string | null;
-  stadium: string | null;
+  stadium: FaceCard | null;
 }
 
 export function buildView(
@@ -327,17 +355,23 @@ export function buildView(
     maxCount: choosing && obs.select ? obs.select.maxCount : 0,
     options:
       choosing && obs.select
-        ? obs.select.option.map((option, index) => ({
-            index,
-            label: optionLabel(obs, option, catalogs.cards, catalogs.attacks, mapping),
-          }))
+        ? obs.select.option.map((option, index) => {
+            const target = optionTarget(obs, option);
+            const face = target ? cardFace(target.id, catalogs.cards, mapping) : null;
+            return {
+              index,
+              label: optionLabel(obs, option, catalogs.cards, catalogs.attacks, mapping),
+              image: face?.image || null,
+              fullImage: face?.fullImage || null,
+            };
+          })
         : [],
     log,
     you: sideView(yours, humanSeat, humanSeat, catalogs.cards, mapping),
     opp: sideView(theirs, 1 - humanSeat, humanSeat, catalogs.cards, mapping),
     turn: current.turn,
     resultText: over ? resultText(current.result, humanSeat, reason) : null,
-    stadium: stadium ? cardName(stadium.id, catalogs.cards, mapping) : null,
+    stadium: stadium ? cardFace(stadium.id, catalogs.cards, mapping) : null,
   };
 }
 
