@@ -3,6 +3,7 @@ import Base from "../../layouts/Base.astro";
 import AdSlot from "../../components/AdSlot.astro";
 import CardTile from "../../components/CardTile.astro";
 import OpinionLine from "../../components/OpinionLine.astro";
+import { externalLinks } from "../../lib/external-links.mjs";
 import { presentSetOpinion } from "../../lib/opinions.mjs";
 import opinions from "../../data/community/opinions.json";
 import {
@@ -51,6 +52,7 @@ const rarities = rarityCounts(set);
 const types = typeCounts(set);
 const printed = String(set.printedTotal).padStart(3, "0");
 const opinion = presentSetOpinion(opinions, set.id);
+const infoLinks = externalLinks(set);
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
@@ -64,6 +66,16 @@ const opinion = presentSetOpinion(opinions, set.id);
         {set.productNameKo}에 수록된 {set.cardCount}장을 모았습니다. 번호는 한국 공식 카드 검색의 번호를 따릅니다.
         {set.id === "m6" && " 065번부터 076번까지는 일본판 수록 순서와 다릅니다."}
       </p>
+      {infoLinks.length > 0 && (
+        <p class="more-info">
+          {infoLinks.map((link) => (
+            <a href={link.href} target="_blank" rel="noopener">
+              {link.label}
+              <span class="sr-only"> (새 창)</span>
+            </a>
+          ))}
+        </p>
+      )}
     </header>
     <dl class="facts">
       <div><dt>한국 발매</dt><dd>{formatDate(set.releaseDateKr)}</dd></div>
