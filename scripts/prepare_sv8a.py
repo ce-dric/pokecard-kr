@@ -441,7 +441,9 @@ def fetch_kr() -> tuple[list[dict], list[dict]]:
 def fetch_jp_cards() -> list[dict]:
     ids = []
     seen = set()
-    for page in range(1, 12):
+    page = 1
+    hit_count = None
+    while page <= 40:
         query = urllib.parse.urlencode(
             {
                 "keyword": "",
@@ -458,6 +460,8 @@ def fetch_jp_cards() -> list[dict]:
         if status != 200:
             raise RuntimeError(f"jp search {status}")
         data = json.loads(raw.decode("utf-8"))
+        if data.get("hitCnt") not in (None, ""):
+            hit_count = int(data["hitCnt"])
         batch = data.get("cardList") or []
         if not batch:
             break
@@ -467,6 +471,11 @@ def fetch_jp_cards() -> list[dict]:
                 ids.append(card["cardID"])
         if page >= int(data.get("maxPage") or page):
             break
+        page += 1
+    else:
+        raise RuntimeError(f"jp search for {JP_PG} did not finish")
+    if hit_count is not None and len(ids) != hit_count:
+        raise RuntimeError(f"jp search for {JP_PG} returned {len(ids)} of {hit_count}")
 
     def one(card_id: str) -> list[dict]:
         status, raw = fetch(
