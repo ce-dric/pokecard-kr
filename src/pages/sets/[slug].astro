@@ -2,7 +2,11 @@
 import Base from "../../layouts/Base.astro";
 import AdSlot from "../../components/AdSlot.astro";
 import CardTile from "../../components/CardTile.astro";
+import OpinionLine from "../../components/OpinionLine.astro";
+import { presentSetOpinion } from "../../lib/opinions.mjs";
+import opinions from "../../data/community/opinions.json";
 import {
+  cardHref,
   collector,
   displayName,
   formatDate,
@@ -39,13 +43,14 @@ const jsonLd = {
       "@type": "ListItem",
       position: index + 1,
       name: `${displayName(card)} ${collector(card)} ${card.rarity}`,
-      url: new URL(withBase(`cards/${set.slug}/${card.number}/`), Astro.site).href,
+      url: new URL(cardHref(set, card), Astro.site).href,
     })),
   },
 };
 const rarities = rarityCounts(set);
 const types = typeCounts(set);
 const printed = String(set.printedTotal).padStart(3, "0");
+const opinion = presentSetOpinion(opinions, set.id);
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
@@ -74,6 +79,7 @@ const printed = String(set.printedTotal).padStart(3, "0");
       <li><a href={withBase("rarity/")}>레어도 일람</a></li>
     </ul>
     <AdSlot id={`${set.id}-list`} />
+    {opinion && <OpinionLine opinion={opinion} />}
     <div class="filters" data-card-filters>
       <div class="filter-row" data-group="rarity">
         <span class="filter-label">레어도</span>
