@@ -899,8 +899,8 @@ dl.specs a { text-decoration-thickness: 1px; }
 }
 
 .hit-dialog {
-  position: relative;
   width: min(820px, calc(100vw - 1.5rem));
+  height: fit-content;
   max-height: calc(100vh - 1.5rem);
   margin: auto;
   padding: 0;
