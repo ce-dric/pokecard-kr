@@ -4,7 +4,8 @@ import test from "node:test";
 import { decks } from "./decks.ts";
 import mappingFile from "../../data/game-cards.json" with { type: "json" };
 import type { CardMapping } from "./types.ts";
-import { cardFace, cleanText } from "./view.ts";
+import { cardFace, cleanText, optionLabel } from "./view.ts";
+import type { Observation } from "./types.ts";
 
 const mapping = mappingFile as CardMapping;
 const middleDot = "\u00b7";
@@ -99,6 +100,49 @@ test("matched cards keep our name and unmatched cards keep the engine English na
   assert.equal(face.nameKo, null);
   assert.equal(face.image, null);
   assert.equal(cleanText("a\u00b7b"), "a b");
+});
+
+test("attach and evolve labels name the pokemon they land on", () => {
+  const cards = new Map([
+    [3, { cardId: 3, name: "Water Energy", cardType: 5, hp: 0, energyType: 3, basic: false, ex: false, megaEx: false, weakness: null, resistance: null }],
+    [721, { cardId: 721, name: "Kyogre", cardType: 0, hp: 150, energyType: 3, basic: true, ex: false, megaEx: false, weakness: null, resistance: null }],
+    [722, { cardId: 722, name: "Snover", cardType: 0, hp: 90, energyType: 3, basic: true, ex: false, megaEx: false, weakness: null, resistance: null }],
+    [723, { cardId: 723, name: "Mega Abomasnow ex", cardType: 0, hp: 350, energyType: 3, basic: false, ex: true, megaEx: true, weakness: null, resistance: null }],
+  ]);
+  const player = {
+    active: [{ id: 722, serial: 1, hp: 90, maxHp: 90, energies: [] }],
+    bench: [{ id: 721, serial: 2, hp: 150, maxHp: 150, energies: [] }],
+    benchMax: 5,
+    deckCount: 40,
+    discard: [],
+    prize: [],
+    handCount: 2,
+    hand: [{ id: 3, serial: 3 }, { id: 723, serial: 4 }],
+    poisoned: false,
+    burned: false,
+    asleep: false,
+    paralyzed: false,
+    confused: false,
+  };
+  const obs: Observation = {
+    select: null,
+    logs: [],
+    current: {
+      turn: 2,
+      yourIndex: 0,
+      result: -1,
+      energyAttached: false,
+      stadium: [],
+      players: [player, { ...player, hand: null, active: [], bench: [] }],
+    },
+  };
+  const active = optionLabel(obs, { type: 8, area: 2, index: 0, inPlayArea: 4, inPlayIndex: 0 }, cards, new Map(), mapping);
+  const bench = optionLabel(obs, { type: 8, area: 2, index: 0, inPlayArea: 5, inPlayIndex: 0 }, cards, new Map(), mapping);
+  assert.equal(active, "배틀 Snover에 부착 Water Energy");
+  assert.equal(bench, "벤치 1 Kyogre에 부착 Water Energy");
+  assert.notEqual(active, bench);
+  const evolve = optionLabel(obs, { type: 9, area: 2, index: 1, inPlayArea: 4, inPlayIndex: 0 }, cards, new Map(), mapping);
+  assert.equal(evolve, "배틀 Snover에 진화 Mega Abomasnow ex");
 });
 
 test("the battle page credits the engine and the nav links to it", () => {

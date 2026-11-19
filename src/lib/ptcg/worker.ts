@@ -35,6 +35,8 @@ function publish(message?: string): void {
 function absorb(next: Observation): void {
   const logs = redactLogs(next.logs || [], HUMAN);
   if (next.current.yourIndex === HUMAN) {
+    // The engine keeps a log cursor per seat. This human observation already
+    // spans the bot's turn, so the bot-seat buffer would repeat those lines.
     pending = [];
     committed.push(...logs);
   } else {

@@ -158,6 +158,21 @@ function optionTarget(obs: Observation, option: Option) {
   return undefined;
 }
 
+function inPlayName(
+  obs: Observation,
+  option: Option,
+  cards: Map<number, CardData>,
+  mapping: CardMapping,
+): string {
+  const player = obs.current.players[obs.current.yourIndex];
+  const index = option.inPlayIndex;
+  if (!player || index == null) return "";
+  const poke = option.inPlayArea === 4 ? player.active?.[index] : option.inPlayArea === 5 ? player.bench?.[index] : undefined;
+  if (!poke) return "";
+  const spot = option.inPlayArea === 4 ? "배틀" : `벤치 ${index + 1}`;
+  return `${spot} ${cardName(poke.id, cards, mapping)}`;
+}
+
 export function optionLabel(
   obs: Observation,
   option: Option,
@@ -180,10 +195,16 @@ export function optionLabel(
       return "버리기";
     case 10:
       return "특성";
-    case 9:
-      return `진화 ${named(optionTarget(obs, option)?.id)}`;
-    case 8:
-      return `에너지 부착 ${named(optionTarget(obs, option)?.id)}`;
+    case 9: {
+      const onto = inPlayName(obs, option, cards, mapping);
+      const evolved = named(optionTarget(obs, option)?.id);
+      return onto ? `${onto}에 진화 ${evolved}` : `진화 ${evolved}`;
+    }
+    case 8: {
+      const onto = inPlayName(obs, option, cards, mapping);
+      const attached = named(optionTarget(obs, option)?.id);
+      return onto ? `${onto}에 부착 ${attached}` : `에너지 부착 ${attached}`;
+    }
     case 7:
       return `사용 ${named(optionTarget(obs, option)?.id)}`;
     case 1:
