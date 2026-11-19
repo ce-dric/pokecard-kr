@@ -1,0 +1,17 @@
+---
+import { withBase } from "../lib/sets";
+---
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href={withBase("")}>
+      <strong>포켓몬 카드 한국판</strong>
+      <span>세트별 카드 리스트</span>
+    </a>
+    <nav class="nav" aria-label="주요">
+      <a href={withBase("")}>홈</a>
+      <a href={withBase("sets/storm-emeralda/")}>스톰에메랄다</a>
+      <a href={withBase("rarity/")}>레어도</a>
+      <a href={withBase("about/")}>소개</a>
+    </nav>
+  </div>
+</header>

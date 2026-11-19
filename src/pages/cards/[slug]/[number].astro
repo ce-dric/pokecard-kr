@@ -1,0 +1,180 @@
+---
+import Base from "../../../layouts/Base.astro";
+import AdSlot from "../../../components/AdSlot.astro";
+import {
+  altText,
+  cardHeading,
+  cardHref,
+  collector,
+  displayName,
+  imageHref,
+  neighbors,
+  rarityLabel,
+  sets,
+  siblings,
+  typeLabel,
+  usesJapaneseName,
+  withBase,
+  type Card,
+  type CardSet,
+} from "../../../lib/sets";
+
+export function getStaticPaths() {
+  return sets.flatMap((set) =>
+    set.cards.map((card) => ({
+      params: { slug: set.slug, number: card.number },
+      props: { set, card },
+    })),
+  );
+}
+
+interface Props {
+  set: CardSet;
+  card: Card;
+}
+const { set, card } = Astro.props;
+const name = displayName(card);
+const heading = cardHeading(card);
+const title = `${heading} ${card.rarity} ${collector(card)} | ${set.nameKo}`;
+const description = `${set.productNameKo} ${collector(card)} ${card.rarity} ${rarityLabel[card.rarity] || card.rarity} ${heading}. 번호, 레어도, 타입, 공식 카드 페이지를 한곳에서 확인합니다.`;
+const imagePath = imageHref(set, card.image);
+const { prev, next } = neighbors(set, card);
+const related = siblings(set, card);
+const pageUrl = Astro.url.href;
+const official = card.verifiedUrl || card.krUrl;
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "홈", item: new URL(withBase(""), Astro.site).href },
+        { "@type": "ListItem", position: 2, name: set.nameKo, item: new URL(withBase(`sets/${set.slug}/`), Astro.site).href },
+        { "@type": "ListItem", position: 3, name: heading, item: pageUrl },
+      ],
+    },
+    {
+      "@type": "WebPage",
+      name: title,
+      description,
+      inLanguage: "ko-KR",
+      url: pageUrl,
+      primaryImageOfPage: new URL(imagePath, Astro.site).href,
+      isPartOf: { "@type": "WebSite", name: "포켓몬 카드 한국판", url: new URL(withBase(""), Astro.site).href },
+      mainEntity: {
+        "@type": "CreativeWork",
+        name: heading,
+        alternateName: card.nameJa || undefined,
+        identifier: collector(card),
+        image: new URL(imagePath, Astro.site).href,
+        isPartOf: {
+          "@type": "CreativeWorkSeries",
+          name: set.productNameKo,
+          url: set.krProductUrl,
+        },
+      },
+    },
+  ],
+};
+---
+<Base title={title} description={description} image={imagePath} jsonLd={jsonLd}>
+  <div class="wrap">
+    <p class="crumbs">
+      <a href={withBase("")}>홈</a> /
+      <a href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a> /
+      {collector(card)}
+    </p>
+    <div class="card-layout">
+      <figure class="card-visual">
+        <img
+          src={imagePath}
+          alt={altText(set, card)}
+          width="640"
+          height="894"
+          fetchpriority="high"
+          decoding="async"
+        />
+        <figcaption class="caption">이미지 출처: 포켓몬 공식</figcaption>
+      </figure>
+      <div>
+        <h1>
+          {heading}
+          {usesJapaneseName(card) && <span class="ja-fallback">일본판 기준</span>}
+        </h1>
+        <p class="lede">
+          {set.productNameKo} {collector(card)} {card.rarity}
+          {rarityLabel[card.rarity] || ""} {heading}.
+          카드 종류는 {card.categoryKo}{card.tags.length ? `, ${card.tags.join(", ")}` : ""}입니다.
+        </p>
+        <dl class="specs">
+          <dt>한국 이름</dt>
+          <dd>
+            {usesJapaneseName(card) ? "확인된 한국 이름 없음" : card.nameKo}
+          </dd>
+          {card.nameJa && (
+            <>
+              <dt>일본판 이름</dt>
+              <dd>{card.nameJa}</dd>
+            </>
+          )}
+          <dt>번호</dt>
+          <dd>{collector(card)}{card.halfKo ? ` (${card.halfKo})` : ""}</dd>
+          {card.jpNumber && card.jpNumber !== card.number && (
+            <>
+              <dt>일본판 번호</dt>
+              <dd>{card.jpNumber}/{card.printedIn}</dd>
+            </>
+          )}
+          <dt>레어도</dt>
+          <dd>{card.rarity} {rarityLabel[card.rarity] || ""}</dd>
+          <dt>종류</dt>
+          <dd>{card.categoryKo}</dd>
+          {card.type && (
+            <>
+              <dt>타입</dt>
+              <dd>{typeLabel[card.type] || card.typeKo}</dd>
+            </>
+          )}
+          {card.hp && (
+            <>
+              <dt>HP</dt>
+              <dd>{card.hp}</dd>
+            </>
+          )}
+          {card.illustrator && (
+            <>
+              <dt>일러스트</dt>
+              <dd>{card.illustrator}</dd>
+            </>
+          )}
+          <dt>세트</dt>
+          <dd><a href={withBase(`sets/${set.slug}/`)}>{set.productNameKo}</a></dd>
+        </dl>
+        <ul class="links">
+          <li><a href={official}>한국 공식 카드 페이지</a></li>
+          {card.jpUrl && <li><a href={card.jpUrl}>일본 공식 카드 페이지</a></li>}
+          <li><a href={withBase(`rarity/#${card.rarity}`)}>{card.rarity} 레어도 목록</a></li>
+        </ul>
+        <AdSlot id={`${set.id}-${card.number}`} />
+        {related.length > 0 && (
+          <section>
+            <h2>같은 이름의 다른 카드</h2>
+            <ul class="links">
+              {related.map((other) => (
+                <li>
+                  <a href={cardHref(set, other)}>
+                    {displayName(other)} {other.rarity} {collector(other)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <nav class="links" aria-label="앞뒤 카드">
+          {prev && <a href={cardHref(set, prev)}>이전 {collector(prev)} {displayName(prev)}</a>}
+          {next && <a href={cardHref(set, next)}>다음 {collector(next)} {displayName(next)}</a>}
+        </nav>
+      </div>
+    </div>
+  </div>
+</Base>

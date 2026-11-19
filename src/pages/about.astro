@@ -1,0 +1,41 @@
+---
+import Base from "../layouts/Base.astro";
+import { sets, withBase } from "../lib/sets";
+
+const set = sets[0];
+const title = "소개 | 포켓몬 카드 한국판";
+const description =
+  "한국판 포켓몬 카드 게임의 세트별 카드 리스트 사이트입니다. 이름과 번호는 한국 공식 카드 검색에서 확인한 정보만 사용합니다.";
+---
+<Base title={title} description={description}>
+  <div class="wrap">
+    <p class="crumbs"><a href={withBase("")}>홈</a> / 소개</p>
+    <h1>소개</h1>
+    <p class="lede">
+      이 사이트는 한국에서 발매된 포켓몬 카드 게임을 카드 한 장, 세트 하나씩 찾아볼 수 있게 만든 개인 데이터베이스입니다.
+      포켓몬코리아나 주식회사 포켓몬의 공식 사이트가 아닙니다.
+    </p>
+    <h2>지금 수록된 세트</h2>
+    <p>
+      <a href={withBase(`sets/${set.slug}/`)}>{set.productNameKo}</a>.
+      한국 공식 제품 페이지에는 카드 목록이 없고, 카드 검색의 개별 카드 페이지에 이름과 번호가 있습니다.
+    </p>
+    <h2>이름과 번호</h2>
+    <ul class="note-list">
+      <li>한국 이름은 pokemoncard.co.kr 카드 상세에 적힌 것만 사용합니다.</li>
+      <li>공식 페이지에서 확인하지 못한 이름은 올리지 않습니다. 그 카드는 일본판 이름을 보여주고 일본판 기준이라고 표시합니다.</li>
+      <li>카드 번호는 한국판 번호를 따릅니다. 스톰에메랄다 065번부터 076번까지는 일본판과 순서가 다릅니다.</li>
+      <li>레어도, 타입, 카드 종류는 한국 공식 페이지를 기준으로 하고 일본 공식 카드 검색과 대조했습니다.</li>
+    </ul>
+    <h2>이미지</h2>
+    <p>
+      카드 이미지는 포켓몬 공식 이미지를 받아 크기를 줄이고, 구석에 세드릭 / blog.naver.com/mdsd12 워터마크를 넣었습니다.
+      각 이미지 아래에는 이미지 출처: 포켓몬 공식이라고 적습니다. 좌우로 이어진 스타디움은 공식 이미지를 반으로 나누어 각각의 카드 페이지에 올렸습니다.
+    </p>
+    <h2>운영</h2>
+    <p>
+      운영은 세드릭입니다. 문의와 정정은 <a href="https://blog.naver.com/mdsd12">blog.naver.com/mdsd12</a>로 남겨 주세요.
+      광고 자리는 나중에 AdSense를 넣기 위한 빈칸이며, 지금은 광고 코드가 없습니다.
+    </p>
+  </div>
+</Base>

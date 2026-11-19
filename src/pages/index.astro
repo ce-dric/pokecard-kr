@@ -1,0 +1,78 @@
+---
+import Base from "../layouts/Base.astro";
+import AdSlot from "../components/AdSlot.astro";
+import {
+  cardHref,
+  displayName,
+  formatDate,
+  formatWon,
+  rarityLabel,
+  setHref,
+  sets,
+  withBase,
+} from "../lib/sets";
+
+const set = sets[0];
+const spotlight = set.cards.filter(
+  (card) => card.nameKo === "메가레쿠쟈 ex" && (card.rarity === "SAR" || card.rarity === "MUR"),
+);
+const title = "포켓몬 카드 한국판 카드 리스트";
+const description =
+  "한국판 포켓몬 카드 게임 세트별 카드 리스트. MEGA 확장팩 스톰에메랄다 113종을 카드마다 한 페이지로 정리했습니다.";
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      name: "포켓몬 카드 한국판",
+      inLanguage: "ko-KR",
+      url: Astro.url.href,
+      description,
+    },
+    {
+      "@type": "ItemList",
+      name: "수록 세트",
+      itemListElement: sets.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.productNameKo,
+        url: new URL(setHref(item), Astro.site).href,
+      })),
+    },
+  ],
+};
+---
+<Base title={title} description={description} jsonLd={jsonLd}>
+  <div class="wrap">
+    <p class="crumbs">한국판 카드 데이터베이스</p>
+    <h1>포켓몬 카드 한국판 카드 리스트</h1>
+    <p class="lede">
+      세트마다, 카드마다 검색될 수 있는 페이지를 만듭니다. 첫 세트는 2026년 8월 21일 발매된
+      <a href={setHref(set)}>MEGA 확장팩 「스톰에메랄다」</a>입니다.
+      스톰에메랄다 카드 리스트와 메가레쿠쟈 ex SAR처럼 카드 이름과 레어도로 찾을 수 있습니다.
+    </p>
+    <AdSlot id="home-top" />
+    <article class="panel">
+      <h2><a href={setHref(set)}>{set.productNameKo}</a></h2>
+      <p>
+        한국 발매 {formatDate(set.releaseDateKr)}. 1팩 {set.cardsPerPack}장 {formatWon(set.packPriceKr)},
+        1상자 {set.packsPerBox}팩 {formatWon(set.boxPriceKr)}. 수록 {set.cardCount}종
+        (번호 {String(set.printedTotal).padStart(3, "0")}까지, 시크릿 포함).
+      </p>
+      <p><a href={setHref(set)}>스톰에메랄다 카드 리스트 보기</a></p>
+    </article>
+    <section>
+      <h2>많이 찾는 카드</h2>
+      <ul class="links">
+        {spotlight.map((card) => (
+          <li>
+            <a href={cardHref(set, card)}>
+              {displayName(card)} {card.rarity} {rarityLabel[card.rarity]} {card.number}/{card.printedIn}
+            </a>
+          </li>
+        ))}
+        <li><a href={withBase("rarity/")}>레어도별 목록</a></li>
+      </ul>
+    </section>
+  </div>
+</Base>
