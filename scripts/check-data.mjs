@@ -513,7 +513,54 @@ mustInclude("시크릿", "secret");
 mustBe("박스깡", ["box-break"]);
 mustInclude("미개봉", "unopened");
 mustInclude("UR", "ur");
+mustBe("RR", ["rr"]);
+mustBe("SR", ["sr"]);
+mustBe("specialart", ["sar"]);
+mustBe("nohit", ["no-hit"]);
 mustBe("zzzz-not-a-term", []);
+
+const megaTerm = glossary.find((term) => term.slug === "mega");
+const megaText = (megaTerm?.definition ?? []).join(" ");
+if (!megaText.includes("확장팩") || !megaText.includes("스타터 세트")) {
+  errors.push("glossary mega should say product names vary between 확장팩 and 스타터 세트");
+}
+if (megaText.includes("MEGA 확장팩이라고 적혀")) {
+  errors.push("glossary mega still says every Korean product name is MEGA 확장팩");
+}
+if (!(megaTerm?.links?.setSeries ?? []).includes("MEGA")) errors.push("glossary mega missing MEGA series link");
+for (const id of ["m6", "m6a", "mee", "mem", "mez"]) {
+  const cardSet = allSets.find((item) => item.id === id);
+  if (!cardSet || cardSet.series !== "MEGA") errors.push(`glossary mega series missing ${id}`);
+}
+
+const exTags = glossary.find((term) => term.slug === "ex")?.links?.tags ?? [];
+for (const id of ["mee", "mem", "mez"]) {
+  const cardSet = allSets.find((item) => item.id === id);
+  const tagged = cardSet?.cards.filter((card) => exTags.some((tag) => card.tags.includes(tag))) ?? [];
+  if (!tagged.length) errors.push(`glossary ex matched no ${id} cards`);
+}
+
+if (!glossary.find((term) => term.slug === "secret")?.links?.abovePrinted) {
+  errors.push("glossary secret missing abovePrinted");
+}
+for (const id of ["mee", "mem", "mez"]) {
+  const cardSet = allSets.find((item) => item.id === id);
+  const extra =
+    cardSet?.cards.filter((card) => {
+      const number = Number(card.number);
+      return Number.isFinite(number) && number > cardSet.printedTotal;
+    }) ?? [];
+  if (!extra.length) errors.push(`glossary secret matched no ${id} cards`);
+}
+for (const slug of ["korean-print", "japanese-print"]) {
+  if (!glossary.find((term) => term.slug === slug)?.links?.allSets) {
+    errors.push(`${slug} should link every set, including the starter sets`);
+  }
+}
+
+const sealedHref = glossary.find((term) => term.slug === "sealed")?.external?.[0]?.href ?? "";
+if (!sealedHref.includes("/menu830")) errors.push(`glossary sealed href ${sealedHref || "(none)"}`);
+if (sealedHref.includes("menu785")) errors.push("glossary sealed still cites menu785");
 
 if (errors.length) {
   console.error(errors.join("\n"));

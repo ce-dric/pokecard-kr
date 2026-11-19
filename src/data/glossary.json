@@ -28,7 +28,7 @@
     "external": [
       {
         "label": "포켓몬코리아, 메가엘레이드 ex SAR GET BATTLE",
-        "href": "https://www.pokemonkorea.co.kr/PCG_Getbattle_M6/menu785"
+        "href": "https://www.pokemonkorea.co.kr/PCG_Getbattle_M6/menu830"
       }
     ]
   },
@@ -207,8 +207,8 @@
     "group": "card",
     "summary": "이 사이트에 수록된 세트의 시리즈 이름입니다.",
     "definition": [
-      "세트 데이터의 시리즈 값이 MEGA인 상품입니다. 한글 상품명에는 MEGA 확장팩이라고 적혀 있습니다.",
-      "카드 목록은 한글 이름에 메가가 들어간 카드만 모았습니다. 메가진화 포켓몬이 아닌 카드도 이름에 메가가 있으면 들어갑니다."
+      "세트 데이터의 시리즈 값이 MEGA인 상품입니다. 한글 상품명은 상품마다 달라서, 확장팩은 MEGA 확장팩, 스타터는 MEGA 스타터 세트 ex라고 적습니다.",
+      "관련 상품은 시리즈가 MEGA인 확장팩과 스타터 세트를 모두 가리킵니다. 카드 목록은 한글 이름에 메가가 들어간 카드만 모았고, 메가진화 포켓몬이 아닌 카드도 이름에 메가가 있으면 들어갑니다."
     ],
     "related": ["ex", "mur"],
     "links": { "setSeries": ["MEGA"], "nameIncludes": ["메가"] }
