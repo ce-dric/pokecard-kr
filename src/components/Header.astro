@@ -1,17 +1,27 @@
 ---
-import { withBase } from "../lib/sets";
+import { setHref, sets, withBase } from "../lib/sets";
+
+const path = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const homeHref = withBase("");
+const homePath = homeHref.endsWith("/") ? homeHref : `${homeHref}/`;
+const isHome = path === homePath;
 ---
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" href={withBase("")}>
-      <strong>포켓몬 카드 한국판</strong>
-      <span>세트별 카드 리스트</span>
-    </a>
+    <a class="brand" href={homeHref}>포켓몬 카드 한국판</a>
     <nav class="nav" aria-label="주요">
-      <a href={withBase("")}>홈</a>
-      <a href={withBase("sets/storm-emeralda/")}>스톰에메랄다</a>
-      <a href={withBase("rarity/")}>레어도</a>
-      <a href={withBase("about/")}>소개</a>
+      <a href={homeHref} aria-current={isHome ? "page" : undefined}>홈</a>
+      {sets.map((set) => {
+        const href = setHref(set);
+        const current = path.includes(`/sets/${set.slug}/`) || path.includes(`/cards/${set.slug}/`);
+        return (
+          <a href={href} aria-current={current ? "page" : undefined}>
+            {set.nameKo}
+          </a>
+        );
+      })}
+      <a href={withBase("rarity/")} aria-current={path.includes("/rarity/") ? "page" : undefined}>레어도</a>
+      <a href={withBase("about/")} aria-current={path.includes("/about/") ? "page" : undefined}>소개</a>
     </nav>
   </div>
 </header>

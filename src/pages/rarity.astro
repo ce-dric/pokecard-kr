@@ -6,7 +6,6 @@ import {
   cardHref,
   collector,
   rarityCounts,
-  rarityLabel,
   sets,
   withBase,
 } from "../lib/sets";
@@ -26,37 +25,49 @@ const jsonLd = {
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
-    <p class="crumbs"><a href={withBase("")}>홈</a> / 레어도</p>
-    <h1>{set.nameKo} 레어도 일람</h1>
-    <p class="lede">
-      {set.productNameKo} {set.cardCount}종의 레어도입니다. 숫자는 한국 공식 카드 페이지에 적힌 표기와 일본 공식 레어도가 같은 카드만 세었습니다.
-    </p>
+    <header class="mast">
+      <p class="crumbs"><a href={withBase("")}>홈</a> / 레어도</p>
+      <div class="mast-row">
+        <h1>{set.nameKo} 레어도 일람</h1>
+        <a class="mast-aside" href={withBase(`sets/${set.slug}/`)}>{set.cardCount}장</a>
+      </div>
+      <p class="lede">
+        {set.productNameKo} {set.cardCount}종의 레어도입니다. 숫자는 한국 공식 카드 페이지에 적힌 표기와 일본 공식 레어도가 같은 카드만 세었습니다.
+      </p>
+    </header>
     <AdSlot id="rarity-top" />
-    <ul class="links">
+    <ul class="rarity-index">
       {rows.map((row) => (
-        <li><a href={`#${row.code}`}>{row.code} {row.label} {row.count}장</a></li>
+        <li>
+          <a href={`#${row.code}`}>
+            <span class={`rarity rarity-${row.code}`}>{row.code}</span>
+            <span class="rarity-name">{row.label}</span>
+            <span class="num">{row.count}장</span>
+          </a>
+        </li>
       ))}
     </ul>
     {rows.map((row) => (
       <section class="rarity-block" id={row.code}>
         <h2>
-          <span class={`badge badge-${row.code}`}>{row.code}</span>
+          <span class={`rarity rarity-${row.code}`}>{row.code}</span>
           {row.label}
-          <span class="meta">{row.count}장</span>
+          <span class="rarity-count">{row.count}장</span>
         </h2>
-        <ul class="links">
+        <ul class="index-list">
           {set.cards
             .filter((card) => card.rarity === row.code)
             .map((card) => (
               <li>
                 <a href={cardHref(set, card)}>
-                  {collector(card)} {cardHeading(card)}
+                  <span class="num">{collector(card)}</span>
+                  <span class="index-name">{cardHeading(card)}</span>
                 </a>
               </li>
             ))}
         </ul>
       </section>
     ))}
-    <p><a href={withBase(`sets/${set.slug}/`)}>{set.nameKo} 카드 리스트로</a></p>
+    <p class="back-link"><a href={withBase(`sets/${set.slug}/`)}>{set.nameKo} 카드 리스트로</a></p>
   </div>
 </Base>

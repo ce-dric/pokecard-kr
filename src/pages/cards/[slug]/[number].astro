@@ -1,12 +1,12 @@
 ---
 import Base from "../../../layouts/Base.astro";
 import AdSlot from "../../../components/AdSlot.astro";
+import CardTile from "../../../components/CardTile.astro";
 import {
   altText,
   cardHeading,
   cardHref,
   collector,
-  displayName,
   imageHref,
   neighbors,
   rarityLabel,
@@ -33,7 +33,6 @@ interface Props {
   card: Card;
 }
 const { set, card } = Astro.props;
-const name = displayName(card);
 const heading = cardHeading(card);
 const title = `${heading} ${card.rarity} ${collector(card)} | ${set.nameKo}`;
 const description = `${set.productNameKo} ${collector(card)} ${card.rarity} ${rarityLabel[card.rarity] || card.rarity} ${heading}. 번호, 레어도, 타입, 공식 카드 페이지를 한곳에서 확인합니다.`;
@@ -96,7 +95,7 @@ const jsonLd = {
         />
         <figcaption class="caption">이미지 출처: 포켓몬 공식</figcaption>
       </figure>
-      <div>
+      <div class="card-copy">
         <h1>
           {heading}
           {usesJapaneseName(card) && <span class="ja-fallback">일본판 기준</span>}
@@ -150,31 +149,37 @@ const jsonLd = {
           <dt>세트</dt>
           <dd><a href={withBase(`sets/${set.slug}/`)}>{set.productNameKo}</a></dd>
         </dl>
-        <ul class="links">
-          <li><a href={official}>한국 공식 카드 페이지</a></li>
-          {card.jpUrl && <li><a href={card.jpUrl}>일본 공식 카드 페이지</a></li>}
+        <ul class="text-links">
+          <li><a href={official} rel="noopener noreferrer">한국 공식 카드 페이지</a></li>
+          {card.jpUrl && <li><a href={card.jpUrl} rel="noopener noreferrer">일본 공식 카드 페이지</a></li>}
           <li><a href={withBase(`rarity/#${card.rarity}`)}>{card.rarity} 레어도 목록</a></li>
         </ul>
         <AdSlot id={`${set.id}-${card.number}`} />
         {related.length > 0 && (
-          <section>
+          <section class="related">
             <h2>같은 이름의 다른 카드</h2>
-            <ul class="links">
-              {related.map((other) => (
-                <li>
-                  <a href={cardHref(set, other)}>
-                    {displayName(other)} {other.rarity} {collector(other)}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <div class="grid grid-tight">
+              {related.map((other) => <CardTile set={set} card={other} />)}
+            </div>
           </section>
         )}
-        <nav class="links" aria-label="앞뒤 카드">
-          {prev && <a href={cardHref(set, prev)}>이전 {collector(prev)} {displayName(prev)}</a>}
-          {next && <a href={cardHref(set, next)}>다음 {collector(next)} {displayName(next)}</a>}
-        </nav>
       </div>
     </div>
+    {(prev || next) && (
+      <nav class="pager" aria-label="앞뒤 카드">
+        {prev && (
+          <a class="prev" href={cardHref(set, prev)}>
+            <span class="pager-kicker">이전</span>
+            <span class="pager-name">{collector(prev)} {cardHeading(prev)}</span>
+          </a>
+        )}
+        {next && (
+          <a class="next" href={cardHref(set, next)}>
+            <span class="pager-kicker">다음</span>
+            <span class="pager-name">{collector(next)} {cardHeading(next)}</span>
+          </a>
+        )}
+      </nav>
+    )}
   </div>
 </Base>
