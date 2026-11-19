@@ -474,6 +474,18 @@ def norm_illust(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().lower()
 
 
+# Official item names. Used only to choose among Japanese cards that already
+# share an illustrator and a stage. Confirmed on the Japanese detail pages:
+# 50742 is ハイパーボール 101/103, 50743 is ポケパッド 102/103, and 50744 is
+# ポケモンいれかえ 103/103. Korean order is Switch, Poké Pad, Hyper Ball, so
+# the collector number is a different card for 101 and 103.
+ITEM_NAME_JA = {
+    "포켓몬 교체": "ポケモンいれかえ",
+    "포켓패드": "ポケパッド",
+    "하이퍼볼": "ハイパーボール",
+}
+
+
 def match_jp(kr_rows: list[dict], jp_rows: list[dict]) -> None:
     used: set[int] = set()
 
@@ -502,9 +514,21 @@ def match_jp(kr_rows: list[dict], jp_rows: list[dict]) -> None:
         if not options:
             kr["jp"] = None
             continue
-        same_number = [jp for jp in options if jp["jpNumber"] == kr["number"]]
-        if len(options) > 1 and same_number:
-            options = same_number
+        if len(options) > 1:
+            wanted = ITEM_NAME_JA.get(kr["nameKo"])
+            named = [jp for jp in options if wanted and jp["jpName"] == wanted]
+            if len(named) == 1:
+                options = named
+            elif not kr["hp"] and not kr["typeKo"]:
+                # No HP and no type, so a shared illustrator is not the same
+                # card. The collector number is not a safe tie-break.
+                kr["jp"] = None
+                kr["jpAmbiguous"] = [f"{jp['jpNumber']}:{jp['jpName']}" for jp in options]
+                continue
+            else:
+                same_number = [jp for jp in options if jp["jpNumber"] == kr["number"]]
+                if same_number:
+                    options = same_number
         if len(options) != 1:
             kr["jp"] = None
             kr["jpAmbiguous"] = [f"{jp['jpNumber']}:{jp['jpName']}" for jp in options]

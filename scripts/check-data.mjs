@@ -71,6 +71,23 @@ for (const card of m6a.cards) {
     }
   }
 }
+const m6aItems = {
+  "101": ["포켓몬 교체", "ポケモンいれかえ", "50744", "103"],
+  "102": ["포켓패드", "ポケパッド", "50743", "102"],
+  "103": ["하이퍼볼", "ハイパーボール", "50742", "101"],
+};
+for (const [number, [nameKo, nameJa, jpCardId, jpNumber]] of Object.entries(m6aItems)) {
+  const card = m6a.cards.find((item) => item.number === number);
+  if (
+    !card ||
+    card.nameKo !== nameKo ||
+    card.nameJa !== nameJa ||
+    card.jpCardId !== jpCardId ||
+    card.jpNumber !== jpNumber
+  ) {
+    errors.push(`m6a ${number} Japanese item pairing`);
+  }
+}
 for (const code of ["GRA", "FIR", "WAT", "LIG", "PSY", "FIG", "DAR", "MET"]) {
   if (!m6aNumbers.has(code)) errors.push(`m6a missing energy ${code}`);
 }
