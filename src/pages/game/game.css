@@ -1,11 +1,11 @@
 .ptcg-page { padding-bottom: 1.5rem; }
 
 .ptcg-setup,
-[data-board] { scroll-margin-top: 3.6rem; }
+[data-board] { scroll-margin-top: 6.5rem; }
 
 @media (max-width: 900px) {
   .ptcg-setup,
-  [data-board] { scroll-margin-top: 7.5rem; }
+  [data-board] { scroll-margin-top: 8rem; }
 }
 
 .ptcg-credit {
@@ -48,9 +48,9 @@
 
 .ptcg-setup button[aria-pressed="true"],
 .ptcg-options button[aria-pressed="true"] {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: #1a1812;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 
 .ptcg-setup button small {
@@ -59,7 +59,7 @@
   font-size: 11px;
 }
 
-.ptcg-setup button[aria-pressed="true"] small { color: #3c3424; }
+.ptcg-setup button[aria-pressed="true"] small { color: #e8f1fd; }
 
 .ptcg-setup button:hover,
 .ptcg-options button:hover,
@@ -110,7 +110,7 @@
   width: 0.55rem;
   height: 0.78rem;
   border: 1px solid var(--rule-strong);
-  background: #24362c;
+  background: #d9dde3;
   vertical-align: -0.12rem;
 }
 
@@ -159,7 +159,7 @@
   aspect-ratio: 63 / 88;
   object-fit: cover;
   box-sizing: border-box;
-  background: #18241d;
+  background: #f4f5f7;
   border: 1px solid var(--rule-strong);
 }
 
@@ -196,7 +196,7 @@
   font-size: 11px;
 }
 
-.ptcg-back { background: repeating-linear-gradient(135deg, #1c2921, #1c2921 6px, #24362c 6px, #24362c 12px); }
+.ptcg-back { background: repeating-linear-gradient(135deg, #e6e8ec, #e6e8ec 6px, #f4f5f7 6px, #f4f5f7 12px); }
 
 .ptcg-options { margin: 0.4rem 0 0.8rem; align-items: flex-end; }
 
@@ -223,7 +223,7 @@
   height: auto;
   aspect-ratio: 63 / 88;
   object-fit: cover;
-  background: #18241d;
+  background: #f4f5f7;
   border: 1px solid var(--rule-strong);
 }
 
@@ -248,19 +248,20 @@
   margin: auto;
   padding: 0.7rem;
   overflow: auto;
-  border: 1px solid var(--gold);
-  background: #141910;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: #fff;
   color: var(--ink);
 }
 
-.ptcg-zoom::backdrop { background: rgba(8, 10, 8, 0.72); }
+.ptcg-zoom::backdrop { background: rgba(20, 24, 32, 0.45); }
 
 .ptcg-zoom img {
   display: block;
   width: 100%;
   height: auto;
   margin-top: 0.45rem;
-  background: #0c1210;
+  background: #f4f5f7;
 }
 
 .ptcg-zoom .caption {

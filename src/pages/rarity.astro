@@ -1,10 +1,8 @@
 ---
 import Base from "../layouts/Base.astro";
 import AdSlot from "../components/AdSlot.astro";
+import CardTile from "../components/CardTile.astro";
 import {
-  cardHeading,
-  cardHref,
-  collector,
   rarityCounts,
   sets,
   withBase,
@@ -69,18 +67,11 @@ const jsonLd = {
                 {row.label === row.code ? "" : row.label}
                 <span class="rarity-count">{row.count}장</span>
               </h2>
-              <ul class="index-list">
+              <div class="grid">
                 {set.cards
                   .filter((card) => card.rarity === row.code)
-                  .map((card) => (
-                    <li>
-                      <a href={cardHref(set, card)}>
-                        <span class="num">{collector(card)}</span>
-                        <span class="index-name">{cardHeading(card)}</span>
-                      </a>
-                    </li>
-                  ))}
-              </ul>
+                  .map((card) => <CardTile set={set} card={card} />)}
+              </div>
             </section>
           ))}
         </section>

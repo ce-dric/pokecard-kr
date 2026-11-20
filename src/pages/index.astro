@@ -2,6 +2,7 @@
 import Base from "../layouts/Base.astro";
 import AdSlot from "../components/AdSlot.astro";
 import CardTile from "../components/CardTile.astro";
+import SetRow from "../components/SetRow.astro";
 import { formatWon, setHref, sets, withBase, type CardSet } from "../lib/sets";
 
 const storm = sets.find((item) => item.id === "m6") ?? sets[0];
@@ -64,28 +65,20 @@ const jsonLd = {
           <span>{group.items.length}세트</span>
         </div>
         <ul class="set-list">
-          {group.items.map((item) => (
+          {group.items.map((item, index) => (
             <li>
-              <a class="set-row" href={setHref(item)}>
-                <span class="mark">{item.expansionMark}</span>
-                <span class="set-main">
-                  <span class="set-title">{item.nameKo}</span>
-                  <span class="set-product">{item.productNameKo}</span>
-                </span>
-                <span class="set-stats">
-                  <span>{item.releaseDateKr.replaceAll("-", ".")}</span>
-                  <span>{item.cardCount}장</span>
-                  {item.packsPerBox > 1 ? (
-                    <>
-                      <span>팩 {formatWon(item.packPriceKr)}</span>
-                      <span>상자 {formatWon(item.boxPriceKr)}</span>
-                    </>
-                  ) : (
-                    <span>덱 {formatWon(item.packPriceKr)}</span>
-                  )}
-                </span>
-                <span class="set-go" aria-hidden="true">&gt;</span>
-              </a>
+              <SetRow set={item} href={setHref(item)} eager={group === groups[0] && index === 0}>
+                <span>{item.releaseDateKr.replaceAll("-", ".")}</span>
+                <span>{item.cardCount}장</span>
+                {item.packsPerBox > 1 ? (
+                  <>
+                    <span>팩 {formatWon(item.packPriceKr)}</span>
+                    <span>상자 {formatWon(item.boxPriceKr)}</span>
+                  </>
+                ) : (
+                  <span>덱 {formatWon(item.packPriceKr)}</span>
+                )}
+              </SetRow>
             </li>
           ))}
         </ul>
