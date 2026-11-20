@@ -3,7 +3,7 @@
 
 Korean names, collector numbers, rarities, categories, types, regulation
 marks, and images come from pokemoncard.co.kr card detail pages for
-MEGA 「스타트 덱 100 배틀컬렉션」. A blank rarity field on that page stays
+Start Deck 100 Battle Collection, set id mc. A blank rarity field on that page stays
 blank. The regulation mark is the letter on the detail-page symbol image.
 Japanese official pages are only a cross-check and are not used to fill a
 Korean name, number, rarity, or type. Detail pages that return an error are

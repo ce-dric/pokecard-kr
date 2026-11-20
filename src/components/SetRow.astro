@@ -1,13 +1,18 @@
 ---
-import { imageHref, type Card, type CardSet } from "../lib/sets";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { imageHref, withBase, type Card, type CardSet } from "../lib/sets";
 
 interface Props {
   set: CardSet;
   href: string;
   eager?: boolean;
+  useBox?: boolean;
 }
 
-const { set, href, eager = false } = Astro.props;
+const { set, href, eager = false, useBox = false } = Astro.props;
+const boxName = `${set.id}.webp`;
+const boxExists = useBox && existsSync(join(process.cwd(), "public", "images", "boxes", boxName));
 const preferred = ["SAR", "MUR", "UR", "SR", "AR", "MA", "RR", "R"];
 let cover: Card | undefined;
 for (const code of preferred) {
@@ -16,8 +21,18 @@ for (const code of preferred) {
 }
 cover ??= set.cards.find((card) => card.thumb) ?? set.cards[0];
 ---
-<a class="set-row" href={href}>
-  {cover?.thumb ? (
+<a class:list={["set-row", { "has-box": boxExists }]} href={href}>
+  {boxExists ? (
+    <img
+      class="row-thumb row-box"
+      src={withBase(`images/boxes/${boxName}`)}
+      alt=""
+      width="72"
+      height="72"
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+    />
+  ) : cover?.thumb ? (
     <img
       class="row-thumb"
       src={imageHref(set, cover.thumb)}

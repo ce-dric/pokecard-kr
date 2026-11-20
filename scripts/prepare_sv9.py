@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean 스칼렛&바이올렛 확장팩 「배틀파트너즈」 dataset from official card pages.
+"""Build the sv9 (Battle Partners) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix
@@ -496,9 +496,8 @@ def norm_illust(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().lower()
 
 
-# Official names printed on the detail pages. Used only to choose among cards
-# that already share an illustrator, a stage, and a rarity. The effect text
-# pairs 대체 티켓 with とりかえチケット and 좋은상처약 with いいきずぐすり.
+# ITEM_NAME_JA holds the printed Korean and Japanese names. Use it only to
+# choose among cards that already share an illustrator, a stage, and a rarity.
 ITEM_NAME_JA = {
     "대체 티켓": "とりかえチケット",
     "좋은상처약": "いいきずぐすり",

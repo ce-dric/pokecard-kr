@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean MEGA 확장팩 「니힐제로」 dataset from official card pages.
+"""Build the m3 (Nihil Zero) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix
@@ -492,14 +492,10 @@ def norm_illust(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().lower()
 
 
-# These Korean and Japanese names are the ones printed on the official detail
-# pages. They are used only to choose among cards that already share an
-# illustrator, a stage, and a rarity. The effect text on those pages pairs
-# 성스러운분말 with せいなるはい, 에너지 리사이클 with エネルギーリサイクル,
-# 원더패치 with ワンダーパッチ, 포켓패드 with ポケパッド, 오래된 지느러미화석
-# with 古びたヒレの化石, and 오래된 턱화석 with 古びたアゴの化石.
-# Collector numbers are not a tie-break: several of these Korean numbers
-# point at a different card in the Japanese set.
+# ITEM_NAME_JA holds the printed Korean and Japanese names. Use it only to
+# choose among cards that already share an illustrator, a stage, and a rarity.
+# Collector numbers are not a tie-break: several Korean numbers point at a
+# different card in the Japanese set.
 ITEM_NAME_JA = {
     "오래된 지느러미화석": "古びたヒレの化石",
     "오래된 턱화석": "古びたアゴの化石",

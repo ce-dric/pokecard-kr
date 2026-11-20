@@ -3,7 +3,7 @@
 
 Korean names, collector numbers, rarities, categories, types, and images come
 from pokemoncard.co.kr card detail pages under
-MEGA 스타터 세트 ex 「나오하&마스카나 ex」 (BS2026009001 onward).
+Sprigatito and Meowscarada ex starter, set id mem (BS2026009001 onward).
 A blank rarity field on that page stays blank. Japanese official pages are only
 a cross-check and are not used to fill Korean name, number, rarity, or type.
 Detail pages that return an error are left out.
@@ -481,9 +481,9 @@ def norm_illust(value: str) -> str:
 # Used only to choose among Japanese cards that already share an illustrator
 # and a stage. Two goods cards are both by Studio Bora Inc., and the Korean
 # collector numbers are not the Japanese ones.
-# 50462 is ふしぎなアメ 011/017. Its effect skips the stage 1, matching the
-# Korean 이상한사탕 detail BS2026009010.
-# 50463 is ポケパッド 012/017, the same item name already paired in m6a.
+# 50462 is Japanese number 011/017. Its effect skips stage 1, matching
+# Korean detail BS2026009010.
+# 50463 is Japanese number 012/017, the same item already paired in m6a.
 ITEM_NAME_JA = {
     "이상한사탕": "ふしぎなアメ",
     "포켓패드": "ポケパッド",

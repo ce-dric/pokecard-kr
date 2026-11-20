@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean 스칼렛&바이올렛 확장팩 「스텔라미라클」 dataset from official card pages.
+"""Build the sv7 (Stellar Miracle) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix
@@ -496,11 +496,8 @@ def norm_illust(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().lower()
 
 
-# Official names printed on the detail pages. Used only to choose among cards
-# that already share an illustrator, a stage, and a rarity. The effect text
-# pairs 오래된 덮개화석 with 古びたふたの化石, 오래된 뿌리화석 with
-# 古びたねっこの化石, 야파열매 (초) with ウタンのみ, and 오카열매 (불꽃)
-# with オッカのみ.
+# ITEM_NAME_JA holds the printed Korean and Japanese names. Use it only to
+# choose among cards that already share an illustrator, a stage, and a rarity.
 ITEM_NAME_JA = {
     "오래된 덮개화석": "古びたふたの化石",
     "오래된 뿌리화석": "古びたねっこの化石",

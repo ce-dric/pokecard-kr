@@ -2,7 +2,7 @@
 """Build the Korean 30th CELEBRATION dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, and images come
-from pokemoncard.co.kr card detail pages under MEGA 확장팩 「30th CELEBRATION」.
+from pokemoncard.co.kr card detail pages for 30th Celebration, set id m6a.
 A blank rarity field on that page stays blank. Japanese official pages are only
 a cross-check and are not used to fill Korean name, number, rarity, or type.
 Detail pages that return an error are left out.
