@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean MEGA 확장팩 「닌자스피너」 dataset from official card pages.
+"""Build the m4 (Ninja Spinner) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix
@@ -492,12 +492,8 @@ def norm_illust(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().lower()
 
 
-# These names are printed on the official detail pages. They only choose among
-# cards that already share an illustrator, a stage, and a rarity. The effect
-# text pairs 변화의 서 with 変化の書, 월척네트 with 大漁ネット, 앙쥬 플라엣테
-# with アンジュフラエッテ, 프리즘타워 with プリズムタワー, 스페셜 레드카드
-# with スペシャルレッドカード, 에너지 회수 with エネルギー回収, and
-# 툴스크래퍼 with ツールスクラッパー.
+# ITEM_NAME_JA holds the printed Korean and Japanese names. Use it only to
+# choose among cards that already share an illustrator, a stage, and a rarity.
 # Collector numbers are not a tie-break.
 ITEM_NAME_JA = {
     "변화의 서": "変化の書",

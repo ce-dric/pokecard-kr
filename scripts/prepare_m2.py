@@ -3,7 +3,7 @@
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages for
-MEGA 확장팩 「인페르노X」. The detail id prefix is BS2025014.
+Inferno X, set id m2. The detail id prefix is BS2025014.
 A blank rarity field on that page stays blank. Japanese official pages are only
 a cross-check and are not used to fill Korean name, number, rarity, or type.
 Detail pages that return an error are left out. The regulation mark is the

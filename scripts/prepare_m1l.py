@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean MEGA 확장팩 「메가브레이브」 dataset from official card pages.
+"""Build the m1l (Mega Brave) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix
@@ -492,11 +492,8 @@ def norm_illust(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip().lower()
 
 
-# These names are printed on the official detail pages. They only choose among
-# cards that already share an illustrator, a stage, and a rarity. The effect
-# text pairs 벌레회피스프레이 with むしよけスプレー, 아이언 디펜드업 with
-# アイアンディフェンダー, 파워프로틴 with パワープロテイン, 파이팅공 with
-# ファイトゴング, and 밤의 들것 with 夜のタンカ.
+# ITEM_NAME_JA holds the printed Korean and Japanese names. Use it only to
+# choose among cards that already share an illustrator, a stage, and a rarity.
 # Collector numbers are not a tie-break.
 ITEM_NAME_JA = {
     "벌레회피스프레이": "むしよけスプレー",

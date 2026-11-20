@@ -3,7 +3,7 @@
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages under
-MEGA 확장팩 「메가심포니아」 (BS2025010001 and the following ids).
+Mega Symphonia, set id m1s (BS2025010001 and the following ids).
 A blank rarity field on that page stays blank. The regulation mark is the
 single-letter symbol on that page, such as symbol/I.png. Japanese official
 pages only fill jpNumber and jpUrl. They are not used for the Korean name,

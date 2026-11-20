@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean 스칼렛&바이올렛 강화 확장팩 「열풍의 아레나」 dataset from official card pages.
+"""Build the sv9a (Heat Wave Arena) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix

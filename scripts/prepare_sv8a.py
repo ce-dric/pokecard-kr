@@ -3,7 +3,7 @@
 
 Korean names, collector numbers, rarities, categories, types, regulation
 marks, and images come from pokemoncard.co.kr card detail pages for
-스칼렛&바이올렛 하이클래스팩 「테라스탈 페스타 ex」. Japanese official pages
+Terastal Festival ex, set id sv8a. Japanese official pages
 supply jpNumber and jpUrl only. A detail page that does not open is left out.
 """
 

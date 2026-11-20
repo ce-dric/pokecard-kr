@@ -2,7 +2,7 @@
 """Build the Korean MEGA Starter Set ex Eevee dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, and images come
-from pokemoncard.co.kr card detail pages under MEGA 스타터 세트 ex 「이브이 ex」.
+from pokemoncard.co.kr card detail pages for the Eevee ex starter, set id mee.
 A blank rarity field on that page stays blank. Japanese official pages are only
 a cross-check and are not used to fill Korean name, number, rarity, or type.
 Detail pages that return an error are left out.

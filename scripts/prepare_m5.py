@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Korean MEGA 확장팩 「어비스아이」 dataset from official card pages.
+"""Build the m5 (Abyss Eye) dataset from official card pages.
 
 Korean names, collector numbers, rarities, categories, types, regulation marks,
 and images come from pokemoncard.co.kr card detail pages. The detail id prefix
@@ -497,11 +497,8 @@ def norm_illust(value: str) -> str:
     return value
 
 
-# These names are printed on the official detail pages. They only choose among
-# cards that already share an illustrator, a stage, and a rarity. The effect
-# text pairs 오래된 두개의화석 with 古びたずがいの化石, 오래된 방패의화석 with
-# 古びたたての化石, 아이언 디펜드업 with アイアンディフェンダー, and
-# 에너지 갈아 달기 with エネルギーつけかえ.
+# ITEM_NAME_JA holds the printed Korean and Japanese names. Use it only to
+# choose among cards that already share an illustrator, a stage, and a rarity.
 # Collector numbers are not a tie-break.
 ITEM_NAME_JA = {
     "오래된 두개의화석": "古びたずがいの化石",
