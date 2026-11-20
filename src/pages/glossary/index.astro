@@ -73,7 +73,6 @@ const jsonLd = {
                         {[term.english, ...term.aliases].filter(Boolean).join(", ")}
                       </span>
                     </span>
-                    <span class="set-go" aria-hidden="true">&gt;</span>
                   </a>
                 </li>
               ))}
@@ -100,18 +99,20 @@ const jsonLd = {
   .glossary-search input[type="search"] {
     flex: 1 1 14rem;
     min-width: 0;
-    border: 1px solid var(--rule-strong);
-    border-radius: 0;
-    background: transparent;
-    padding: 0.32rem 0.5rem;
+    height: 36px;
+    border: 1px solid #e3e5e8;
+    border-radius: 6px;
+    background: #fff;
+    padding: 0 0.65rem;
+    font-size: 16px;
   }
   .glossary-search input[type="search"]:hover,
   .glossary-search input[type="search"]:focus-visible {
-    border-color: var(--gold);
+    border-color: var(--accent);
   }
   .glossary-list :global(.set-row) {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "main go";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "main";
     align-items: center;
   }
   .glossary-list :global(.set-product) {

@@ -13,7 +13,8 @@ import {
   siteRarityLabel,
   type GlossaryTerm,
 } from "../../lib/glossary";
-import { cardHeading, cardHref, collector, setHref, withBase } from "../../lib/sets";
+import CardTile from "../../components/CardTile.astro";
+import { setHref, withBase } from "../../lib/sets";
 
 export function getStaticPaths() {
   return glossary.map((term) => ({ params: { slug: term.slug }, props: { term } }));
@@ -131,20 +132,9 @@ const hasLinks = Boolean(rarityIndex || rarities.length || setsForTerm.length ||
           <h2><a href={setHref(group.set)}>{group.set.nameKo}</a></h2>
           <a href={setHref(group.set)}>{group.cards.length}장</a>
         </div>
-        <ul class="index-list">
-          {group.cards.map((card) => (
-            <li>
-              <a href={cardHref(group.set, card)}>
-                <span class="num">{collector(card)}</span>
-                <span class="index-name">
-                  {cardHeading(card)}
-                  {card.rarity && <span class={`rarity rarity-${card.rarity}`}>{card.rarity}</span>}
-                  {card.category !== "pokemon" && <span class="rarity-name"> {card.categoryKo}</span>}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <div class="grid">
+          {group.cards.map((card) => <CardTile set={group.set} card={card} />)}
+        </div>
       </section>
     ))}
     <p class="back-link"><a href={glossaryIndexHref()}>용어집으로</a></p>

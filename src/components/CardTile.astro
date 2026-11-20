@@ -24,20 +24,23 @@ const { set, card, eager = false } = Astro.props;
     <img
       src={imageHref(set, card.thumb)}
       alt={altText(set, card)}
-      width="280"
-      height="391"
+      width="63"
+      height="88"
       loading={eager ? "eager" : "lazy"}
       decoding="async"
     />
-    <span class="tile-name">
-      {displayName(card)}
-      {card.halfKo ? ` ${card.halfKo}` : ""}
-      {usesJapaneseName(card) && <em class="ja-fallback">일본판 기준</em>}
-    </span>
-    <span class="tile-meta">
-      <span class="num">{collector(card)}</span>
-      <span class={`rarity rarity-${card.rarity}`}>{card.rarity}</span>
-      {card.typeKo && <span>{typeLabel[card.type || ""] || card.typeKo}</span>}
+    <span class="tile-copy">
+      <span class="tile-name">
+        {displayName(card)}
+        {card.halfKo ? ` ${card.halfKo}` : ""}
+        {usesJapaneseName(card) && <em class="ja-fallback">일본판 기준</em>}
+      </span>
+      <span class="tile-meta">
+        <span class="source">{set.nameKo}</span>
+        <span class="num">{collector(card)}</span>
+        <span class={`rarity rarity-${card.rarity}`}>{card.rarity}</span>
+        {card.typeKo && <span>{typeLabel[card.type || ""] || card.typeKo}</span>}
+      </span>
     </span>
   </a>
 </article>

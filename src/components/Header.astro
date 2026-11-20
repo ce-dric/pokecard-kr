@@ -1,26 +1,43 @@
 ---
 import { HITS_NAV_LABEL } from "../lib/hits.mjs";
-import { setHref, sets, withBase } from "../lib/sets";
+import { withBase } from "../lib/sets";
 
 const path = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
 const homeHref = withBase("");
 const homePath = homeHref.endsWith("/") ? homeHref : `${homeHref}/`;
 const isHome = path === homePath;
+const base = import.meta.env.BASE_URL;
 ---
 <header class="site-header">
   <div class="header-inner">
     <a class="brand" href={homeHref}>포켓몬 카드 한국판</a>
+    <form class="site-search" role="search" action={homeHref} data-site-search data-base={base}>
+      <label class="sr-only" for="site-q">검색</label>
+      <input
+        id="site-q"
+        name="q"
+        type="search"
+        placeholder="카드, 세트, 용어"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        role="combobox"
+        aria-expanded="false"
+        aria-controls="site-search-list"
+        aria-autocomplete="list"
+        enterkeyhint="search"
+      />
+      <button type="submit">검색</button>
+      <div class="search-panel" data-search-panel hidden>
+        <p class="search-empty" data-search-empty hidden>해당하는 결과가 없습니다.</p>
+        <ul id="site-search-list" role="listbox"></ul>
+      </div>
+      <p class="sr-only" data-search-status aria-live="polite"></p>
+    </form>
+  </div>
+  <div class="nav-wrap">
     <nav class="nav" aria-label="주요">
       <a href={homeHref} aria-current={isHome ? "page" : undefined}>홈</a>
-      {sets.map((set) => {
-        const href = setHref(set);
-        const current = path.includes(`/sets/${set.slug}/`) || path.includes(`/cards/${set.slug}/`);
-        return (
-          <a href={href} aria-current={current ? "page" : undefined}>
-            {set.nameKo}
-          </a>
-        );
-      })}
       <a href={withBase("hits/")} aria-current={path.includes("/hits/") ? "page" : undefined}>{HITS_NAV_LABEL}</a>
       <a href={withBase("rarity/")} aria-current={path.includes("/rarity/") ? "page" : undefined}>레어도</a>
       <a href={withBase("glossary/")} aria-current={path.includes("/glossary/") ? "page" : undefined}>용어집</a>
@@ -30,3 +47,170 @@ const isHome = path === homePath;
     </nav>
   </div>
 </header>
+<script>
+  import { matchSearch, type SearchItem } from "../lib/site-search.ts";
+
+  const root = document.querySelector<HTMLElement>("[data-site-search]");
+  const input = root?.querySelector<HTMLInputElement>("#site-q");
+  const panel = root?.querySelector<HTMLElement>("[data-search-panel]");
+  const empty = root?.querySelector<HTMLElement>("[data-search-empty]");
+  const list = root?.querySelector<HTMLUListElement>("#site-search-list");
+  const status = root?.querySelector<HTMLElement>("[data-search-status]");
+  const base = root?.dataset.base || "/";
+
+  function joinBase(path: string) {
+    const rootPath = base.endsWith("/") ? base : `${base}/`;
+    return `${rootPath}${path.replace(/^\/+/, "")}`;
+  }
+
+  let items: SearchItem[] | null = null;
+  let pending: Promise<SearchItem[]> | null = null;
+  let request = 0;
+  let active = -1;
+
+  function ensure() {
+    if (items) return Promise.resolve(items);
+    if (!pending) {
+      pending = import("virtual:card-search").then((mod) => {
+        items = mod.default;
+        return items;
+      });
+    }
+    return pending;
+  }
+
+  function closePanel() {
+    if (!panel || !input || !list || !empty) return;
+    panel.hidden = true;
+    empty.hidden = true;
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+    active = -1;
+  }
+
+  function paint(results: SearchItem[], query: string) {
+    if (!panel || !input || !list || !empty || !status) return;
+    list.replaceChildren();
+    active = -1;
+    input.removeAttribute("aria-activedescendant");
+    if (!query.trim()) {
+      closePanel();
+      status.textContent = "";
+      return;
+    }
+    panel.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    if (!results.length) {
+      empty.hidden = false;
+      list.hidden = true;
+      status.textContent = "해당하는 결과가 없습니다.";
+      return;
+    }
+    empty.hidden = true;
+    list.hidden = false;
+    results.forEach((item, index) => {
+      const li = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = joinBase(item.h);
+      link.id = `site-search-opt-${index}`;
+      link.setAttribute("role", "option");
+      link.setAttribute("aria-selected", "false");
+      if (item.i) {
+        const image = document.createElement("img");
+        image.src = joinBase(item.i);
+        image.alt = "";
+        image.width = 63;
+        image.height = 88;
+        link.append(image);
+      } else {
+        const mark = document.createElement("span");
+        mark.className = "search-mark";
+        mark.textContent = item.s;
+        link.append(mark);
+      }
+      const copy = document.createElement("span");
+      copy.className = "search-copy";
+      const title = document.createElement("span");
+      title.className = "search-title";
+      title.textContent = item.t;
+      const meta = document.createElement("span");
+      meta.className = "search-meta";
+      const source = document.createElement("span");
+      source.className = "source";
+      source.textContent = item.s;
+      meta.append(source);
+      if (item.m) meta.append(document.createTextNode(` ${item.m}`));
+      copy.append(title, meta);
+      link.append(copy);
+      link.addEventListener("pointerenter", () => select(index));
+      li.append(link);
+      list.append(li);
+    });
+    status.textContent = `${results.length}건`;
+  }
+
+  function options() {
+    return [...(list?.querySelectorAll<HTMLAnchorElement>("a") || [])];
+  }
+
+  function wrap(index: number, length: number) {
+    let value = index;
+    while (value < 0) value += length;
+    while (value >= length) value -= length;
+    return value;
+  }
+
+  function select(index: number) {
+    const links = options();
+    if (!links.length || !input) return;
+    active = wrap(index, links.length);
+    links.forEach((link, itemIndex) => {
+      const on = itemIndex === active;
+      link.setAttribute("aria-selected", on ? "true" : "false");
+      if (on) input.setAttribute("aria-activedescendant", link.id);
+    });
+  }
+
+  function go(index: number) {
+    const link = options()[index];
+    if (link) window.location.href = link.href;
+  }
+
+  if (root && input && panel && list) {
+    input.addEventListener("focus", () => { void ensure(); }, { once: true });
+    input.addEventListener("pointerdown", () => { void ensure(); }, { once: true });
+    input.addEventListener("input", () => {
+      const token = ++request;
+      const query = input.value;
+      void ensure().then((loaded) => {
+        if (token !== request) return;
+        paint(matchSearch(loaded, query), query);
+      });
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.isComposing || event.key === "Process") return;
+      const links = options();
+      if (event.key === "ArrowDown" && links.length) {
+        event.preventDefault();
+        select(active + 1);
+      } else if (event.key === "ArrowUp" && links.length) {
+        event.preventDefault();
+        select(active < 0 ? links.length - 1 : active - 1);
+      } else if (event.key === "Escape") {
+        closePanel();
+      } else if (event.key === "Enter" && !panel.hidden && links.length) {
+        event.preventDefault();
+        go(active >= 0 ? active : 0);
+      }
+    });
+    root.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const links = options();
+      if (!panel.hidden && links.length) go(active >= 0 ? active : 0);
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (!root.contains(event.target as Node)) closePanel();
+    });
+  }
+</script>

@@ -1,6 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import AdSlot from "../../components/AdSlot.astro";
+import SetRow from "../../components/SetRow.astro";
 import { groupSetsBySeries, HITS_NAV_LABEL, hitGroups, hitNote, hitsSetPath } from "../../lib/hits.mjs";
 import { sets, withBase } from "../../lib/sets";
 
@@ -54,30 +55,22 @@ const jsonLd = {
           <span>{group.sets.length}세트</span>
         </div>
         <ul class="set-list">
-          {group.sets.map((set) => {
+          {group.sets.map((set, index) => {
             const sections = hitGroups(set);
             const count = sections.reduce((sum, section) => sum + section.cards.length, 0);
             const note = hitNote(set);
             return (
               <li>
-                <a class="set-row" href={withBase(hitsSetPath(set))}>
-                  <span class="mark">{set.expansionMark}</span>
-                  <span class="set-main">
-                    <span class="set-title">{set.nameKo}</span>
-                    <span class="set-product">{set.productNameKo}</span>
-                  </span>
-                  <span class="set-stats">
-                    {count > 0 ? (
-                      <>
-                        <span>{sections.map((section) => section.code).join(" ")}</span>
-                        <span>{count}장</span>
-                      </>
-                    ) : (
-                      <span>안내</span>
-                    )}
-                  </span>
-                  <span class="set-go" aria-hidden="true">&gt;</span>
-                </a>
+                <SetRow set={set} href={withBase(hitsSetPath(set))} eager={group === groups[0] && index === 0}>
+                  {count > 0 ? (
+                    <>
+                      <span>{sections.map((section) => section.code).join(" ")}</span>
+                      <span>{count}장</span>
+                    </>
+                  ) : (
+                    <span>안내</span>
+                  )}
+                </SetRow>
                 {note && <p class="set-note">{note}</p>}
               </li>
             );
