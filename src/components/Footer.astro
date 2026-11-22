@@ -1,12 +1,13 @@
 ---
 import { withBase } from "../lib/sets";
+import { SITE_NAME } from "../lib/site";
 const github = "https://github.com/ce-dric/pokecard-kr";
 ---
 <footer class="site-footer">
   <div class="footer-inner">
     <div>
-      <strong>포켓몬 카드 한국판</strong>
-      <p class="small">포켓몬 공식 사이트가 아닙니다. 카드 이미지는 공식 이미지를 사용했으며 워터마크를 넣었습니다.</p>
+      <strong>{SITE_NAME}</strong>
+      <p class="small">한국판 포켓몬 카드 사전. 포켓몬 공식 사이트가 아닙니다. 카드 이미지는 공식 이미지를 사용했으며 워터마크를 넣었습니다.</p>
     </div>
     <nav class="footer-links" aria-label="하단">
       <a href={withBase("about/")}>소개</a>

@@ -1,8 +1,9 @@
 ---
 import Base from "../layouts/Base.astro";
 import { sets, withBase } from "../lib/sets";
+import { SITE_NAME } from "../lib/site";
 
-const title = "소개 | 포켓몬 카드 한국판";
+const title = `소개 | ${SITE_NAME}`;
 const description =
   "한국판 포켓몬 카드 게임의 세트별 카드 리스트 사이트입니다. 이름과 번호는 한국 공식 카드 검색에서 확인한 정보만 사용합니다.";
 ---
@@ -16,7 +17,7 @@ const description =
       </div>
     </header>
     <p class="lede">
-      이 사이트는 한국에서 발매된 포켓몬 카드 게임을 카드 한 장, 세트 하나씩 찾아볼 수 있게 만든 개인 데이터베이스입니다.
+      포카북은 한국에서 발매된 포켓몬 카드 게임을 카드 한 장, 세트 하나씩 찾아볼 수 있게 만든 개인 데이터베이스입니다.
       포켓몬코리아나 주식회사 포켓몬의 공식 사이트가 아닙니다.
     </p>
     <h2>지금 수록된 세트</h2>

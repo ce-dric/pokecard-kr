@@ -1,6 +1,6 @@
 # pokecard-kr
 
-Static Korean Pokemon TCG card list. Astro builds one URL per set and per card from `src/data/sets/*.json`. This is not an official Pokemon site.
+Static Korean Pokemon TCG card list. The public site name is 포카북, a Korean pun on book and drum. Astro builds one URL per set and per card from `src/data/sets/*.json`. This is not an official Pokemon site.
 
 Live origin: `https://ce-dric.github.io/pokecard-kr/`
 

@@ -2,8 +2,9 @@
 import Base from "../../layouts/Base.astro";
 import { PSA_CENTERING_SOURCE, PSA_CENTERING_TABLE } from "../../lib/centering.mjs";
 import { withBase } from "../../lib/sets";
+import { SITE_NAME } from "../../lib/site";
 
-const title = "카드 센터링 확인 | 포켓몬 카드 한국판";
+const title = `카드 센터링 확인 | ${SITE_NAME}`;
 const description =
   "카드 사진의 좌우, 상하 테두리 비율을 브라우저에서 계산하고 PSA 센터링 기준으로 추정 등급을 보여 줍니다. 사진은 서버로 보내지 않습니다.";
 const jsonLd = {
