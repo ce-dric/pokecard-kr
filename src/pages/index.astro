@@ -4,6 +4,7 @@ import AdSlot from "../components/AdSlot.astro";
 import CardTile from "../components/CardTile.astro";
 import SetRow from "../components/SetRow.astro";
 import { formatWon, setHref, sets, withBase, type CardSet } from "../lib/sets";
+import { SITE_NAME, SITE_TAGLINE } from "../lib/site";
 
 const storm = sets.find((item) => item.id === "m6") ?? sets[0];
 const spotlight = storm.cards.filter(
@@ -16,8 +17,8 @@ for (const item of sets) {
   else groups.push({ series: item.series, items: [item] });
 }
 const cardTotal = sets.reduce((sum, item) => sum + item.cardCount, 0);
-const title = "포켓몬 카드 한국판 카드 리스트";
-const description = `한국판 포켓몬 카드 게임 세트별 카드 리스트. ${sets
+const title = SITE_TAGLINE;
+const description = `${SITE_TAGLINE}. 한국판 포켓몬 카드 게임 세트별 카드 리스트. ${sets
   .map((item) => `${item.nameKo} ${item.cardCount}종`)
   .join(", ")}을 카드마다 한 페이지로 정리했습니다.`;
 const jsonLd = {
@@ -25,7 +26,7 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebSite",
-      name: "포켓몬 카드 한국판",
+      name: SITE_NAME,
       inLanguage: "ko-KR",
       url: Astro.url.href,
       description,

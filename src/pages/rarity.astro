@@ -2,13 +2,14 @@
 import Base from "../layouts/Base.astro";
 import AdSlot from "../components/AdSlot.astro";
 import CardTile from "../components/CardTile.astro";
+import { SITE_NAME } from "../lib/site";
 import {
   rarityCounts,
   sets,
   withBase,
 } from "../lib/sets";
 
-const title = "레어도 일람 | 포켓몬 카드 한국판";
+const title = `레어도 일람 | ${SITE_NAME}`;
 const description = `${sets.map((set) => `${set.nameKo} ${set.cardCount}종`).join(", ")} 레어도별 카드 목록. 한국 공식 카드 상세에 적힌 레어도만 모았습니다.`;
 const jsonLd = {
   "@context": "https://schema.org",

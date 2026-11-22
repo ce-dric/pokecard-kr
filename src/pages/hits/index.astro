@@ -4,6 +4,7 @@ import AdSlot from "../../components/AdSlot.astro";
 import SetRow from "../../components/SetRow.astro";
 import { groupSetsBySeries, HITS_NAV_LABEL, hitGroups, hitNote, hitsSetPath } from "../../lib/hits.mjs";
 import { sets, withBase } from "../../lib/sets";
+import { SITE_NAME } from "../../lib/site";
 
 const groups = groupSetsBySeries(sets);
 const described = sets
@@ -13,7 +14,7 @@ const described = sets
   })
   .filter(Boolean)
   .join(", ");
-const title = `${HITS_NAV_LABEL} | 포켓몬 카드 한국판`;
+const title = `${HITS_NAV_LABEL} | ${SITE_NAME}`;
 const description = `박스별 힛카드. ${described}. 이름과 레어도는 수록 데이터에 있는 것만 보여 줍니다.`;
 const jsonLd = {
   "@context": "https://schema.org",

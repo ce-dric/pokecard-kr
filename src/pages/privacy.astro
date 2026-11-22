@@ -1,9 +1,10 @@
 ---
 import Base from "../layouts/Base.astro";
 import { withBase } from "../lib/sets";
+import { SITE_NAME } from "../lib/site";
 
-const title = "개인정보처리방침 | 포켓몬 카드 한국판";
-const description = "포켓몬 카드 한국판의 개인정보처리방침. 현재는 회원 가입과 개인정보 수집이 없는 정적 사이트입니다.";
+const title = `개인정보처리방침 | ${SITE_NAME}`;
+const description = `${SITE_NAME}의 개인정보처리방침. 현재는 회원 가입과 개인정보 수집이 없는 정적 사이트입니다.`;
 ---
 <Base title={title} description={description}>
   <div class="wrap">
@@ -16,7 +17,7 @@ const description = "포켓몬 카드 한국판의 개인정보처리방침. 현
     </header>
     <p>시행일: 2026년 11월 19일</p>
     <p>
-      포켓몬 카드 한국판(이하 "사이트")은 카드 정보를 보여주는 정적 웹사이트입니다.
+      {SITE_NAME}(이하 "사이트")은 카드 정보를 보여주는 정적 웹사이트입니다.
       운영자는 세드릭이며, 연락은 <a href="https://github.com/ce-dric/pokecard-kr">깃허브</a>를 이용합니다.
     </p>
     <h2>수집하는 개인정보</h2>

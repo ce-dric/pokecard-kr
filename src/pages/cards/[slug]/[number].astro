@@ -5,6 +5,7 @@ import CardTile from "../../../components/CardTile.astro";
 import OpinionLine from "../../../components/OpinionLine.astro";
 import { presentCardOpinion } from "../../../lib/opinions.mjs";
 import opinions from "../../../data/community/opinions.json";
+import { SITE_NAME } from "../../../lib/site";
 import {
   altText,
   cardHeading,
@@ -63,7 +64,7 @@ const jsonLd = {
       inLanguage: "ko-KR",
       url: pageUrl,
       primaryImageOfPage: new URL(imagePath, Astro.site).href,
-      isPartOf: { "@type": "WebSite", name: "포켓몬 카드 한국판", url: new URL(withBase(""), Astro.site).href },
+      isPartOf: { "@type": "WebSite", name: SITE_NAME, url: new URL(withBase(""), Astro.site).href },
       mainEntity: {
         "@type": "CreativeWork",
         name: heading,
