@@ -1,3 +1,10 @@
+import {
+  interactionMode,
+  mapOption,
+  type ActionKind,
+  type CardSpot,
+  type InteractionMode,
+} from "./actions.ts";
 import type {
   AttackData,
   BattleLog,
@@ -199,7 +206,7 @@ function sideView(
   };
 }
 
-function optionTarget(obs: Observation, option: Option) {
+export function optionTarget(obs: Observation, option: Option) {
   const you = obs.current.yourIndex;
   const owner = option.playerIndex ?? you;
   const player = obs.current.players[owner];
@@ -349,6 +356,13 @@ export interface ChoiceOption {
   label: string;
   image: string | null;
   fullImage: string | null;
+  kind: ActionKind;
+  source: CardSpot | null;
+  target: CardSpot | null;
+  attackId?: number;
+  damage?: number;
+  energies?: string[];
+  playAs?: "bench" | "use";
 }
 
 export interface GameView {
@@ -357,6 +371,7 @@ export interface GameView {
   minCount: number;
   maxCount: number;
   options: ChoiceOption[];
+  interaction: InteractionMode;
   log: string[];
   you: SideView;
   opp: SideView;
@@ -379,6 +394,7 @@ export function buildView(
   const over = current.result !== -1;
   const choosing = !over && current.yourIndex === humanSeat && obs.select;
   const stadium = current.stadium?.[0];
+  const myTurn = !over && current.yourIndex === humanSeat;
   return {
     phase: over ? "over" : "choose",
     prompt: choosing && obs.select ? selectionPrompt(obs.select) : over ? "대전이 끝났습니다" : "상대가 고르는 중",
@@ -389,14 +405,24 @@ export function buildView(
         ? obs.select.option.map((option, index) => {
             const target = optionTarget(obs, option);
             const face = target ? cardFace(target.id, catalogs.cards, mapping) : null;
+            const mapped = mapOption(obs, option, index, catalogs.cards);
+            const attack = mapped.attackId == null ? undefined : catalogs.attacks.get(mapped.attackId);
             return {
               index,
               label: optionLabel(obs, option, catalogs.cards, catalogs.attacks, mapping),
               image: face?.image || null,
               fullImage: face?.fullImage || null,
+              kind: mapped.kind,
+              source: mapped.source,
+              target: mapped.target,
+              attackId: mapped.attackId,
+              damage: attack?.damage,
+              energies: (attack?.energies || []).map((type) => SWATCH[type] || "colorless"),
+              playAs: mapped.playAs,
             };
           })
         : [],
+    interaction: interactionMode(obs.select, over ? "over" : "choose", myTurn),
     log,
     you: sideView(yours, humanSeat, humanSeat, catalogs.cards, mapping),
     opp: sideView(theirs, 1 - humanSeat, humanSeat, catalogs.cards, mapping),

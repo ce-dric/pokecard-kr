@@ -53,6 +53,7 @@ function view(overrides: Partial<GameView> = {}): GameView {
     minCount: 1,
     maxCount: 1,
     options: [],
+    interaction: "board",
     log: ["내 턴"],
     you: side(),
     opp: side({ hand: null, handCount: 5 }),
