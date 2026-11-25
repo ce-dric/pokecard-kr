@@ -85,10 +85,18 @@ function overlays(card: FaceCard, active: boolean): string {
   return parts.filter(Boolean).join("");
 }
 
+export interface PlayCardOptions {
+  active: boolean;
+  /** Extra classes such as playable / selected / target highlights. */
+  className?: string;
+  /** Extra attributes on the outer card shell (data-spot, data-card-act, draggable). */
+  attrs?: string;
+}
+
 /** Active or bench Pokemon with HP, damage, energy, tool, and status overlays. */
-export function playCardHtml(card: FaceCard, options: { active: boolean }): string {
+export function playCardHtml(card: FaceCard, options: PlayCardOptions): string {
   if (card.hidden) {
-    return `<div class="ptcg-card"><div class="ptcg-back" aria-label="뒷면"></div></div>`;
+    return `<div class="ptcg-card${options.className ? ` ${options.className}` : ""}"${options.attrs || ""}><div class="ptcg-back" aria-label="뒷면"></div></div>`;
   }
   const src = imageSrc(card.image);
   const full = imageSrc(card.fullImage || card.image);
@@ -100,7 +108,7 @@ export function playCardHtml(card: FaceCard, options: { active: boolean }): stri
         ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
         : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong></div>`;
   const tilt = options.active ? rotateClassForConditions(card.conditions) : "";
-  const classes = ["ptcg-card", "ptcg-card--play", tilt].filter(Boolean).join(" ");
+  const classes = ["ptcg-card", "ptcg-card--play", tilt, options.className].filter(Boolean).join(" ");
   const caption = `<span class="ptcg-caption">${name}</span>`;
-  return `<div class="${classes}"><div class="ptcg-card__face">${body}${overlays(card, options.active)}</div>${caption}</div>`;
+  return `<div class="${classes}"${options.attrs || ""}><div class="ptcg-card__face">${body}${overlays(card, options.active)}</div>${caption}</div>`;
 }
