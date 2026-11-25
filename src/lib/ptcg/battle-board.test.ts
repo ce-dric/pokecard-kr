@@ -163,13 +163,24 @@ test("battle CSS puts active toward the center and bench toward each edge", () =
   assert.match(css, /aspect-ratio:\s*10\s*\/\s*16/);
   assert.match(
     css,
-    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"prizes active rails"[\s\S]*"prizes bench rails"/,
+    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"head"[\s\S]*"field"/,
   );
   assert.match(
     css,
-    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"rails bench prizes"[\s\S]*"rails active prizes"/,
+    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"head"[\s\S]*"hand"[\s\S]*"field"/,
   );
   assert.match(css, /ptcg-zone--rails/);
+  assert.match(css, /\.ptcg-field/);
+  assert.match(css, /--card-edge-w:\s*clamp\(3\.[45]rem/);
+  assert.match(css, /--card-hand-w/);
+  assert.match(css, /ptcg-hud-skip/);
+});
+
+test("battle board wraps active and bench in a field cluster", () => {
+  const html = boardHtml(view);
+  assert.match(html, /ptcg-field/);
+  assert.match(html, /ptcg-playmat--opp[\s\S]*ptcg-zone--bench[\s\S]*ptcg-zone--active/);
+  assert.match(html, /ptcg-playmat--you[\s\S]*ptcg-zone--active[\s\S]*ptcg-zone--bench/);
 });
 
 test("bot turn keeps the action sheet closed and marks the battle shell", () => {
@@ -177,6 +188,8 @@ test("bot turn keeps the action sheet closed and marks the battle shell", () => 
   assert.match(html, /data-bot-turn="true"/);
   assert.match(html, /data-action-sheet[^>]*hidden/);
   assert.match(html, /상대 턴/);
+  assert.match(html, /ptcg-hud-skip[^>]*data-skip-bot/);
+  assert.doesNotMatch(html, /ptcg-bot-banner/);
   assert.doesNotMatch(html, /ptcg-fallback/);
 });
 

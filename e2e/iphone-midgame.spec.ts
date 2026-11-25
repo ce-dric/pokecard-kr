@@ -191,10 +191,20 @@ for (const { name, width, height } of [
       const exitTop = await page.locator(".ptcg-hud-exit").evaluate((el) => el.getBoundingClientRect().top);
       expect(exitTop).toBeGreaterThanOrEqual(40);
 
-      await assertNoOverlap(page, ".ptcg-playmat--opp .ptcg-zone--active", ".ptcg-playmat--opp .ptcg-zone--bench");
-      await assertNoOverlap(page, ".ptcg-playmat--you .ptcg-zone--active", ".ptcg-playmat--you .ptcg-zone--bench");
-      await assertNoOverlap(page, ".ptcg-playmat--you .ptcg-zone--bench", ".ptcg-zone--my-hand");
-      await assertNoOverlap(page, ".ptcg-playmat--you .ptcg-zone--rails", ".ptcg-zone--my-hand");
+      // Hand must sit below the you playmat (bench may pack tightly inside the mat).
+      const handBelowBoard = await page.evaluate(() => {
+        const mat = document.querySelector(".ptcg-playmat--you");
+        const hand = document.querySelector(".ptcg-zone--my-hand");
+        if (!(mat instanceof HTMLElement) || !(hand instanceof HTMLElement)) return false;
+        return hand.getBoundingClientRect().top >= mat.getBoundingClientRect().bottom - 2;
+      });
+      expect(handBelowBoard).toBeTruthy();
+
+      const oppCardsVisible = await page.locator(".ptcg-playmat--opp .ptcg-zone--active .ptcg-card").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.height > 60 && r.width > 70;
+      });
+      expect(oppCardsVisible).toBeTruthy();
 
       const trash = page.locator(".ptcg-playmat--you .ptcg-zone--trash, .ptcg-playmat--you .ptcg-rail-item.ptcg-zone--trash");
       await expect(trash.first()).toBeVisible();
@@ -204,7 +214,34 @@ for (const { name, width, height } of [
       const handCards = page.locator(".ptcg-zone--my-hand .ptcg-fan-card, .ptcg-zone--my-hand .ptcg-card");
       await expect(handCards.first()).toBeVisible();
       const handCardBox = await handCards.first().boundingBox();
-      expect(handCardBox?.height || 0).toBeGreaterThan(28);
+      expect(handCardBox?.width || 0).toBeGreaterThanOrEqual(54);
+      expect(handCardBox?.height || 0).toBeGreaterThan(48);
+
+      const benchCard = page.locator(".ptcg-playmat--you .ptcg-bench .ptcg-card").first();
+      const benchBox = await benchCard.boundingBox();
+      expect(benchBox?.width || 0).toBeGreaterThanOrEqual(60);
+
+      const activeCard = page.locator(".ptcg-playmat--you .ptcg-zone--active .ptcg-card").first();
+      const activeBox = await activeCard.boundingBox();
+      expect(activeBox?.width || 0).toBeGreaterThanOrEqual(84);
+
+      const activeCenter = await page.evaluate(() => {
+        const card = document.querySelector(".ptcg-playmat--you .ptcg-zone--active .ptcg-card");
+        const mat = document.querySelector(".ptcg-playmat--you");
+        if (!(card instanceof HTMLElement) || !(mat instanceof HTMLElement)) return null;
+        const c = card.getBoundingClientRect();
+        const m = mat.getBoundingClientRect();
+        return Math.abs((c.left + c.right) / 2 - (m.left + m.right) / 2);
+      });
+      expect(activeCenter).not.toBeNull();
+      expect(activeCenter!).toBeLessThan(40);
+
+      const pile = page.locator(".ptcg-playmat--you .ptcg-pile-wrap, .ptcg-playmat--you .ptcg-zone--deck .ptcg-pile-wrap").first();
+      const pileBox = await pile.boundingBox();
+      expect(pileBox?.width || 0).toBeGreaterThanOrEqual(50);
+
+      await expect(page.locator(".ptcg-playmat--you .ptcg-playmat-head h2")).toBeVisible();
+      await expect(page.locator(".ptcg-playmat--opp .ptcg-playmat-head h2")).toBeVisible();
 
       if (name === "390x664") await shot(page, "midgame-board-390x664");
       if (name === "390x750") await shot(page, "midgame-board-390x750");
@@ -216,13 +253,22 @@ for (const { name, width, height } of [
 
       await paintBattle(page, "bot");
       await expect(page.locator("[data-bot-turn='true']")).toBeVisible();
-      await expect(page.locator(".ptcg-bot-banner")).toBeVisible();
+      await expect(page.locator(".ptcg-hud-skip[data-skip-bot]")).toBeVisible();
       await expect(page.locator("[data-action-sheet]")).toBeHidden();
       const boardVisible = await page.locator(".ptcg-battle-stage").evaluate((el) => {
         const r = el.getBoundingClientRect();
         return r.top < window.innerHeight && r.bottom > 0 && r.height > 100;
       });
       expect(boardVisible).toBeTruthy();
+      const skipCoversBench = await page.evaluate(() => {
+        const skip = document.querySelector(".ptcg-hud-skip");
+        const bench = document.querySelector(".ptcg-playmat--opp .ptcg-zone--bench");
+        if (!(skip instanceof HTMLElement) || !(bench instanceof HTMLElement)) return true;
+        const A = skip.getBoundingClientRect();
+        const B = bench.getBoundingClientRect();
+        return !(A.right <= B.left || B.right <= A.left || A.bottom <= B.top || B.bottom <= A.top);
+      });
+      expect(skipCoversBench).toBeFalsy();
       if (name === "390x664") await shot(page, "bot-turn-390x664");
     });
   });
