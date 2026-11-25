@@ -1,4 +1,4 @@
-import { findDropOption, handActions, targetsFor, type CardSpot } from "./actions.ts";
+import { findDropOption, targetsFor, type CardSpot } from "./actions.ts";
 import {
   boardHtml,
   closeLogDrawer,
@@ -26,6 +26,7 @@ import { mappedFromView, parseSpot } from "./interact-ui.ts";
 import { loadPrefs, lobbyHtml, resolveOpponentDeck, savePrefs, type LobbyPrefs } from "./lobby.ts";
 import {
   coinMapsToFirst,
+  createCoinAutoAdvance,
   goFirstOptionIndex,
   prebattleHtml,
   prebattlePhase,
@@ -36,6 +37,8 @@ import type { GameView } from "./view.ts";
 
 export { boardHtml } from "./battle-board.ts";
 export type { BoardPaintOptions, ViewUiState } from "./battle-board.ts";
+
+const HAND_HINT_KEY = "ptcg.hand-hint-seen";
 
 interface WorkerIn {
   type: "start" | "restart" | "choose";
@@ -148,6 +151,11 @@ export function mountGame(root: Element | null): void {
   let coinFlipped = false;
   let coinSide: CoinSide | null = null;
   let wasSetup = false;
+  let showHandHint = typeof localStorage === "undefined" ? true : localStorage.getItem(HAND_HINT_KEY) !== "1";
+  const coinAdvance = createCoinAutoAdvance({
+    setTimeout: (fn, ms) => window.setTimeout(fn, ms),
+    clearTimeout: (id) => window.clearTimeout(id as number),
+  });
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
@@ -163,6 +171,7 @@ export function mountGame(root: Element | null): void {
     setBattleChrome(false);
     skipBot?.();
     playbackToken += 1;
+    coinAdvance.clear();
     latest = null;
     previous = null;
     coinFlipped = false;
@@ -173,6 +182,7 @@ export function mountGame(root: Element | null): void {
 
   const paintLobby = (): void => {
     setBattleChrome(false);
+    coinAdvance.clear();
     coinFlipped = false;
     coinSide = null;
     wasSetup = false;
@@ -232,6 +242,7 @@ export function mountGame(root: Element | null): void {
           reducedMotion: prefersReducedMotion(),
         }) || ""}<p class="ptcg-actions"><button type="button" data-decks>덱 고르기</button></p>`;
       } else {
+        coinAdvance.clear();
         coinFlipped = false;
         coinSide = null;
         board.innerHTML = `${prebattleHtml(view) || ""}<p class="ptcg-actions"><button type="button" data-decks>덱 고르기</button></p>`;
@@ -243,6 +254,7 @@ export function mountGame(root: Element | null): void {
     const events = collectFxEvents(previous, view);
     previous = view;
     setBattleChrome(true);
+    coinAdvance.clear();
     coinFlipped = false;
     coinSide = null;
     board.innerHTML = boardHtml(view, banner, {
@@ -251,9 +263,18 @@ export function mountGame(root: Element | null): void {
       highlights: paint.highlights || [],
       ui: paint.ui || uiState,
       muted: paint.muted ?? muted,
+      showHandHint: !paint.botTurn && showHandHint,
     }, paint.muted ?? muted);
     applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
     if (!paint.botTurn) syncPressed();
+  };
+
+  const confirmCoin = (): void => {
+    if (!latest || !coinSide || busy || prebattlePhase(latest) !== "coin") return;
+    coinAdvance.clear();
+    const goFirst = coinMapsToFirst(coinSide);
+    const index = goFirstOptionIndex(latest.options, goFirst);
+    choose([index]);
   };
 
   const finishHumanView = (view: GameView, note = ""): void => {
@@ -347,6 +368,7 @@ export function mountGame(root: Element | null): void {
     if (!deck0 || !deck1) return;
     persist();
     busy = true;
+    coinAdvance.clear();
     coinFlipped = false;
     coinSide = null;
     wasSetup = false;
@@ -458,24 +480,12 @@ export function mountGame(root: Element | null): void {
     }
 
     if (spot.area === 2 && spot.playerIndex === 0) {
-      const actions = handActions(mapped, spot.index, 0);
-      if (!actions.length) return;
-      if (actions.length === 1 && actions[0].kind === "play") {
-        choose([actions[0].optionIndex]);
-        return;
-      }
-      const onlyAttach = actions.length > 0 && actions.every((row) => row.kind === "attach");
-      const onlyEvolve = actions.length > 0 && actions.every((row) => row.kind === "evolve");
-      if (onlyAttach || onlyEvolve) {
-        uiState = {
-          selected: spot,
-          targets: actions.map((row) => row.target!).filter(Boolean),
-          sheet: "none",
-        };
-        paintBoard(latest, noteText);
-        return;
-      }
+      // Tap always selects and opens the action bar (play / attach / 확대). Zoom is long-press or 확대.
       uiState = { selected: spot, targets: [], sheet: "hand" };
+      if (showHandHint) {
+        showHandHint = false;
+        if (typeof localStorage !== "undefined") localStorage.setItem(HAND_HINT_KEY, "1");
+      }
       paintBoard(latest, noteText);
       return;
     }
@@ -582,9 +592,16 @@ export function mountGame(root: Element | null): void {
     const action = actionFromPointer(event);
     if (!(target instanceof Element)) return;
     const acting = target.closest("[data-card-act]");
-    if (acting instanceof HTMLElement && action?.type === "zoom") {
-      activateCard(parseSpot(acting.getAttribute("data-spot")));
-      return;
+    if (acting instanceof HTMLElement) {
+      const inHand = Boolean(acting.closest(".ptcg-hand--fan, .ptcg-zone--my-hand"));
+      if (inHand) {
+        activateCard(parseSpot(acting.getAttribute("data-spot")));
+        return;
+      }
+      if (action?.type === "zoom") {
+        activateCard(parseSpot(acting.getAttribute("data-spot")));
+        return;
+      }
     }
     if (action?.type === "zoom") {
       openZoom(action.full, action.alt);
@@ -670,12 +687,11 @@ export function mountGame(root: Element | null): void {
       coinFlipped = true;
       coinSide = Math.random() < 0.5 ? "heads" : "tails";
       paintBoard(latest);
+      coinAdvance.arm(() => confirmCoin());
       return;
     }
     if (target.closest("[data-coin-confirm]") && latest && prebattlePhase(latest) === "coin" && coinSide && !busy) {
-      const goFirst = coinMapsToFirst(coinSide);
-      const index = goFirstOptionIndex(latest.options, goFirst);
-      choose([index]);
+      confirmCoin();
       return;
     }
     if (busy || !latest || latest.phase !== "choose") return;

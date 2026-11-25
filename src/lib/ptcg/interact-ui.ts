@@ -70,8 +70,10 @@ export function energySwatches(energies: string[] | undefined): string {
     .join("");
 }
 
-export function handActionMenuHtml(options: ChoiceOption[]): string {
-  if (!options.length) return "";
+export function handActionMenuHtml(
+  options: ChoiceOption[],
+  zoom?: { full: string; alt: string } | null,
+): string {
   const unique = new Map<string, ChoiceOption>();
   for (const option of options) {
     const key = option.kind === "play" ? `play:${option.playAs || "use"}` : option.kind;
@@ -86,7 +88,17 @@ export function handActionMenuHtml(options: ChoiceOption[]): string {
       return `<button type="button" ${attr}>${esc(actionVerb(option))}</button>`;
     })
     .join("");
-  return `<div class="ptcg-card-actions" role="group" aria-label="카드 행동">${buttons}<button type="button" data-clear-selection>닫기</button></div>`;
+  const full = zoom?.full ? imageSrc(zoom.full) : "";
+  const zoomBtn = full
+    ? `<button type="button" class="ptcg-hand-zoom" data-zoom-open data-full="${esc(full)}" data-alt="${esc(zoom?.alt || "")}" aria-label="${esc(zoom?.alt || "카드")} 확대">확대</button>`
+    : "";
+  if (!buttons && !zoomBtn) return "";
+  return `<div class="ptcg-card-actions" role="group" aria-label="카드 행동">${buttons}${zoomBtn}<button type="button" data-clear-selection>닫기</button></div>`;
+}
+
+export function handTapHintHtml(show: boolean): string {
+  if (!show) return "";
+  return `<p class="ptcg-hand-hint" data-hand-hint role="status">패를 누르면 행동을 고릅니다. 길게 누르면 확대됩니다.</p>`;
 }
 
 export function attackSheetHtml(view: GameView): string {

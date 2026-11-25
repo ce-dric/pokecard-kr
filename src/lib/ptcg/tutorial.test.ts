@@ -10,12 +10,15 @@ import {
   isTutorialComplete,
   markTutorialComplete,
   optionKeyForLabel,
+  overlayHtml,
   progressLabel,
   readTutorialComplete,
   shouldOfferTutorial,
+  tagTutorialTargets,
   tutorialScenarioCards,
   tutorialViewForStep,
 } from "./tutorial.ts";
+import { layoutTutorialChrome } from "./tutorial-ui.ts";
 
 test("tutorial starts on the board overview step", () => {
   const state = createTutorialState();
@@ -180,4 +183,31 @@ test("tutorial captions stay Korean and avoid the middle dot", () => {
       state = applyTutorialAction(state, action.type === "option" || action.type === "target" ? action : { type: "next" });
     }
   }
+});
+
+test("overlay ships a spotlight hole and coach placement hook", () => {
+  const html = overlayHtml(createTutorialState(), "/pokecard-kr/game/");
+  assert.match(html, /data-tutorial-spotlight/);
+  assert.match(html, /data-tutorial-coach/);
+  assert.match(html, /data-placement="bottom"/);
+  assert.equal(html.includes("\u00b7"), false);
+});
+
+test("hand action verbs map onto tutorial option keys", () => {
+  assert.equal(optionKeyForLabel("벤치에 내기"), "bench");
+  assert.equal(optionKeyForLabel("에너지 붙이기"), "energy");
+  assert.equal(optionKeyForLabel("사용하기"), "trainer");
+});
+
+test("tutorial highlight helpers clear zones and size the spotlight hole", async () => {
+  const { readFileSync } = await import("node:fs");
+  const tutorialSrc = readFileSync(new URL("./tutorial.ts", import.meta.url), "utf8");
+  const uiSrc = readFileSync(new URL("./tutorial-ui.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(tutorialSrc, /dataset\.tutorialZone\) continue/);
+  assert.match(tutorialSrc, /node\.removeAttribute\("data-tutorial-active"\)/);
+  assert.match(uiSrc, /getBoundingClientRect/);
+  assert.match(uiSrc, /dataset\.placement/);
+  assert.match(uiSrc, /data-tutorial-spotlight/);
+  assert.equal(typeof layoutTutorialChrome, "function");
+  assert.equal(typeof tagTutorialTargets, "function");
 });

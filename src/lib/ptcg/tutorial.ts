@@ -460,9 +460,9 @@ export function tutorialViewForStep(stepId: TutorialStepId): GameView {
 }
 
 export function optionKeyForLabel(label: string): string | null {
-  if (label.startsWith("사용 눈쓰개")) return "bench";
-  if (label.startsWith("에너지 부착")) return "energy";
-  if (label.startsWith("사용 릴리에의 결심")) return "trainer";
+  if (label.startsWith("사용 눈쓰개") || label === "벤치에 내기") return "bench";
+  if (label.startsWith("에너지 부착") || label === "에너지 붙이기") return "energy";
+  if (label.startsWith("사용 릴리에의 결심") || label === "사용하기") return "trainer";
   if (label.startsWith("공격 ")) return "attack";
   return null;
 }
@@ -487,8 +487,9 @@ export function overlayHtml(state: TutorialState, basePath: string): string {
         ${showNext ? `<button type="button" data-tutorial-next>다음</button>` : ""}
         <button type="button" data-tutorial-skip>건너뛰기</button>
       </div>`;
-  return `<div class="ptcg-tutorial-overlay" data-tutorial-overlay data-tutorial-step="${step.id}" data-tutorial-highlight="${step.highlight || ""}">
-    <div class="ptcg-tutorial-coach" role="dialog" aria-modal="true" aria-labelledby="ptcg-tutorial-caption">
+  return `<div class="ptcg-tutorial-spotlight" data-tutorial-spotlight hidden></div>
+  <div class="ptcg-tutorial-overlay" data-tutorial-overlay data-tutorial-step="${step.id}" data-tutorial-highlight="${step.highlight || ""}">
+    <div class="ptcg-tutorial-coach" data-tutorial-coach data-placement="bottom" role="dialog" aria-modal="true" aria-labelledby="ptcg-tutorial-caption">
       <p class="ptcg-tutorial-progress" aria-hidden="true">${progress}</p>
       <p id="ptcg-tutorial-caption" class="ptcg-tutorial-caption" aria-live="polite">${step.caption}</p>
       ${controls}
@@ -498,8 +499,7 @@ export function overlayHtml(state: TutorialState, basePath: string): string {
 
 export function tagTutorialTargets(root: ParentNode, step: TutorialStep | null): void {
   for (const node of root.querySelectorAll("[data-tutorial-target]")) {
-    if (node instanceof HTMLElement && node.dataset.tutorialZone) continue;
-    node.removeAttribute("data-tutorial-active");
+    if (node instanceof HTMLElement) node.removeAttribute("data-tutorial-active");
   }
   if (!step?.highlight) return;
   const match = root.querySelector(`[data-tutorial-target="${step.highlight}"]`);

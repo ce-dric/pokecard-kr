@@ -77,5 +77,16 @@ test("lobby cards show face art, type, and blurb without a middle dot", () => {
   assert.match(html, /봇 난이도/);
   assert.match(html, /가이오가/);
   assert.match(html, /물/);
+  assert.match(html, /ptcg-lobby-card/);
   assert.equal(html.includes("\u00b7"), false);
+});
+
+test("lobby CSS keeps deck cards as rounded rectangles, not pills", async () => {
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../../pages/game/game.css", import.meta.url), "utf8");
+  assert.match(css, /\.ptcg-setup button:not\(\.ptcg-lobby-card\)/);
+  assert.match(css, /\.ptcg-setup \.ptcg-lobby-card,\s*\n\.ptcg-lobby-card \{[\s\S]*?border-radius:\s*var\(--ptcg-radius/);
+  const lobbyBlock = css.match(/\.ptcg-setup \.ptcg-lobby-card,\s*\n\.ptcg-lobby-card \{[^}]+\}/);
+  assert.ok(lobbyBlock);
+  assert.doesNotMatch(lobbyBlock![0], /border-radius:\s*999px/);
 });

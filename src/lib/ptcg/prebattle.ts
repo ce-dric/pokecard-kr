@@ -5,8 +5,34 @@ export type PrebattlePhase = "coin" | "mulligan" | "setup" | null;
 
 export type CoinSide = "heads" | "tails";
 
+/** After the coin result shows, advance without requiring 확인. */
+export const COIN_AUTO_ADVANCE_MS = 3000;
+
 /** Engine contexts that belong to the opening setup, before turn 1. */
 const SETUP_CONTEXTS = new Set([1, 2, 38]);
+
+export function createCoinAutoAdvance(deps: {
+  setTimeout: (fn: () => void, ms: number) => unknown;
+  clearTimeout: (id: unknown) => void;
+  delayMs?: number;
+}): { arm: (onAdvance: () => void) => void; clear: () => void } {
+  let timer: unknown = null;
+  const delay = deps.delayMs ?? COIN_AUTO_ADVANCE_MS;
+  return {
+    arm(onAdvance: () => void) {
+      if (timer != null) deps.clearTimeout(timer);
+      timer = deps.setTimeout(() => {
+        timer = null;
+        onAdvance();
+      }, delay);
+    },
+    clear() {
+      if (timer == null) return;
+      deps.clearTimeout(timer);
+      timer = null;
+    },
+  };
+}
 
 export function prebattlePhase(view: GameView): PrebattlePhase {
   if (view.phase === "over") return null;
@@ -83,13 +109,14 @@ function setupBoard(view: GameView): string {
   const oppBench = Array.from({ length: 5 }, (_, index) =>
     faceDownSlot("벤치", index < view.opp.bench.length),
   ).join("");
+  // Match the battle board: active toward the center, bench toward each edge.
   return `<div class="ptcg-pre-board" aria-label="준비 중인 필드">
-    <section class="ptcg-pre-side" aria-label="상대">
+    <section class="ptcg-pre-side ptcg-pre-side--opp" aria-label="상대">
       <h3>상대</h3>
-      <div class="ptcg-pre-active">${faceDownSlot("배틀", oppActiveFilled)}</div>
       <div class="ptcg-pre-bench">${oppBench}</div>
+      <div class="ptcg-pre-active">${faceDownSlot("배틀", oppActiveFilled)}</div>
     </section>
-    <section class="ptcg-pre-side" aria-label="나">
+    <section class="ptcg-pre-side ptcg-pre-side--you" aria-label="나">
       <h3>나</h3>
       <div class="ptcg-pre-active">${faceDownSlot("배틀", youActiveFilled)}</div>
       <div class="ptcg-pre-bench">${youBench}</div>
@@ -143,6 +170,7 @@ export function coinTossHtml(state: {
   const actions = !state.flipped
     ? `<button type="button" data-coin-flip>코인 던지기</button>`
     : `<p class="ptcg-pre-result" role="status">${esc(sideLabel)} - ${esc(first)}</p>
+       <p class="ptcg-note ptcg-coin-auto" data-coin-auto>3초 뒤 자동으로 넘어갑니다</p>
        <button type="button" data-coin-confirm>확인</button>`;
   return `<div class="ptcg-prebattle ptcg-coin-screen">
     <h2>코인 토스</h2>
