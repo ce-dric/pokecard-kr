@@ -388,5 +388,18 @@
     ],
     "related": ["mega", "mur"],
     "links": { "rarities": ["MA"] }
+  },
+  {
+    "slug": "bwr",
+    "term": "BWR",
+    "english": "Black White Rare",
+    "aliases": [],
+    "group": "rarity",
+    "summary": "한국 공식 상세에 BWR로 적힌 레어도 기호입니다.",
+    "definition": [
+      "한국 공식 상세에 적힌 기호를 그대로 가져왔습니다. 이 페이지는 그 기호를 다른 한글로 풀어 적지 않습니다."
+    ],
+    "related": ["ex", "ur"],
+    "links": { "rarities": ["BWR"] }
   }
 ]
