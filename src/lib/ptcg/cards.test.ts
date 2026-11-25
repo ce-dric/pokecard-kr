@@ -289,6 +289,12 @@ test("discard, stadium, and choices carry thumbnails", () => {
   assert.match(page, /이미지 출처: 포켓몬 공식/);
   assert.match(page, /스탠다드 레귤레이션/);
   assert.match(page, /pokemoncard\.co\.kr\/card\/play_qna/);
+  assert.match(page, /봇 난이도/);
+  assert.match(page, /data-difficulty/);
+  const difficulty = readFileSync(new URL("src/lib/ptcg/difficulty.ts", root), "utf8");
+  assert.match(difficulty, /쉬움/);
+  assert.match(difficulty, /보통/);
+  assert.match(difficulty, /어려움/);
 });
 
 test("the battle page credits the engine and the nav links to it", () => {
