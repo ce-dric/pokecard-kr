@@ -3,13 +3,28 @@ import Base from "../layouts/Base.astro";
 import AdSlot from "../components/AdSlot.astro";
 import CardTile from "../components/CardTile.astro";
 import SetRow from "../components/SetRow.astro";
-import { formatWon, setHref, sets, withBase, type CardSet } from "../lib/sets";
+import { setHref, sets, withBase, type CardSet } from "../lib/sets";
 import { SITE_NAME, SITE_TAGLINE } from "../lib/site";
+
+function productKind(set: CardSet): "exp" | "high" | "deck" {
+  const name = set.productNameKo;
+  if (name.includes("하이클래스")) return "high";
+  if (name.includes("확장팩")) return "exp";
+  return "deck";
+}
 
 const storm = sets.find((item) => item.id === "m6") ?? sets[0];
 const spotlight = storm.cards.filter(
   (card) => card.nameKo === "메가레쿠쟈 ex" && (card.rarity === "SAR" || card.rarity === "MUR"),
 );
+
+const kindCounts = {
+  all: sets.length,
+  exp: sets.filter((s) => productKind(s) === "exp").length,
+  high: sets.filter((s) => productKind(s) === "high").length,
+  deck: sets.filter((s) => productKind(s) === "deck").length,
+};
+
 const groups: { series: string; items: CardSet[] }[] = [];
 for (const item of sets) {
   const found = groups.find((group) => group.series === item.series);
@@ -45,37 +60,42 @@ const jsonLd = {
 };
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
-  <div class="wrap">
+  <div class="wrap" data-home>
     <header class="mast">
-      <p class="crumbs">한국판 카드 사전</p>
-      <div class="mast-row">
-        <h1>이 카드 뭐였더라? 한국판으로 바로 찾기.</h1>
-        <p class="mast-aside">{sets.length}세트, {cardTotal}장</p>
-      </div>
-      <p class="lede">팩별, 레어도별로 정리한 한국판 카드 사전이에요.</p>
+      <h1>한국판 포켓몬 카드,<br />세트별로 찾아보세요.</h1>
+      <p class="lede">
+        국내 발매 <span class="num">{sets.length}</span>세트, <span class="num">{cardTotal.toLocaleString("ko-KR")}</span>장을 팩과 레어도별로 정리했습니다.
+      </p>
     </header>
     <AdSlot id="home-top" />
+    <div class="tb">
+      <div class="tb-l" data-kind-filters>
+        <button type="button" class="chip" data-kind="all" aria-pressed="true">전체<span class="c">{kindCounts.all}</span></button>
+        <button type="button" class="chip" data-kind="exp" aria-pressed="false">확장팩<span class="c">{kindCounts.exp}</span></button>
+        <button type="button" class="chip" data-kind="high" aria-pressed="false">하이클래스팩<span class="c">{kindCounts.high}</span></button>
+        <button type="button" class="chip" data-kind="deck" aria-pressed="false">덱, 박스<span class="c">{kindCounts.deck}</span></button>
+      </div>
+      <div class="seg" data-sort>
+        <button type="button" data-sort-value="new" aria-pressed="true">발매순</button>
+        <button type="button" data-sort-value="count" aria-pressed="false">수록 많은 순</button>
+      </div>
+    </div>
     {groups.map((group) => (
-      <section class="catalog">
+      <section class="catalog" data-series-group>
         <div class="catalog-head">
           <h2>{group.series}</h2>
-          <span>{group.items.length}세트</span>
+          <span data-group-count>{group.items.length}세트</span>
         </div>
-        <ul class="set-list">
+        <ul class="set-list" data-set-list data-default-order={group.items.map((item) => item.id).join(",")}>
           {group.items.map((item, index) => (
-            <li>
-              <SetRow set={item} href={setHref(item)} eager={group === groups[0] && index === 0} useBox>
-                <span>{item.releaseDateKr.replaceAll("-", ".")}</span>
-                <span>{item.cardCount}장</span>
-                {item.packsPerBox > 1 ? (
-                  <>
-                    <span>팩 {formatWon(item.packPriceKr)}</span>
-                    <span>상자 {formatWon(item.boxPriceKr)}</span>
-                  </>
-                ) : (
-                  <span>덱 {formatWon(item.packPriceKr)}</span>
-                )}
-              </SetRow>
+            <li data-set-item data-id={item.id} data-kind={productKind(item)} data-count={item.cardCount} data-date={item.releaseDateKr}>
+              <SetRow
+                set={item}
+                href={setHref(item)}
+                eager={group === groups[0] && index === 0}
+                useBox
+                kind={productKind(item)}
+              />
             </li>
           ))}
         </ul>
@@ -92,3 +112,53 @@ const jsonLd = {
     </section>
   </div>
 </Base>
+<script is:inline>
+  const root = document.querySelector("[data-home]");
+  if (root) {
+    let kind = "all";
+    let sort = "new";
+    const chips = root.querySelectorAll("[data-kind-filters] .chip");
+    const sorts = root.querySelectorAll("[data-sort] button");
+    const groups = [...root.querySelectorAll("[data-series-group]")];
+
+    function apply() {
+      for (const group of groups) {
+        const list = group.querySelector("[data-set-list]");
+        const items = [...group.querySelectorAll("[data-set-item]")];
+        let shown = 0;
+        for (const item of items) {
+          const ok = kind === "all" || item.dataset.kind === kind;
+          item.hidden = !ok;
+          if (ok) shown += 1;
+        }
+        if (list) {
+          const visible = items.filter((item) => !item.hidden);
+          visible.sort((a, b) => {
+            if (sort === "count") return Number(b.dataset.count) - Number(a.dataset.count);
+            return String(b.dataset.date).localeCompare(String(a.dataset.date));
+          });
+          for (const item of visible) list.append(item);
+          for (const item of items.filter((row) => row.hidden)) list.append(item);
+        }
+        const count = group.querySelector("[data-group-count]");
+        if (count) count.textContent = shown + "세트";
+        group.hidden = shown === 0;
+      }
+    }
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        kind = chip.dataset.kind;
+        chips.forEach((item) => item.setAttribute("aria-pressed", item === chip ? "true" : "false"));
+        apply();
+      });
+    });
+    sorts.forEach((button) => {
+      button.addEventListener("click", () => {
+        sort = button.dataset.sortValue;
+        sorts.forEach((item) => item.setAttribute("aria-pressed", item === button ? "true" : "false"));
+        apply();
+      });
+    });
+  }
+</script>

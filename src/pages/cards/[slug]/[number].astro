@@ -83,11 +83,11 @@ const jsonLd = {
 ---
 <Base title={title} description={description} image={imagePath} jsonLd={jsonLd}>
   <div class="wrap">
-    <p class="crumbs">
-      <a href={withBase("")}>홈</a> /
-      <a href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a> /
-      {collector(card)}
-    </p>
+    <nav class="crumbs">
+      <a href={withBase("")}>세트</a><span>/</span>
+      <a href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a><span>/</span>
+      <span class="num">{card.number}</span>
+    </nav>
     <div class="card-layout">
       <figure class="card-visual">
         <img
@@ -101,6 +101,10 @@ const jsonLd = {
         <figcaption class="caption">이미지 출처: 포켓몬 공식</figcaption>
       </figure>
       <div class="card-copy">
+        <div class="eyebrow">
+          <span class="num">{set.expansionMark} {collector(card)}</span>
+          {card.rarity && <span class={`rarity rarity-${card.rarity}`}>{card.rarity}</span>}
+        </div>
         <h1>
           {heading}
           {usesJapaneseName(card) && <span class="ja-fallback">일본판 기준</span>}
@@ -135,7 +139,7 @@ const jsonLd = {
           <dt>레어도</dt>
           <dd>
             {card.rarity
-              ? `${card.rarity}${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? ` ${rarityLabel[card.rarity]}` : ""}`
+              ? `${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? `${rarityLabel[card.rarity]} ` : ""}${card.rarity}`
               : "표기 없음"}
           </dd>
           <dt>종류</dt>
@@ -143,13 +147,16 @@ const jsonLd = {
           {card.type && (
             <>
               <dt>타입</dt>
-              <dd>{typeLabel[card.type] || card.typeKo}</dd>
+              <dd>
+                <span class={`swatch swatch-${card.type}`} aria-hidden="true"></span>
+                {typeLabel[card.type] || card.typeKo}
+              </dd>
             </>
           )}
           {card.hp && (
             <>
               <dt>HP</dt>
-              <dd>{card.hp}</dd>
+              <dd class="num">{card.hp}</dd>
             </>
           )}
           {card.illustrator && (
@@ -159,7 +166,7 @@ const jsonLd = {
             </>
           )}
           <dt>세트</dt>
-          <dd><a href={withBase(`sets/${set.slug}/`)}>{set.productNameKo}</a></dd>
+          <dd><a class="more" href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a></dd>
         </dl>
         <ul class="text-links">
           <li><a href={official} rel="noopener noreferrer">한국 공식 카드 페이지</a></li>
@@ -184,18 +191,18 @@ const jsonLd = {
     {opinion && <OpinionLine opinion={opinion} />}
     {(prev || next) && (
       <nav class="pager" aria-label="앞뒤 카드">
-        {prev && (
+        {prev ? (
           <a class="prev" href={cardHref(set, prev)}>
-            <span class="pager-kicker">이전</span>
-            <span class="pager-name">{collector(prev)} {cardHeading(prev)}</span>
+            <span class="pager-kicker">← 이전</span>
+            <span class="pager-name">{cardHeading(prev)}</span>
           </a>
-        )}
-        {next && (
+        ) : <span />}
+        {next ? (
           <a class="next" href={cardHref(set, next)}>
-            <span class="pager-kicker">다음</span>
-            <span class="pager-name">{collector(next)} {cardHeading(next)}</span>
+            <span class="pager-kicker">다음 →</span>
+            <span class="pager-name">{cardHeading(next)}</span>
           </a>
-        )}
+        ) : <span />}
       </nav>
     )}
   </div>
