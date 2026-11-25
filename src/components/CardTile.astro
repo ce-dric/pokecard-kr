@@ -5,7 +5,6 @@ import {
   collector,
   displayName,
   imageHref,
-  typeLabel,
   usesJapaneseName,
   type Card,
   type CardSet,
@@ -36,10 +35,8 @@ const { set, card, eager = false } = Astro.props;
         {usesJapaneseName(card) && <em class="ja-fallback">일본판 기준</em>}
       </span>
       <span class="tile-meta">
-        <span class="source">{set.nameKo}</span>
         <span class="num">{collector(card)}</span>
-        <span class={`rarity rarity-${card.rarity}`}>{card.rarity}</span>
-        {card.typeKo && <span>{typeLabel[card.type || ""] || card.typeKo}</span>}
+        <span class={`rarity rarity-${card.rarity}`}>{card.rarity || "—"}</span>
       </span>
     </span>
   </a>

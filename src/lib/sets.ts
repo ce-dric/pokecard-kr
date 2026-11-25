@@ -14,6 +14,8 @@ export interface Card {
   tags: string[];
   hp: number | null;
   illustrator: string | null;
+  /** Printed regulation mark from the Korean official detail page. Empty when the page has no mark. */
+  regulation?: string | null;
   krCardId: string;
   krUrl: string;
   verifiedUrl?: string;

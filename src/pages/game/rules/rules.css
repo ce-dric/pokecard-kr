@@ -1,0 +1,150 @@
+.rules-page {
+  padding-bottom: 2rem;
+}
+
+.rules-page .rules-body {
+  max-width: 40rem;
+}
+
+.rules-page .rules-toc {
+  margin: 0.85rem 0 1.1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--rule);
+  background: var(--fill);
+}
+
+.rules-page .rules-toc h2 {
+  margin: 0 0 0.35rem;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--faint);
+}
+
+.rules-page .rules-toc ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.rules-page .rules-toc li {
+  margin: 0.18rem 0;
+  font-size: 13px;
+}
+
+.rules-page .rules-toc a {
+  color: var(--ink);
+}
+
+.rules-page .rules-toc a:hover {
+  color: var(--accent);
+}
+
+.rules-page h2 {
+  margin: 1.45rem 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.rules-page h3 {
+  margin: 1rem 0 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.rules-page h4 {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.rules-page p,
+.rules-page li {
+  line-height: 1.55;
+}
+
+.rules-page p {
+  margin: 0.25rem 0 0.65rem;
+}
+
+.rules-page ul,
+.rules-page ol {
+  margin: 0.15rem 0 0.8rem;
+  padding-left: 1.15rem;
+}
+
+.rules-page li {
+  margin: 0.22rem 0;
+}
+
+.rules-page .rules-callout {
+  margin: 0.85rem 0 1.1rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--accent);
+  background: var(--fill);
+}
+
+.rules-page .rules-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.rules-page .rules-diff {
+  margin: 0.85rem 0 1.1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--rule-strong);
+  background: #fffaf0;
+}
+
+.rules-page .rules-diff h2 {
+  margin-top: 0;
+}
+
+.rules-page .rules-diff li + li {
+  margin-top: 0.45rem;
+}
+
+.rules-page .rules-sources {
+  margin-top: 1.6rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.rules-page .rules-sources a {
+  word-break: break-all;
+}
+
+.rules-page .zone-grid {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.4rem 0 0.9rem;
+}
+
+@media (min-width: 560px) {
+  .rules-page .zone-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.rules-page .zone-item {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rule);
+}
+
+.rules-page .zone-item strong {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 13px;
+}
+
+.rules-page .zone-item span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.rules-page .back-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 13px;
+}

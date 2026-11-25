@@ -5,6 +5,11 @@ import CardTile from "../../../components/CardTile.astro";
 import OpinionLine from "../../../components/OpinionLine.astro";
 import { presentCardOpinion } from "../../../lib/opinions.mjs";
 import opinions from "../../../data/community/opinions.json";
+import {
+  OFFICIAL_REGULATION_PDF,
+  OFFICIAL_REGULATION_QNA,
+  regulationStatus,
+} from "../../../lib/regulation.mjs";
 import { SITE_NAME } from "../../../lib/site";
 import {
   altText,
@@ -46,6 +51,7 @@ const { prev, next } = neighbors(set, card);
 const related = siblings(set, card);
 const pageUrl = Astro.url.href;
 const official = card.verifiedUrl || card.krUrl;
+const regulation = regulationStatus(card, set);
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -83,11 +89,11 @@ const jsonLd = {
 ---
 <Base title={title} description={description} image={imagePath} jsonLd={jsonLd}>
   <div class="wrap">
-    <p class="crumbs">
-      <a href={withBase("")}>홈</a> /
-      <a href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a> /
-      {collector(card)}
-    </p>
+    <nav class="crumbs">
+      <a href={withBase("")}>세트</a><span>/</span>
+      <a href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a><span>/</span>
+      <span class="num">{card.number}</span>
+    </nav>
     <div class="card-layout">
       <figure class="card-visual">
         <img
@@ -101,6 +107,10 @@ const jsonLd = {
         <figcaption class="caption">이미지 출처: 포켓몬 공식</figcaption>
       </figure>
       <div class="card-copy">
+        <div class="eyebrow">
+          <span class="num">{set.expansionMark} {collector(card)}</span>
+          {card.rarity && <span class={`rarity rarity-${card.rarity}`}>{card.rarity}</span>}
+        </div>
         <h1>
           {heading}
           {usesJapaneseName(card) && <span class="ja-fallback">일본판 기준</span>}
@@ -135,21 +145,39 @@ const jsonLd = {
           <dt>레어도</dt>
           <dd>
             {card.rarity
-              ? `${card.rarity}${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? ` ${rarityLabel[card.rarity]}` : ""}`
+              ? `${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? `${rarityLabel[card.rarity]} ` : ""}${card.rarity}`
               : "표기 없음"}
+          </dd>
+          <dt>레귤레이션</dt>
+          <dd class="regulation-cell">
+            <span class="regulation-mark" data-known={regulation.known ? "1" : "0"}>
+              {regulation.labelKo}
+            </span>
+            {regulation.standardLegal && (
+              <span class="standard-badge">{regulation.badgeKo}</span>
+            )}
+            <p class="regulation-cite">
+              {regulation.citeKo}.{" "}
+              <a href={OFFICIAL_REGULATION_QNA} rel="noopener noreferrer">공식 레귤레이션 안내</a>
+              {" / "}
+              <a href={OFFICIAL_REGULATION_PDF} rel="noopener noreferrer">2026 배틀 규정 PDF</a>
+            </p>
           </dd>
           <dt>종류</dt>
           <dd>{card.categoryKo}</dd>
           {card.type && (
             <>
               <dt>타입</dt>
-              <dd>{typeLabel[card.type] || card.typeKo}</dd>
+              <dd>
+                <span class={`swatch swatch-${card.type}`} aria-hidden="true"></span>
+                {typeLabel[card.type] || card.typeKo}
+              </dd>
             </>
           )}
           {card.hp && (
             <>
               <dt>HP</dt>
-              <dd>{card.hp}</dd>
+              <dd class="num">{card.hp}</dd>
             </>
           )}
           {card.illustrator && (
@@ -159,7 +187,7 @@ const jsonLd = {
             </>
           )}
           <dt>세트</dt>
-          <dd><a href={withBase(`sets/${set.slug}/`)}>{set.productNameKo}</a></dd>
+          <dd><a class="more" href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a></dd>
         </dl>
         <ul class="text-links">
           <li><a href={official} rel="noopener noreferrer">한국 공식 카드 페이지</a></li>
@@ -184,19 +212,63 @@ const jsonLd = {
     {opinion && <OpinionLine opinion={opinion} />}
     {(prev || next) && (
       <nav class="pager" aria-label="앞뒤 카드">
-        {prev && (
+        {prev ? (
           <a class="prev" href={cardHref(set, prev)}>
-            <span class="pager-kicker">이전</span>
-            <span class="pager-name">{collector(prev)} {cardHeading(prev)}</span>
+            <span class="pager-kicker">← 이전</span>
+            <span class="pager-name">{cardHeading(prev)}</span>
           </a>
-        )}
-        {next && (
+        ) : <span />}
+        {next ? (
           <a class="next" href={cardHref(set, next)}>
-            <span class="pager-kicker">다음</span>
-            <span class="pager-name">{collector(next)} {cardHeading(next)}</span>
+            <span class="pager-kicker">다음 →</span>
+            <span class="pager-name">{cardHeading(next)}</span>
           </a>
-        )}
+        ) : <span />}
       </nav>
     )}
   </div>
 </Base>
+
+<style>
+  .regulation-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.55rem;
+  }
+
+  .regulation-mark {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .regulation-mark[data-known="0"] {
+    font-weight: 500;
+    color: var(--faint);
+  }
+
+  .standard-badge {
+    display: inline-block;
+    padding: 0.12rem 0.45rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--fill) 70%, transparent);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .regulation-cite {
+    flex: 1 0 100%;
+    margin: 0;
+    color: var(--faint);
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+
+  .regulation-cite a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+</style>

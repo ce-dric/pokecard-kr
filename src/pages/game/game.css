@@ -1,15 +1,15 @@
 /* Scoped to /game so the parallel site redesign can land without fighting these rules. */
 .ptcg-page {
   --ptcg-bg: var(--bg, #eef0f3);
-  --ptcg-surface: var(--fill, #fff);
+  --ptcg-surface: var(--surface, #fff);
   --ptcg-ink: var(--ink, #16181d);
-  --ptcg-muted: var(--muted, #5c6570);
-  --ptcg-faint: var(--faint, #8a929c);
+  --ptcg-muted: var(--muted, #687080);
+  --ptcg-faint: var(--faint, #9aa1ad);
   --ptcg-accent: var(--accent, #3355d1);
-  --ptcg-accent-press: var(--accent-press, #2744b0);
-  --ptcg-rule: var(--rule, #dfe3e8);
-  --ptcg-rule-strong: var(--rule-strong, #cfd5dc);
-  --ptcg-radius: 12px;
+  --ptcg-accent-press: var(--accent-press, #2946b3);
+  --ptcg-rule: var(--rule, #e6e8ec);
+  --ptcg-rule-strong: var(--rule-strong, #d7dbe1);
+  --ptcg-radius: var(--r, 12px);
   --ptcg-yellow: #f0c419;
   --ptcg-cta: #d62828;
   --ptcg-cta-press: #b51f1f;
@@ -18,7 +18,7 @@
   --ptcg-mat-edge: #8fb85f;
   --ptcg-hand-well: #23272e;
   --ptcg-slot: rgba(255, 255, 255, 0.35);
-  --ptcg-font: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --ptcg-font: var(--font-body, "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif);
   width: min(1080px, calc(100% - 1.25rem));
   padding-bottom: 2rem;
   color: var(--ptcg-ink);

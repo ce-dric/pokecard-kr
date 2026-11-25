@@ -87,22 +87,38 @@ for (const cells of table.slice(1)) {
 }
 
 const ENERGY = new Set(["GRA", "FIR", "WAT", "LIG", "PSY", "FIG", "DAR", "MET"]);
-const PUBLISHED = ["m6", "m6a", "mee", "mem", "mez"];
+const STANDARD_MARKS = new Set(["H", "I", "J", ""]);
 const index = new Map();
+const nameJaIndex = new Map();
 const sets = [];
 const setDir = new URL("./src/data/sets/", root);
+
+function foldJa(value) {
+  return String(value || "").replaceAll("【", "").replaceAll("】", "").replace(/\s+/g, "");
+}
+
 for (const name of readdirSync(setDir).filter((file) => file.endsWith(".json")).sort()) {
   const set = JSON.parse(readFileSync(new URL(name, setDir), "utf8"));
   sets.push(set);
   for (const card of set.cards) {
+    const entry = { set, card };
     const keys = [];
     if (card.jpNumber) keys.push(`${set.expansionMark}\0${normNumber(card.jpNumber)}`);
     // Basic energies are stored with a blank expansion mark and the type code as the number.
     if (!card.jpNumber && card.category === "energy" && ENERGY.has(card.number)) keys.push(`\0${card.number}`);
     for (const key of keys) {
       const list = index.get(key) || [];
-      list.push({ set, card });
+      list.push(entry);
       index.set(key, list);
+    }
+    // Official Korean rows that already carry nameJa can fill gaps when the
+    // engine printing's set code + number are not paired in our set JSON yet.
+    if (card.nameStatus === "verified-kr" && card.nameKo && card.nameJa) {
+      const ja = foldJa(card.nameJa);
+      if (!ja || ja.includes("\u00b7")) continue;
+      const list = nameJaIndex.get(ja) || [];
+      list.push(entry);
+      nameJaIndex.set(ja, list);
     }
   }
 }
@@ -111,9 +127,35 @@ function engineKey(row) {
   return `${row.setCode}\0${normNumber(row.number)}`;
 }
 
+function findMatches(row) {
+  const byKey = index.get(engineKey(row));
+  if (byKey?.length) return byKey;
+  const ja = foldJa(row.nameJa);
+  if (!ja) return [];
+  return nameJaIndex.get(ja) || [];
+}
+
+function setMarksOnlyStandard(set) {
+  const marks = String(set.regulation || "")
+    .split(/[,\s]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return marks.length > 0 && marks.every((mark) => STANDARD_MARKS.has(mark) && mark !== "");
+}
+
+function standardRank(item) {
+  const mark = item.card.regulation == null ? "" : String(item.card.regulation);
+  if (mark === "H" || mark === "I" || mark === "J") return 0;
+  if (mark === "" && item.card.category === "energy" && ENERGY.has(item.card.number)) return 0;
+  if ((mark === "" || mark == null) && setMarksOnlyStandard(item.set)) return 1;
+  return 2;
+}
+
 function pickLink(matches) {
   const verified = matches.filter((item) => item.card.nameStatus === "verified-kr" && item.card.nameKo);
   const pool = (verified.length ? verified : matches).slice().sort((a, b) => {
+    const byMark = standardRank(a) - standardRank(b);
+    if (byMark) return byMark;
     const byDate = b.set.releaseDateKr.localeCompare(a.set.releaseDateKr);
     return byDate || a.card.number.localeCompare(b.card.number);
   });
@@ -131,16 +173,15 @@ function pickLink(matches) {
 }
 
 function samePrinting(left, right) {
-  const name = (value) => String(value || "").replaceAll("【", "").replaceAll("】", "").replace(/\s+/g, "");
-  return name(left.nameJa) !== "" && name(left.nameJa) === name(right.nameJa) && left.stage === right.stage && left.hp === right.hp;
+  return foldJa(left.nameJa) !== "" && foldJa(left.nameJa) === foldJa(right.nameJa) && left.stage === right.stage && left.hp === right.hp;
 }
 
 function preferredId(id) {
   const row = engineById.get(id);
-  if (!row || index.has(engineKey(row))) return id;
+  if (!row || findMatches(row).length) return id;
   let chosen = null;
   for (const other of engineById.values()) {
-    if (other.id === id || !samePrinting(row, other) || !index.has(engineKey(other))) continue;
+    if (other.id === id || !samePrinting(row, other) || !findMatches(other).length) continue;
     if (!chosen || other.id < chosen.id) chosen = other;
   }
   return chosen ? chosen.id : id;
@@ -184,7 +225,7 @@ for (const set of sets) {
 const wanted = new Set();
 for (const deck of nextDecks) for (const id of deck.cards) wanted.add(id);
 for (const row of engineById.values()) {
-  if (index.has(engineKey(row))) wanted.add(row.id);
+  if (findMatches(row).length) wanted.add(row.id);
 }
 
 const dest = new URL("./src/data/game-cards.json", root);
@@ -198,27 +239,28 @@ try {
 const cards = {};
 for (const id of [...wanted].sort((a, b) => a - b)) {
   const row = engineById.get(id) || { id, setCode: "", number: "", nameJa: null };
-  const matches = index.get(engineKey(row));
+  const matches = findMatches(row);
   const prior = previous.cards?.[String(id)];
-  const picture = !matches && prior && prior.setCode === row.setCode && prior.number === row.number ? prior.picture || null : null;
+  const picture = !matches.length && prior && prior.setCode === row.setCode && prior.number === row.number ? prior.picture || null : null;
   cards[String(id)] = {
     id,
     setCode: row.setCode,
     number: row.number,
     nameJa: row.nameJa,
-    link: matches ? pickLink(matches) : null,
+    link: matches.length ? pickLink(matches) : null,
     picture,
   };
 }
 
-const matches = Object.fromEntries(PUBLISHED.map((id) => [id, 0]));
+const setIds = sets.map((set) => set.id).sort();
+const matches = Object.fromEntries(setIds.map((id) => [id, 0]));
 for (const row of engineById.values()) {
-  const found = index.get(engineKey(row)) || [];
+  const found = findMatches(row);
   for (const setId of new Set(found.map((item) => item.set.id))) {
     if (setId in matches) matches[setId] += 1;
   }
 }
-const linked = Object.fromEntries(PUBLISHED.map((id) => [id, 0]));
+const linked = Object.fromEntries(setIds.map((id) => [id, 0]));
 for (const card of Object.values(cards)) {
   const setId = card.link?.setId;
   if (setId && setId in linked) linked[setId] += 1;
@@ -236,6 +278,7 @@ const output = {
 };
 writeFileSync(dest, `${JSON.stringify(output, null, 2)}\n`);
 const withPicture = Object.values(cards).filter((card) => card.picture).length;
+const withLink = Object.values(cards).filter((card) => card.link).length;
 const textOnly = Object.values(cards).filter((card) => !card.link && !card.picture).length;
-console.log(`wrote ${Object.keys(cards).length} cards; linked ${JSON.stringify(linked)}; match ${JSON.stringify(matches)}`);
-console.log(`deck slots rewritten ${swapped}; jp pictures kept ${withPicture}; text fallback ${textOnly}`);
+console.log(`wrote ${Object.keys(cards).length} cards; linked ${withLink}; jp pictures ${withPicture}; text fallback ${textOnly}`);
+console.log(`deck slots rewritten ${swapped}; linked by set ${JSON.stringify(Object.fromEntries(Object.entries(linked).filter(([, n]) => n)))}`);
