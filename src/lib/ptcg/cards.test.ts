@@ -250,6 +250,7 @@ test("discard, stadium, and choices carry thumbnails", () => {
       option: [
         { type: 3, area: 2, index: 0, playerIndex: 0 },
         { type: 3, area: 12, index: 0, playerIndex: 0 },
+        { type: 3, area: 1, index: 20, playerIndex: 0 },
         { type: 3, area: 3, index: 0, playerIndex: 0 },
         { type: 3, area: 3, index: 1, playerIndex: 1 },
         { type: 10, area: 7, index: 0 },
@@ -262,7 +263,9 @@ test("discard, stadium, and choices carry thumbnails", () => {
       result: -1,
       energyAttached: false,
       stadium: [{ id: 1264, serial: 3 }],
-      looking: [{ id: 1121, serial: 8 }],
+      looking: Array.from({ length: 21 }, (_, index) =>
+        index === 20 ? { id: 721, serial: 21 } : { id: 1121, serial: index + 1 },
+      ),
       players: [
         { ...empty, handCount: 1, hand: [{ id: 721, serial: 1 }], discard: [{ id: 1121, serial: 2 }] },
         { ...empty, hand: null, handCount: 5, discard: [{ id: 756, serial: 9 }, { id: 723, serial: 4 }] },
@@ -275,11 +278,14 @@ test("discard, stadium, and choices carry thumbnails", () => {
   assert.equal(view.options[0]?.image, mapping.cards["721"]?.link?.image);
   assert.equal(view.options[0]?.fullImage, "images/cards/m1s/016.webp");
   assert.equal(view.options[1]?.image, mapping.cards["1121"]?.link?.image);
-  assert.equal(view.options[2]?.image, mapping.cards["1121"]?.link?.image);
-  assert.equal(view.options[2]?.fullImage, mapping.cards["1121"]?.link?.image?.replace("-thumb.webp", ".webp"));
-  assert.equal(view.options[3]?.image, mapping.cards["723"]?.link?.image);
-  assert.equal(view.options[4]?.image, mapping.cards["1264"]?.link?.image);
-  assert.equal(view.options[4]?.label, "특성");
+  assert.equal(view.options[2]?.image, mapping.cards["721"]?.link?.image);
+  assert.equal(view.options[2]?.label, "가이오가");
+  assert.doesNotMatch(view.options[2]?.label || "", /^덱 /);
+  assert.equal(view.options[3]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.options[3]?.fullImage, mapping.cards["1121"]?.link?.image?.replace("-thumb.webp", ".webp"));
+  assert.equal(view.options[4]?.image, mapping.cards["723"]?.link?.image);
+  assert.equal(view.options[5]?.image, mapping.cards["1264"]?.link?.image);
+  assert.equal(view.options[5]?.label, "특성");
   assert.equal(view.stadium?.image, mapping.cards["1264"]?.link?.image);
   const page = readFileSync(new URL("src/lib/ptcg/ui.ts", root), "utf8");
   const board = readFileSync(new URL("src/lib/ptcg/battle-board.ts", root), "utf8");

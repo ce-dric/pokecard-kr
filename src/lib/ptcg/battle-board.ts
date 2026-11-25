@@ -11,6 +11,7 @@ import {
   boardPlayable,
   fallbackOptionsHtml,
   handActionMenuHtml,
+  handTapHintHtml,
   highlightClass,
   pickerHtml,
   quickActionsHtml,
@@ -65,6 +66,7 @@ export interface BoardPaintOptions {
   highlights?: BoardHighlight[];
   ui?: ViewUiState;
   muted?: boolean;
+  showHandHint?: boolean;
 }
 
 export const EMPTY_UI: ViewUiState = { selected: null, targets: [], sheet: "none" };
@@ -80,6 +82,8 @@ interface CardRenderOpts {
   selected?: CardSpot | null;
   targets?: CardSpot[];
   draggable?: boolean;
+  /** Hand cards stay tappable for the action bar even when not playable. */
+  forceAct?: boolean;
 }
 
 interface SideRenderOpts {
@@ -126,7 +130,7 @@ function cardHtml(card: FaceCard, opts: CardRenderOpts): string {
   const playable = opts.playable || [];
   const targets = opts.targets || [];
   const hi = highlightClass(opts.spot, playable, opts.selected || null, targets);
-  const canAct = spotCanAct(opts.spot, playable, targets, opts.draggable);
+  const canAct = Boolean(opts.forceAct) || spotCanAct(opts.spot, playable, targets, opts.draggable);
   const shell = spotAttrs(opts.spot, canAct, Boolean(opts.draggable));
   if (card.hidden) {
     return `<div class="ptcg-card ${hi}"${shell}><div class="ptcg-back" aria-label="뒷면"></div></div>`;
@@ -313,6 +317,7 @@ function fanHand(cards: FaceCard[], opts: SideRenderOpts): string {
         selected: opts.selected,
         targets: opts.targets,
         draggable: canDrag,
+        forceAct: opts.interactive,
       });
       return `<div class="ptcg-fan-card ptcg-hand-stack" data-card-id="${group.card.id ?? ""}" data-count="${group.count}" style="--fan-i:${offset};--fan-rot:${rotate}deg;--fan-lift:${lift}px">${layers}${front}${badge}</div>`;
     })
@@ -376,6 +381,7 @@ function battleBoardHtml(
   muted = true,
   botTurn = false,
   highlights: BoardHighlight[] = [],
+  showHandHint = false,
 ): string {
   const playable = !botTurn && view.interaction === "board" ? boardPlayable(view) : [];
   const youOpts: SideRenderOpts = {
@@ -420,6 +426,10 @@ function battleBoardHtml(
     view.phase === "over"
       ? `<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`
       : "";
+  const selectedHand =
+    ui.sheet === "hand" && ui.selected?.area === 2 && ui.selected.playerIndex === 0
+      ? view.you.hand?.[ui.selected.index] || null
+      : null;
   const handMenu =
     !botTurn && ui.sheet === "hand" && ui.selected
       ? handActionMenuHtml(
@@ -431,8 +441,12 @@ function battleBoardHtml(
               option.source.playerIndex === ui.selected!.playerIndex &&
               (option.kind === "play" || option.kind === "attach" || option.kind === "evolve"),
           ),
+          selectedHand
+            ? { full: selectedHand.fullImage || selectedHand.image || "", alt: selectedHand.name }
+            : null,
         )
       : "";
+  const handHint = !botTurn ? handTapHintHtml(showHandHint) : "";
   const attackSheet = !botTurn && ui.sheet === "attack" ? attackSheetHtml(view) : "";
   const picker = !botTurn && view.interaction === "picker" ? pickerHtml(view) : "";
   const quick =
@@ -483,6 +497,7 @@ function battleBoardHtml(
     <div class="ptcg-controls ptcg-battle-controls">
       <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
       <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
+      ${handHint}
       ${quick}
       ${handMenu}
       ${attackSheet}
@@ -517,6 +532,7 @@ export function boardHtml(
     paintOrUi.muted ?? muted,
     Boolean(paintOrUi.botTurn),
     paintOrUi.highlights || [],
+    Boolean(paintOrUi.showHandHint),
   );
 }
 

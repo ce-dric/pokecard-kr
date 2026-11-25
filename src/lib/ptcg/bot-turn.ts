@@ -12,7 +12,7 @@ function optionTarget(obs: Observation, option: Option) {
   const owner = option.playerIndex ?? you;
   const player = obs.current.players[owner];
   if (option.type === 7) return obs.current.players[you]?.hand?.[option.index ?? -1];
-  if (option.area === 12) return obs.current.looking?.[option.index ?? -1];
+  if (option.area === 1 || option.area === 12) return obs.current.looking?.[option.index ?? -1];
   if (option.area === 7) return obs.current.stadium?.[option.index ?? -1];
   if (!player) return undefined;
   if (option.area === 2 && owner === you) return player.hand?.[option.index ?? -1];

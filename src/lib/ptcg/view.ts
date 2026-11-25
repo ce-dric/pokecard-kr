@@ -214,7 +214,8 @@ export function optionTarget(obs: Observation, option: Option) {
   const owner = option.playerIndex ?? you;
   const player = obs.current.players[owner];
   if (option.type === 7) return obs.current.players[you]?.hand?.[option.index ?? -1];
-  if (option.area === 12) return obs.current.looking?.[option.index ?? -1];
+  // Deck search reveals faces into looking; options may cite area 1 (덱) or 12 (확인).
+  if (option.area === 1 || option.area === 12) return obs.current.looking?.[option.index ?? -1];
   // Stadium is one shared list. Ability and discard options omit playerIndex.
   if (option.area === 7) return obs.current.stadium?.[option.index ?? -1];
   if (!player) return undefined;
@@ -264,6 +265,9 @@ export function optionLabel(
     case 5: {
       const card = optionTarget(obs, option);
       const area = AREA_KO[option.area ?? -1] || "카드";
+      if (card && (option.area === 1 || option.area === 12)) {
+        return named(card.id) || `${area} ${(option.index ?? 0) + 1}`;
+      }
       return card ? `${area} ${named(card.id)}` : `${area} ${(option.index ?? 0) + 1}`;
     }
     case 6:

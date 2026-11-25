@@ -22,20 +22,59 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
+const SPOTLIGHT_PAD = 6;
+
+/** Position the spotlight hole on the target's box and keep the coach off that box. */
+export function layoutTutorialChrome(root: ParentNode): void {
+  const target = root.querySelector("[data-tutorial-active='true']");
+  const spot = root.querySelector("[data-tutorial-spotlight]");
+  const coach = root.querySelector("[data-tutorial-coach]");
+  if (!(spot instanceof HTMLElement)) return;
+
+  if (!(target instanceof HTMLElement)) {
+    spot.hidden = true;
+    spot.style.width = "0";
+    spot.style.height = "0";
+    if (coach instanceof HTMLElement) coach.dataset.placement = "bottom";
+    return;
+  }
+
+  const rect = target.getBoundingClientRect();
+  const top = Math.max(0, rect.top - SPOTLIGHT_PAD);
+  const left = Math.max(0, rect.left - SPOTLIGHT_PAD);
+  const width = Math.max(rect.width + SPOTLIGHT_PAD * 2, 1);
+  const height = Math.max(rect.height + SPOTLIGHT_PAD * 2, 1);
+  spot.hidden = false;
+  spot.style.top = `${top}px`;
+  spot.style.left = `${left}px`;
+  spot.style.width = `${width}px`;
+  spot.style.height = `${height}px`;
+
+  if (coach instanceof HTMLElement) {
+    const mid = rect.top + rect.height / 2;
+    const placeTop = mid > (typeof window !== "undefined" ? window.innerHeight * 0.45 : 400);
+    coach.dataset.placement = placeTop ? "top" : "bottom";
+  }
+
+  if (!prefersReducedMotion()) {
+    target.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+  } else {
+    target.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+  }
+}
+
 function focusHighlight(root: Element, highlight: string | null): void {
   if (!highlight) return;
   const target = root.querySelector(`[data-tutorial-target="${highlight}"]`);
   if (!(target instanceof HTMLElement)) return;
   if (typeof target.focus === "function") {
     try {
-      target.focus({ preventScroll: prefersReducedMotion() });
+      target.focus({ preventScroll: true });
     } catch {
       target.focus();
     }
   }
-  if (!prefersReducedMotion()) {
-    target.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }
+  layoutTutorialChrome(root);
 }
 
 export interface TutorialMountOptions {
@@ -53,6 +92,16 @@ export interface TutorialHost {
 export function mountTutorial(root: Element, options: TutorialMountOptions): TutorialHost {
   let state: TutorialState | null = null;
   let host: HTMLElement | null = null;
+  let layoutFrame = 0;
+
+  const scheduleLayout = (): void => {
+    if (typeof window === "undefined") return;
+    if (layoutFrame) window.cancelAnimationFrame(layoutFrame);
+    layoutFrame = window.requestAnimationFrame(() => {
+      layoutFrame = 0;
+      layoutTutorialChrome(root);
+    });
+  };
 
   const ensureHost = (): HTMLElement => {
     if (host && host.isConnected) return host;
@@ -98,6 +147,7 @@ export function mountTutorial(root: Element, options: TutorialMountOptions): Tut
     const shell = ensureHost();
     shell.innerHTML = overlayHtml(state, basePath());
     focusHighlight(root, step.highlight);
+    scheduleLayout();
   };
 
   const dispatch = (action: Parameters<typeof applyTutorialAction>[1]): void => {
@@ -154,6 +204,11 @@ export function mountTutorial(root: Element, options: TutorialMountOptions): Tut
     },
     true,
   );
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", scheduleLayout);
+    window.addEventListener("scroll", scheduleLayout, true);
+  }
 
   return {
     start() {

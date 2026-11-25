@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  COIN_AUTO_ADVANCE_MS,
   coinMapsToFirst,
   coinTossHtml,
+  createCoinAutoAdvance,
   goFirstOptionIndex,
   mulliganHtml,
   optionIndexForHandCard,
@@ -92,9 +94,61 @@ test("coin toss html flips without a middle dot", () => {
   assert.match(idle, /코인 토스/);
   const done = coinTossHtml({ flipped: true, side: "heads", reducedMotion: true });
   assert.match(done, /data-coin-confirm/);
+  assert.match(done, /data-coin-auto/);
+  assert.match(done, /3초 뒤 자동으로 넘어갑니다/);
   assert.match(done, /내가 선공합니다/);
   assert.equal(done.includes("\u00b7"), false);
   assert.equal(idle.includes("\u00b7"), false);
+});
+
+test("coin toss auto-advances after three seconds and confirm can clear it", () => {
+  assert.equal(COIN_AUTO_ADVANCE_MS, 3000);
+  const calls: number[] = [];
+  let now = 0;
+  const timers = new Map<number, { fn: () => void; at: number }>();
+  let nextId = 1;
+  const advance = createCoinAutoAdvance({
+    delayMs: COIN_AUTO_ADVANCE_MS,
+    setTimeout: (fn, ms) => {
+      const id = nextId++;
+      timers.set(id, { fn, at: now + ms });
+      return id;
+    },
+    clearTimeout: (id) => {
+      timers.delete(id as number);
+    },
+  });
+  const flush = (ms: number) => {
+    now += ms;
+    for (const [id, timer] of [...timers.entries()]) {
+      if (timer.at <= now) {
+        timers.delete(id);
+        timer.fn();
+      }
+    }
+  };
+  advance.arm(() => calls.push(1));
+  flush(2999);
+  assert.deepEqual(calls, []);
+  flush(1);
+  assert.deepEqual(calls, [1]);
+  advance.arm(() => calls.push(2));
+  advance.clear();
+  flush(5000);
+  assert.deepEqual(calls, [1]);
+});
+
+test("setup board keeps five bench slots and active toward the center", () => {
+  const html = setupHtml(
+    baseView({
+      context: 1,
+      you: side([card("가이오가")], [card("가이오가")]),
+      opp: side(null, [card("돌살이")]),
+    }),
+  );
+  assert.match(html, /ptcg-pre-side--opp[\s\S]*ptcg-pre-bench[\s\S]*ptcg-pre-active/);
+  assert.match(html, /ptcg-pre-side--you[\s\S]*ptcg-pre-active[\s\S]*ptcg-pre-bench/);
+  assert.equal((html.match(/aria-label="벤치"/g) || []).length, 10);
 });
 
 test("setup prompt clarifies bench count and face-down placement", () => {
