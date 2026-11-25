@@ -24,6 +24,11 @@ const card = (name: string, image: string | null = "game/cards/721-thumb.webp"):
   energies: [],
   kind: "포켓몬",
   typeLabel: "물",
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 });
 
 function side(hand: FaceCard[] | null, active: FaceCard[] = [], bench: FaceCard[] = []): SideView {
@@ -54,6 +59,7 @@ function baseView(over: Partial<GameView> = {}): GameView {
     turn: 0,
     resultText: null,
     stadium: null,
+    interaction: "board",
     ...over,
   };
 }

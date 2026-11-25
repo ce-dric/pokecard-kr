@@ -1,27 +1,27 @@
 import mappingFile from "../../data/game-cards.json" with { type: "json" };
+import {
+  BOT_DIFFICULTIES,
+  BOT_DIFFICULTY_LABELS,
+  type BotDifficulty,
+  parseBotDifficulty,
+  readStoredBotDifficulty,
+  writeStoredBotDifficulty,
+} from "./difficulty.ts";
 import { decks } from "./decks.ts";
 import { esc, fullFromThumb, imageSrc } from "./html.ts";
 import type { CardMapping, DeckFile } from "./types.ts";
 
 const mapping = mappingFile as CardMapping;
 
-export type Difficulty = "easy" | "normal" | "hard";
-
 export const RANDOM_DECK = "random";
-
-export const DIFFICULTY_OPTIONS: ReadonlyArray<{ id: Difficulty; labelKo: string }> = [
-  { id: "easy", labelKo: "쉬움" },
-  { id: "normal", labelKo: "보통" },
-  { id: "hard", labelKo: "어려움" },
-];
 
 export interface LobbyPrefs {
   mine: string;
   theirs: string;
-  difficulty: Difficulty;
+  difficulty: BotDifficulty;
 }
 
-const STORAGE_KEY = "ptcg.lobby";
+const DECK_STORAGE_KEY = "ptcg.lobby";
 
 /** Presentation fields for lobby deck cards. Kept here so decks.json stays list-only. */
 const DECK_BLURBS: Record<
@@ -75,34 +75,35 @@ export function allDeckCards(): DeckCardInfo[] {
   return decks.map(deckCardInfo);
 }
 
-export function isDifficulty(value: string): value is Difficulty {
-  return value === "easy" || value === "normal" || value === "hard";
-}
-
-export function defaultPrefs(): LobbyPrefs {
+export function defaultPrefs(
+  storage: Pick<Storage, "getItem"> | null | undefined = globalStorage(),
+): LobbyPrefs {
   return {
     mine: decks[0]?.id ?? "sample",
     theirs: RANDOM_DECK,
-    difficulty: "easy",
+    difficulty: readStoredBotDifficulty(storage),
   };
 }
 
 export function loadPrefs(storage: Pick<Storage, "getItem"> | null | undefined = globalStorage()): LobbyPrefs {
-  const fallback = defaultPrefs();
+  const fallback = defaultPrefs(storage);
   if (!storage) return fallback;
   try {
-    const raw = storage.getItem(STORAGE_KEY);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw) as Partial<LobbyPrefs>;
-    const mine = typeof parsed.mine === "string" && findDeckId(parsed.mine) ? parsed.mine : fallback.mine;
-    const theirs =
-      parsed.theirs === RANDOM_DECK || (typeof parsed.theirs === "string" && findDeckId(parsed.theirs))
-        ? parsed.theirs
-        : fallback.theirs;
-    const difficulty = typeof parsed.difficulty === "string" && isDifficulty(parsed.difficulty)
-      ? parsed.difficulty
-      : fallback.difficulty;
-    return { mine, theirs, difficulty };
+    const raw = storage.getItem(DECK_STORAGE_KEY);
+    let mine = fallback.mine;
+    let theirs = fallback.theirs;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<LobbyPrefs>;
+      if (typeof parsed.mine === "string" && findDeckId(parsed.mine)) mine = parsed.mine;
+      if (parsed.theirs === RANDOM_DECK || (typeof parsed.theirs === "string" && findDeckId(parsed.theirs))) {
+        theirs = parsed.theirs;
+      }
+    }
+    return {
+      mine,
+      theirs,
+      difficulty: readStoredBotDifficulty(storage),
+    };
   } catch {
     return fallback;
   }
@@ -110,11 +111,12 @@ export function loadPrefs(storage: Pick<Storage, "getItem"> | null | undefined =
 
 export function savePrefs(
   prefs: LobbyPrefs,
-  storage: Pick<Storage, "setItem"> | null | undefined = globalStorage(),
+  storage: (Pick<Storage, "setItem"> & Pick<Storage, "getItem">) | null | undefined = globalStorage(),
 ): void {
   if (!storage) return;
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    storage.setItem(DECK_STORAGE_KEY, JSON.stringify({ mine: prefs.mine, theirs: prefs.theirs }));
+    writeStoredBotDifficulty(storage, parseBotDifficulty(prefs.difficulty));
   } catch {
     // Ignore quota / private-mode failures.
   }
@@ -170,10 +172,10 @@ function randomOpponentButton(current: string): string {
   </button>`;
 }
 
-function difficultyButtons(current: Difficulty): string {
-  return DIFFICULTY_OPTIONS.map((option) => {
-    const pressed = option.id === current ? "true" : "false";
-    return `<button type="button" data-difficulty="${option.id}" aria-pressed="${pressed}">${esc(option.labelKo)}</button>`;
+function difficultyButtons(current: BotDifficulty): string {
+  return BOT_DIFFICULTIES.map((id) => {
+    const pressed = id === current ? "true" : "false";
+    return `<button type="button" data-difficulty="${id}" aria-pressed="${pressed}">${esc(BOT_DIFFICULTY_LABELS[id])}</button>`;
   }).join("");
 }
 
