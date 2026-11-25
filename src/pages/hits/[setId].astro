@@ -73,23 +73,33 @@ function rarityText(code: string) {
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
-    <header class="mast">
-      <p class="crumbs">
-        <a href={withBase("")}>홈</a> /
-        <a href={withBase("hits/")}>{HITS_NAV_LABEL}</a> /
-        {set.nameKo}
-      </p>
+    <nav class="crumbs">
+      <a href={withBase("")}>세트</a><span>/</span>
+      <a href={withBase(`sets/${set.slug}/`)}>{set.nameKo}</a><span>/</span>
+      <span>{HITS_NAV_LABEL}</span>
+    </nav>
+    <header class="mast" style="padding-top:20px">
+      <div class="eyebrow"><span class="num">{set.expansionMark}</span><span>{set.nameKo}</span></div>
       <div class="mast-row">
-        <h1>{set.nameKo} 힛카드</h1>
+        <h1>힛카드 <span class="num">{count}</span>장</h1>
         <a class="mast-aside" href={withBase(`sets/${set.slug}/`)}>카드 리스트</a>
       </div>
       {note ? (
         <p class="lede">{note}</p>
       ) : (
         <p class="lede">
-          {set.productNameKo}에서 공식 상세에 높은 레어도로 적힌 {count}장입니다.
-          카드를 누르면 이름과 레어도를 볼 수 있습니다.
+          AR 이상 레어도만 모았습니다. 높은 레어도부터 보여 드립니다.
         </p>
+      )}
+      {groups.length > 0 && (
+        <div class="jump">
+          {groups.map((group) => (
+            <a class="chip" href={`#${set.id}-${group.code}`}>
+              {group.code}{rarityText(group.code) ? ` ${rarityText(group.code)}` : ""}
+              <span class="c">{group.cards.length}</span>
+            </a>
+          ))}
+        </div>
       )}
     </header>
     <AdSlot id={`${set.id}-hits`} />
@@ -102,25 +112,13 @@ function rarityText(code: string) {
     {groups.length > 0 && (
       <>
       <div data-hit-grid>
-        <ul class="rarity-index">
-          {groups.map((group) => (
-            <li>
-              <a href={`#${set.id}-${group.code}`}>
-                <span class={`rarity rarity-${group.code}`}>{group.code}</span>
-                <span class="rarity-name">{rarityText(group.code)}</span>
-                <span class="num">{group.cards.length}장</span>
-              </a>
-            </li>
-          ))}
-        </ul>
         {groups.map((group, groupIndex) => (
-          <section class="rarity-block" id={`${set.id}-${group.code}`}>
-            <h2>
-              <span class={`rarity rarity-${group.code}`}>{group.code}</span>
-              {rarityText(group.code)}
-              <span class="rarity-count">{group.cards.length}장</span>
-            </h2>
-            <div class="grid grid-hits">
+          <section class={`hsec rarity-block`} id={`${set.id}-${group.code}`}>
+            <div class="hsec-h">
+              <h2><span class="num">{group.code}</span>{rarityText(group.code)}</h2>
+              <span class="num">{group.cards.length}장</span>
+            </div>
+            <div class:list={["grid", "grid-hits", "hgrid", { lg: group.code === "MUR" || group.code === "SAR" || group.code === "UR" }]}>
               {group.cards.map((card, cardIndex) => (
                 <CardTile set={set} card={card} eager={groupIndex === 0 && cardIndex === 0} />
               ))}
