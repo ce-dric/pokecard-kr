@@ -1,3 +1,10 @@
+import {
+  interactionMode,
+  mapOption,
+  type ActionKind,
+  type CardSpot,
+  type InteractionMode,
+} from "./actions.ts";
 import type {
   AttackData,
   BattleLog,
@@ -70,6 +77,11 @@ export interface FaceCard {
   energies: string[];
   kind: string | null;
   typeLabel: string | null;
+  tools: string[];
+  conditions: string[];
+  ex: boolean;
+  megaEx: boolean;
+  prizeValue: number | null;
 }
 
 function fullFromThumb(path: string | null | undefined): string | null {
@@ -90,7 +102,19 @@ const EMPTY_FACE: FaceCard = {
   energies: [],
   kind: null,
   typeLabel: null,
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
+
+export function prizeValueFor(data: CardData | undefined): number | null {
+  if (!data) return null;
+  if (data.megaEx) return 3;
+  if (data.ex) return 2;
+  return null;
+}
 
 export function cardFace(
   id: number,
@@ -105,6 +129,9 @@ export function cardFace(
   const name = nameKo || (data?.name ? cleanText(data.name) : `카드 ${id}`);
   const energyType = data?.energyType;
   const thumb = link?.image || row?.picture?.thumb || null;
+  const tools = (poke?.tools || []).map((tool) => cardName(tool.id, cards, mapping));
+  const ex = Boolean(data?.ex);
+  const megaEx = Boolean(data?.megaEx);
   return {
     id,
     name,
@@ -116,6 +143,11 @@ export function cardFace(
     energies: (poke?.energies || []).map((type) => SWATCH[type] || "colorless"),
     kind: data ? KIND_KO[data.cardType] || null : null,
     typeLabel: energyType != null && TYPE_KO[energyType] ? TYPE_KO[energyType] : null,
+    tools,
+    conditions: [],
+    ex,
+    megaEx,
+    prizeValue: prizeValueFor(data),
   };
 }
 
@@ -123,16 +155,18 @@ function pokemonFace(
   poke: PokemonState | null,
   cards: Map<number, CardData>,
   mapping: CardMapping,
+  activeConditions: string[] = [],
 ): FaceCard {
   if (!poke) return EMPTY_FACE;
-  return cardFace(poke.id, cards, mapping, poke);
+  const face = cardFace(poke.id, cards, mapping, poke);
+  return activeConditions.length ? { ...face, conditions: activeConditions } : face;
 }
 
 function conditions(player: PlayerView): string[] {
   const names: string[] = [];
   if (player.poisoned) names.push("독");
   if (player.burned) names.push("화상");
-  if (player.asleep) names.push("잠");
+  if (player.asleep) names.push("잠듦");
   if (player.paralyzed) names.push("마비");
   if (player.confused) names.push("혼란");
   return names;
@@ -161,8 +195,9 @@ function sideView(
     playerIndex === humanSeat && player.hand
       ? player.hand.map((card) => cardFace(card.id, cards, mapping))
       : null;
+  const status = conditions(player);
   return {
-    active: (player.active || []).map((poke) => pokemonFace(poke, cards, mapping)),
+    active: (player.active || []).map((poke) => pokemonFace(poke, cards, mapping, status)),
     bench: (player.bench || []).map((poke) => pokemonFace(poke, cards, mapping)),
     hand,
     handCount: player.handCount,
@@ -170,11 +205,11 @@ function sideView(
     discard: (player.discard || []).map((card) => cardFace(card.id, cards, mapping)),
     discardCount: player.discard?.length || 0,
     deckCount: player.deckCount,
-    conditions: conditions(player),
+    conditions: status,
   };
 }
 
-function optionTarget(obs: Observation, option: Option) {
+export function optionTarget(obs: Observation, option: Option) {
   const you = obs.current.yourIndex;
   const owner = option.playerIndex ?? you;
   const player = obs.current.players[owner];
@@ -324,6 +359,13 @@ export interface ChoiceOption {
   label: string;
   image: string | null;
   fullImage: string | null;
+  kind: ActionKind;
+  source: CardSpot | null;
+  target: CardSpot | null;
+  attackId?: number;
+  damage?: number;
+  energies?: string[];
+  playAs?: "bench" | "use";
 }
 
 export interface GameView {
@@ -332,6 +374,7 @@ export interface GameView {
   minCount: number;
   maxCount: number;
   options: ChoiceOption[];
+  interaction: InteractionMode;
   log: string[];
   you: SideView;
   opp: SideView;
@@ -354,6 +397,7 @@ export function buildView(
   const over = current.result !== -1;
   const choosing = !over && current.yourIndex === humanSeat && obs.select;
   const stadium = current.stadium?.[0];
+  const myTurn = !over && current.yourIndex === humanSeat;
   return {
     phase: over ? "over" : "choose",
     prompt: choosing && obs.select ? selectionPrompt(obs.select) : over ? "대전이 끝났습니다" : "상대가 고르는 중",
@@ -364,14 +408,24 @@ export function buildView(
         ? obs.select.option.map((option, index) => {
             const target = optionTarget(obs, option);
             const face = target ? cardFace(target.id, catalogs.cards, mapping) : null;
+            const mapped = mapOption(obs, option, index, catalogs.cards);
+            const attack = mapped.attackId == null ? undefined : catalogs.attacks.get(mapped.attackId);
             return {
               index,
               label: optionLabel(obs, option, catalogs.cards, catalogs.attacks, mapping),
               image: face?.image || null,
               fullImage: face?.fullImage || null,
+              kind: mapped.kind,
+              source: mapped.source,
+              target: mapped.target,
+              attackId: mapped.attackId,
+              damage: attack?.damage,
+              energies: (attack?.energies || []).map((type) => SWATCH[type] || "colorless"),
+              playAs: mapped.playAs,
             };
           })
         : [],
+    interaction: interactionMode(obs.select, over ? "over" : "choose", myTurn),
     log,
     you: sideView(yours, humanSeat, humanSeat, catalogs.cards, mapping),
     opp: sideView(theirs, 1 - humanSeat, humanSeat, catalogs.cards, mapping),

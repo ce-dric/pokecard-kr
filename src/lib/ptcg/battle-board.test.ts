@@ -15,6 +15,11 @@ const card: FaceCard = {
   energies: ["colorless"],
   kind: "포켓몬",
   typeLabel: "무색",
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
 
 const energy: FaceCard = {
@@ -28,6 +33,11 @@ const energy: FaceCard = {
   energies: [],
   kind: "에너지",
   typeLabel: "무색",
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
 
 function side(hand: FaceCard[] | null, prizeCount = 6): SideView {
@@ -50,9 +60,26 @@ const view: GameView = {
   minCount: 1,
   maxCount: 1,
   options: [
-    { index: 0, label: "패 이브이", image: card.image, fullImage: card.fullImage },
-    { index: 1, label: "턴 종료", image: null, fullImage: null },
+    {
+      index: 0,
+      label: "패 이브이",
+      image: card.image,
+      fullImage: card.fullImage,
+      kind: "select",
+      source: { area: 2, index: 0, playerIndex: 0 },
+      target: null,
+    },
+    {
+      index: 1,
+      label: "턴 종료",
+      image: null,
+      fullImage: null,
+      kind: "end",
+      source: null,
+      target: null,
+    },
   ],
+  interaction: "picker",
   log: ["내 턴", "드로우"],
   you: side([card, card, card, energy, energy], 4),
   opp: side(null, 5),
@@ -80,16 +107,15 @@ test("battle board is a fixed app shell with HUD, fan hand, and log drawer", () 
   assert.match(html, /ptcg-hand--backs/);
   assert.match(html, /aria-label="상대 패 5"/);
   assert.doesNotMatch(html, /<details class="ptcg-log-panel"/);
-  assert.doesNotMatch(html, /ptcg-options[\s\S]*턴 종료/);
 });
 
 test("identical hand cards collapse into a channel-style stack with a count badge", () => {
   const groups = groupHandCards([card, energy, card, card, energy]);
   assert.deepEqual(
-    groups.map((group) => [group.card.id, group.count]),
+    groups.map((group) => [group.card.id, group.count, group.indices]),
     [
-      [721, 3],
-      [14, 2],
+      [721, 3, [0, 2, 3]],
+      [14, 2, [1, 4]],
     ],
   );
   const html = boardHtml(view);
@@ -119,7 +145,7 @@ test("turn owner label follows the prompt and phase", () => {
   assert.equal(turnOwnerLabel({ ...view, phase: "over", prompt: "대전이 끝났습니다" }), "종료");
 });
 
-test("battle CSS locks the viewport and hides site chrome", () => {
+test("battle CSS puts active toward the center and bench toward each edge", () => {
   const css = readFileSync(new URL("../../pages/game/battle.css", import.meta.url), "utf8");
   assert.equal(css.includes("\u00b7"), false);
   assert.match(css, /100dvh/);
@@ -128,6 +154,14 @@ test("battle CSS locks the viewport and hides site chrome", () => {
   assert.match(css, /\.ptcg-hand--fan/);
   assert.match(css, /\.ptcg-log-drawer/);
   assert.match(css, /aspect-ratio:\s*10\s*\/\s*16/);
+  assert.match(
+    css,
+    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"prizes active deck"[\s\S]*"prizes bench trash"/,
+  );
+  assert.match(
+    css,
+    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"deck bench prizes"[\s\S]*"trash active prizes"/,
+  );
 });
 
 test("the game page loads battle CSS next to the lobby styles", () => {

@@ -1,15 +1,37 @@
+import { findDropOption, handActions, targetsFor, type CardSpot } from "./actions.ts";
 import {
   boardHtml,
   closeLogDrawer,
   closePileSheet,
+  EMPTY_UI,
   openLogDrawer,
   openPileSheet,
   setBattleChrome,
+  type BoardPaintOptions,
+  type ViewUiState,
 } from "./battle-board.ts";
+import { boardHighlights } from "./bot-highlight.ts";
+import { botStepDelayMs, playBotSteps, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
+import {
+  BOT_DIFFICULTIES,
+  BOT_DIFFICULTY_LABELS,
+  type BotDifficulty,
+  readStoredBotDifficulty,
+  writeStoredBotDifficulty,
+} from "./difficulty.ts";
+import {
+  applyBoardFx,
+  collectFxEvents,
+  prefersReducedMotion,
+  sfxMutedDefault,
+  writeSfxMuted,
+} from "./fx.ts";
+import { mappedFromView, parseSpot } from "./interact-ui.ts";
 import type { GameView } from "./view.ts";
 
 export { boardHtml } from "./battle-board.ts";
+export type { BoardPaintOptions, ViewUiState } from "./battle-board.ts";
 
 interface WorkerIn {
   type: "start" | "restart" | "choose";
@@ -17,13 +39,16 @@ interface WorkerIn {
   deck0?: number[];
   deck1?: number[];
   indices?: number[];
+  difficulty?: BotDifficulty;
 }
 
 interface WorkerOut {
   type: "view" | "error";
   view?: GameView;
   message?: string;
+  steps?: BotPlaybackStep[];
 }
+
 
 function esc(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => {
@@ -34,6 +59,7 @@ function esc(value: string): string {
     return "&#39;";
   });
 }
+
 
 interface Control {
   tagName: string;
@@ -103,9 +129,17 @@ export function mountGame(root: Element | null): void {
   let worker: Worker | null = null;
   let mine = decks[0]?.id ?? "sample";
   let theirs = decks[1]?.id ?? decks[0]?.id ?? "sample";
+  let difficulty: BotDifficulty = readStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage);
   let picked = new Set<number>();
   let latest: GameView | null = null;
+  let previous: GameView | null = null;
   let busy = false;
+  let muted = sfxMutedDefault(typeof localStorage === "undefined" ? null : localStorage);
+  let uiState: ViewUiState = { ...EMPTY_UI };
+  let dragSource: CardSpot | null = null;
+  let noteText = "";
+  let skipBot: (() => void) | null = null;
+  let playbackToken = 0;
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
@@ -120,8 +154,16 @@ export function mountGame(root: Element | null): void {
       })
       .join("");
 
+  const difficultyButtons = (): string =>
+    BOT_DIFFICULTIES.map((id) => {
+      const pressed = id === difficulty ? "true" : "false";
+      return `<button type="button" data-difficulty="${id}" aria-pressed="${pressed}">${esc(BOT_DIFFICULTY_LABELS[id])}</button>`;
+    }).join("");
+
   const showLobby = (): void => {
     setBattleChrome(false);
+    skipBot?.();
+    playbackToken += 1;
     root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
     const board = root.querySelector("[data-board]");
     if (board) {
@@ -135,27 +177,105 @@ export function mountGame(root: Element | null): void {
     root.innerHTML = `<div class="ptcg-setup">
       <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
       <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
+      <fieldset><legend>봇 난이도</legend><div class="ptcg-choices">${difficultyButtons()}</div></fieldset>
       <p class="ptcg-note">샘플 덱은 공식 스탠다드 레귤레이션(마크 H, I, J)을 따릅니다. 규정은 <a href="https://pokemoncard.co.kr/card/play_qna" rel="noopener noreferrer">포켓몬 카드 게임 공식 플레이 안내</a>를 보세요. 한국판 목록에 확인된 카드는 우리 이름과 이미지를 쓰고, 아직 없는 카드는 영문 이름과 일본 공식 이미지를 씁니다.</p>
       <button type="button" data-start>대전 시작</button>
     </div><div data-board hidden></div>`;
   };
 
-  const paintBoard = (view: GameView, note = ""): void => {
+  const syncPressed = (): void => {
+    for (const button of root.querySelectorAll("[data-option]")) {
+      if (!(button instanceof HTMLButtonElement)) continue;
+      const index = Number(button.getAttribute("data-option"));
+      button.setAttribute("aria-pressed", picked.has(index) ? "true" : "false");
+    }
+    const confirm = root.querySelector("[data-confirm]");
+    if (confirm instanceof HTMLButtonElement && latest) {
+      const ready = picked.size >= latest.minCount && picked.size <= latest.maxCount;
+      confirm.disabled = !ready;
+      confirm.textContent = picked.size === 0 && latest.minCount === 0 ? "넘기기" : "결정";
+    }
+  };
+
+  const paintBoard = (view: GameView, note = "", paint: BoardPaintOptions = {}): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
+    const events = collectFxEvents(previous, view);
+    previous = view;
+    noteText = note;
     setBattleChrome(true);
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = boardHtml(view, note);
+    board.innerHTML = boardHtml(view, note, {
+      note,
+      botTurn: Boolean(paint.botTurn),
+      highlights: paint.highlights || [],
+      ui: paint.ui || uiState,
+      muted: paint.muted ?? muted,
+    }, paint.muted ?? muted);
+    applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
+    if (!paint.botTurn) syncPressed();
+  };
+
+  const finishHumanView = (view: GameView, note = ""): void => {
+    latest = view;
+    picked = new Set();
+    uiState = { ...EMPTY_UI };
+    dragSource = null;
+    skipBot = null;
+    busy = false;
+    paintBoard(view, note);
+  };
+
+  const playIncoming = async (view: GameView, steps: BotPlaybackStep[] | undefined, note: string): Promise<void> => {
+    const token = ++playbackToken;
+    if (!steps || steps.length === 0) {
+      finishHumanView(view, note);
+      return;
+    }
+    busy = true;
+    let prior: GameView | null = previous;
+    await playBotSteps(steps, view, {
+      delayMs: botStepDelayMs(prefersReducedMotion()),
+      onStep: (step, controls) => {
+        if (token !== playbackToken) {
+          controls.skip();
+          return;
+        }
+        skipBot = () => controls.skip();
+        paintBoard(step.view, "상대가 두는 중", {
+          botTurn: true,
+          highlights: boardHighlights(prior, step.view),
+        });
+        prior = step.view;
+      },
+      onDone: (done) => {
+        if (token !== playbackToken) return;
+        finishHumanView(done, note);
+      },
+    });
+  };
+
+  const choose = (indices: number[]): void => {
+    if (busy || !latest) return;
+    busy = true;
+    uiState = { ...EMPTY_UI };
+    ensureWorker().postMessage({ type: "choose", indices } satisfies WorkerIn);
+  };
+
+  const clearUi = (): void => {
+    uiState = { ...EMPTY_UI };
+    if (latest) paintBoard(latest, noteText);
   };
 
   const ensureWorker = (): Worker => {
     if (worker) return worker;
     worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (event: MessageEvent<WorkerOut>) => {
-      busy = false;
       const data = event.data;
       if (data.type === "error") {
+        busy = false;
+        skipBot = null;
         const board = root.querySelector("[data-board]");
         if (board) {
           setBattleChrome(true);
@@ -166,9 +286,7 @@ export function mountGame(root: Element | null): void {
         return;
       }
       if (data.view) {
-        latest = data.view;
-        picked = new Set();
-        paintBoard(data.view, data.message || "");
+        void playIncoming(data.view, data.steps, data.message || "");
       }
     };
     worker.onerror = () => {
@@ -200,6 +318,7 @@ export function mountGame(root: Element | null): void {
       engineUrl: engineUrl(),
       deck0: deck0.cards,
       deck1: deck1.cards,
+      difficulty,
     } satisfies WorkerIn);
   };
 
@@ -232,6 +351,13 @@ export function mountGame(root: Element | null): void {
     if (image instanceof HTMLImageElement) image.focus();
   };
 
+  let pressTimer: ReturnType<typeof setTimeout> | null = null;
+  let longPressed = false;
+  const clearPress = (): void => {
+    if (pressTimer != null) clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+
   root.addEventListener("keydown", (event) => {
     const action = actionFromKey(event);
     if (action?.type === "close") {
@@ -245,20 +371,174 @@ export function mountGame(root: Element | null): void {
         pile.close();
         return;
       }
-      closeLogDrawer(root);
+      const drawer = root.querySelector("[data-log-drawer]");
+      if (drawer instanceof HTMLElement && !drawer.hidden) {
+        closeLogDrawer(root);
+        return;
+      }
+      if (uiState.sheet !== "none") {
+        clearUi();
+        return;
+      }
       return;
     }
-    if (action?.type === "zoom") openZoom(action.full, action.alt);
+    const keyTarget = event.target;
+    const acting =
+      keyTarget instanceof Element ? keyTarget.closest("[data-card-act]") : null;
+    if (action?.type === "zoom" && !(acting instanceof HTMLElement)) {
+      openZoom(action.full, action.alt);
+      return;
+    }
+    if (busy || !latest || latest.phase !== "choose") return;
+    if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return;
+    if (!(acting instanceof HTMLElement)) return;
+    event.preventDefault();
+    activateCard(parseSpot(acting.getAttribute("data-spot")));
+  });
+
+  const activateCard = (spot: CardSpot | null): void => {
+    if (!spot || !latest || latest.interaction !== "board") return;
+    const mapped = mappedFromView(latest);
+
+    if (uiState.targets.length && uiState.selected) {
+      const hit = uiState.targets.find((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex);
+      if (hit) {
+        const option = findDropOption(mapped, uiState.selected, hit);
+        if (option) {
+          choose([option.optionIndex]);
+          return;
+        }
+      }
+    }
+
+    if (spot.area === 2 && spot.playerIndex === 0) {
+      const actions = handActions(mapped, spot.index, 0);
+      if (!actions.length) return;
+      if (actions.length === 1 && actions[0].kind === "play") {
+        choose([actions[0].optionIndex]);
+        return;
+      }
+      const onlyAttach = actions.length > 0 && actions.every((row) => row.kind === "attach");
+      const onlyEvolve = actions.length > 0 && actions.every((row) => row.kind === "evolve");
+      if (onlyAttach || onlyEvolve) {
+        uiState = {
+          selected: spot,
+          targets: actions.map((row) => row.target!).filter(Boolean),
+          sheet: "none",
+        };
+        paintBoard(latest, noteText);
+        return;
+      }
+      uiState = { selected: spot, targets: [], sheet: "hand" };
+      paintBoard(latest, noteText);
+      return;
+    }
+
+    if (spot.area === 4 && spot.playerIndex === 0 && spot.index === 0) {
+      const hasSheet = latest.options.some(
+        (option) => option.kind === "attack" || option.kind === "retreat" || (option.kind === "ability" && option.source?.area === 4),
+      );
+      if (!hasSheet) return;
+      uiState = { selected: spot, targets: [], sheet: "attack" };
+      paintBoard(latest, noteText);
+      return;
+    }
+
+    if (spot.area === 4 || spot.area === 5 || spot.area === 7) {
+      const ability = latest.options.find(
+        (option) =>
+          option.kind === "ability" &&
+          option.source &&
+          option.source.area === spot.area &&
+          option.source.index === spot.index &&
+          option.source.playerIndex === spot.playerIndex,
+      );
+      if (ability) choose([ability.index]);
+    }
+  };
+
+  root.addEventListener("dragstart", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || !latest || latest.interaction !== "board") return;
+    const card = target.closest("[data-card-act][draggable='true']");
+    if (!(card instanceof HTMLElement)) return;
+    dragSource = parseSpot(card.getAttribute("data-spot"));
+    event.dataTransfer?.setData("text/plain", card.getAttribute("data-spot") || "");
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+  });
+
+  root.addEventListener("dragover", (event) => {
+    if (!dragSource || !latest) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const card = target.closest("[data-spot]");
+    if (!(card instanceof HTMLElement)) return;
+    const spot = parseSpot(card.getAttribute("data-spot"));
+    if (!spot) return;
+    if (!findDropOption(mappedFromView(latest), dragSource, spot)) return;
+    event.preventDefault();
+  });
+
+  root.addEventListener("drop", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element) || !latest || !dragSource) return;
+    const card = target.closest("[data-spot]");
+    if (!(card instanceof HTMLElement)) return;
+    const spot = parseSpot(card.getAttribute("data-spot"));
+    if (!spot) return;
+    const option = findDropOption(mappedFromView(latest), dragSource, spot);
+    dragSource = null;
+    if (!option) return;
+    event.preventDefault();
+    choose([option.optionIndex]);
+  });
+
+  root.addEventListener("dragend", () => {
+    dragSource = null;
+  });
+
+  root.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const target = asControl(event.target);
+    if (!target) return;
+    const zoom = closestButton(target, "[data-zoom-open]");
+    if (!zoom) return;
+    longPressed = false;
+    clearPress();
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      openZoom(zoom.getAttribute("data-full") || "", zoom.getAttribute("data-alt") || "");
+    }, 450);
+  });
+  root.addEventListener("pointerup", clearPress);
+  root.addEventListener("pointercancel", clearPress);
+  root.addEventListener("pointerleave", clearPress);
+  root.addEventListener("contextmenu", (event) => {
+    const action = actionFromPointer(event);
+    if (action?.type !== "zoom") return;
+    event.preventDefault();
+    openZoom(action.full, action.alt);
   });
 
   root.addEventListener("click", (event) => {
+    if (longPressed) {
+      longPressed = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     const action = actionFromPointer(event);
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const acting = target.closest("[data-card-act]");
+    if (acting instanceof HTMLElement && action?.type === "zoom") {
+      activateCard(parseSpot(acting.getAttribute("data-spot")));
+      return;
+    }
     if (action?.type === "zoom") {
       openZoom(action.full, action.alt);
       return;
     }
-    const target = event.target;
-    if (!(target instanceof Element)) return;
     if (target.closest("[data-log-open]")) {
       openLogDrawer(root);
       return;
@@ -294,7 +574,35 @@ export function mountGame(root: Element | null): void {
       }
       return;
     }
+    const difficultyButton = target.closest("[data-difficulty]");
+    if (difficultyButton instanceof HTMLButtonElement) {
+      const id = difficultyButton.dataset.difficulty;
+      if (id !== "easy" && id !== "normal" && id !== "hard") return;
+      difficulty = id;
+      writeStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage, difficulty);
+      for (const button of root.querySelectorAll("[data-difficulty]")) {
+        button.setAttribute("aria-pressed", button.getAttribute("data-difficulty") === id ? "true" : "false");
+      }
+      return;
+    }
+    if (target.closest("[data-sfx-mute]")) {
+      muted = !muted;
+      if (typeof localStorage !== "undefined") writeSfxMuted(muted, localStorage);
+      const mute = root.querySelector("[data-sfx-mute]");
+      if (mute instanceof HTMLButtonElement) {
+        mute.setAttribute("aria-pressed", muted ? "true" : "false");
+        mute.textContent = muted ? "소리 켜기" : "소리 끄기";
+      }
+      return;
+    }
+    if (target.closest("[data-skip-bot]")) {
+      skipBot?.();
+      return;
+    }
     if (target.closest("[data-start]") || target.closest("[data-restart]")) {
+      skipBot?.();
+      playbackToken += 1;
+      previous = null;
       start();
       return;
     }
@@ -302,31 +610,55 @@ export function mountGame(root: Element | null): void {
       showLobby();
       return;
     }
+    if (target.closest("[data-clear-selection]")) {
+      clearUi();
+      return;
+    }
     if (busy || !latest || latest.phase !== "choose") return;
+
+    const intent = target.closest("[data-hand-intent]");
+    if (intent instanceof HTMLButtonElement && latest) {
+      const kind = intent.getAttribute("data-hand-intent");
+      const handIndex = Number(intent.getAttribute("data-hand-index"));
+      if ((kind === "attach" || kind === "evolve") && Number.isInteger(handIndex)) {
+        const rows = targetsFor(mappedFromView(latest), kind, handIndex, 0);
+        uiState = {
+          selected: { playerIndex: 0, area: 2, index: handIndex },
+          targets: rows.map((row) => row.target!).filter(Boolean),
+          sheet: "none",
+        };
+        paintBoard(latest, noteText);
+      }
+      return;
+    }
+
     if (action?.type === "option") {
       const index = action.index;
       const optionButton = target.closest("[data-option]");
       if (!(optionButton instanceof HTMLButtonElement)) return;
       if (latest.maxCount === 1 && latest.minCount >= 1) {
-        busy = true;
-        ensureWorker().postMessage({ type: "choose", indices: [index] } satisfies WorkerIn);
+        choose([index]);
         return;
       }
       if (picked.has(index)) picked.delete(index);
       else if (picked.size < latest.maxCount) picked.add(index);
-      optionButton.setAttribute("aria-pressed", picked.has(index) ? "true" : "false");
-      const confirm = root.querySelector("[data-confirm]");
-      if (confirm instanceof HTMLButtonElement) {
-        const ready = picked.size >= latest.minCount && picked.size <= latest.maxCount;
-        confirm.disabled = !ready;
-        confirm.textContent = picked.size === 0 && latest.minCount === 0 ? "넘기기" : "결정";
-      }
+      syncPressed();
       return;
     }
     if (target.closest("[data-confirm]")) {
       if (picked.size < (latest.minCount || 0) || picked.size > latest.maxCount) return;
-      busy = true;
-      ensureWorker().postMessage({ type: "choose", indices: [...picked] } satisfies WorkerIn);
+      choose([...picked]);
+      return;
+    }
+
+    const card = target.closest("[data-card-act]");
+    if (card instanceof HTMLElement) {
+      activateCard(parseSpot(card.getAttribute("data-spot")));
+      return;
+    }
+    if (uiState.targets.length) {
+      const drop = target.closest("[data-spot]");
+      if (drop instanceof HTMLElement) activateCard(parseSpot(drop.getAttribute("data-spot")));
     }
   });
 

@@ -180,8 +180,9 @@ body.ptcg-battle-active [data-ptcg] {
   align-content: stretch;
 }
 
+/* Active sits toward the stadium (center line); bench toward each player's own edge. */
 .ptcg-battle .ptcg-playmat--you {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-areas:
     "head head head"
     "prizes active deck"
@@ -193,8 +194,8 @@ body.ptcg-battle-active [data-ptcg] {
   grid-template-areas:
     "head head head"
     "hand hand hand"
-    "deck active prizes"
-    "trash bench prizes";
+    "deck bench prizes"
+    "trash active prizes";
 }
 
 .ptcg-battle .ptcg-playmat-head {

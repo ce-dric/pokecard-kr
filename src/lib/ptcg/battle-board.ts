@@ -1,3 +1,21 @@
+import type { CardSpot } from "./actions.ts";
+import { playCardHtml } from "./board-card.ts";
+import { flashClass, type BoardHighlight } from "./bot-highlight.ts";
+import {
+  muteToggleHtml,
+  resultOutcome,
+  resultScreenHtml,
+} from "./fx.ts";
+import {
+  attackSheetHtml,
+  boardPlayable,
+  fallbackOptionsHtml,
+  handActionMenuHtml,
+  highlightClass,
+  pickerHtml,
+  quickActionsHtml,
+  spotKey,
+} from "./interact-ui.ts";
 import type { FaceCard, GameView } from "./view.ts";
 
 const ENERGY_CLASS: Record<string, string> = {
@@ -35,8 +53,84 @@ function zoomButton(src: string, full: string, label: string, width: number, hei
   return `<button type="button" class="ptcg-zoom-image" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대"><img src="${esc(src)}" alt="" width="${width}" height="${height}" loading="lazy" decoding="async" /></button>`;
 }
 
-function cardHtml(card: FaceCard, caption: boolean): string {
-  if (card.hidden) return `<div class="ptcg-card"><div class="ptcg-back" aria-label="뒷면"></div></div>`;
+export interface ViewUiState {
+  selected: CardSpot | null;
+  targets: CardSpot[];
+  sheet: "none" | "hand" | "attack";
+}
+
+export interface BoardPaintOptions {
+  note?: string;
+  botTurn?: boolean;
+  highlights?: BoardHighlight[];
+  ui?: ViewUiState;
+  muted?: boolean;
+}
+
+export const EMPTY_UI: ViewUiState = { selected: null, targets: [], sheet: "none" };
+
+function isViewUiState(value: unknown): value is ViewUiState {
+  return Boolean(value && typeof value === "object" && "selected" in value && "targets" in value && "sheet" in value);
+}
+
+interface CardRenderOpts {
+  caption: boolean;
+  spot?: CardSpot | null;
+  playable?: CardSpot[];
+  selected?: CardSpot | null;
+  targets?: CardSpot[];
+  draggable?: boolean;
+}
+
+interface SideRenderOpts {
+  playable: CardSpot[];
+  selected: CardSpot | null;
+  targets: CardSpot[];
+  playerIndex: number;
+  interactive: boolean;
+}
+
+function spotCanAct(
+  spot: CardSpot | null | undefined,
+  playable: CardSpot[],
+  targets: CardSpot[],
+  draggable?: boolean,
+): boolean {
+  if (!spot) return false;
+  if (draggable) return true;
+  return (
+    playable.some((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex) ||
+    targets.some((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex)
+  );
+}
+
+function spotAttrs(spot: CardSpot | null | undefined, canAct: boolean, draggable: boolean): string {
+  if (!spot) return "";
+  const parts = [` data-spot="${spotKey(spot)}"`];
+  if (draggable) parts.push(` draggable="true" tabindex="0" data-card-act`);
+  else if (canAct) parts.push(` tabindex="0" data-card-act`);
+  return parts.join("");
+}
+
+function playSpotHtml(card: FaceCard, active: boolean, spot: CardSpot, opts: SideRenderOpts): string {
+  const hi = highlightClass(spot, opts.playable, opts.selected, opts.targets);
+  const canAct = spotCanAct(spot, opts.playable, opts.targets, false);
+  return playCardHtml(card, {
+    active,
+    className: hi,
+    attrs: spotAttrs(spot, canAct, false),
+  });
+}
+
+function cardHtml(card: FaceCard, opts: CardRenderOpts): string {
+  const playable = opts.playable || [];
+  const targets = opts.targets || [];
+  const hi = highlightClass(opts.spot, playable, opts.selected || null, targets);
+  const canAct = spotCanAct(opts.spot, playable, targets, opts.draggable);
+  const shell = spotAttrs(opts.spot, canAct, Boolean(opts.draggable));
+  if (card.hidden) {
+    return `<div class="ptcg-card ${hi}"${shell}><div class="ptcg-back" aria-label="뒷면"></div></div>`;
+  }
   const src = imageSrc(card.image);
   const full = imageSrc(card.fullImage || card.image);
   const name = esc(card.name);
@@ -50,12 +144,14 @@ function cardHtml(card: FaceCard, caption: boolean): string {
       : src
         ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
         : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
-  const meta = caption ? `<span class="ptcg-caption">${name}${hp ? ` ${esc(hp)}` : ""}</span>${energies ? `<span class="ptcg-energies">${energies}</span>` : ""}` : "";
-  return `<div class="ptcg-card">${body}${meta}</div>`;
+  const meta = opts.caption ? `<span class="ptcg-caption">${name}${hp ? ` ${esc(hp)}` : ""}</span>${energies ? `<span class="ptcg-energies">${energies}</span>` : ""}` : "";
+  return `<div class="ptcg-card ${hi}"${shell}>${body}${meta}</div>`;
 }
 
-function emptySlot(label: string): string {
-  return `<div class="ptcg-card"><div class="ptcg-empty ptcg-slot" aria-label="${esc(label)}">${esc(label)}</div></div>`;
+function emptySlot(label: string, spot?: CardSpot | null, targets: CardSpot[] = []): string {
+  const hi = highlightClass(spot, [], null, targets);
+  const spotAttr = spot ? ` data-spot="${spotKey(spot)}" data-drop-slot` : "";
+  return `<div class="ptcg-card ${hi}"${spotAttr}><div class="ptcg-empty ptcg-slot" aria-label="${esc(label)}">${esc(label)}</div></div>`;
 }
 
 function prizeGrid(count: number): string {
@@ -69,10 +165,13 @@ function prizeGrid(count: number): string {
   return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
 }
 
-function benchSlots(cards: FaceCard[]): string {
+function benchSlots(cards: FaceCard[], opts: SideRenderOpts, highlights: BoardHighlight[] = [], role: "you" | "opp" = "you"): string {
   return Array.from({ length: 5 }, (_, index) => {
+    const spot = { playerIndex: opts.playerIndex, area: 5, index };
     const card = cards[index];
-    return card ? cardHtml(card, true) : emptySlot("빈자리");
+    const body = card ? playSpotHtml(card, false, spot, opts) : emptySlot("빈자리", spot, opts.targets);
+    const flash = flashClass(highlights, role, "bench", index);
+    return flash ? `<div class="ptcg-flash-wrap${flash}">${body}</div>` : body;
   }).join("");
 }
 
@@ -88,14 +187,24 @@ function faceThumb(card: FaceCard): string {
   return `<div class="ptcg-textcard"><strong>${name}</strong></div>`;
 }
 
-function trashPile(side: GameView["you"], role: "you" | "opp"): string {
+function trashPile(side: GameView["you"], role: "you" | "opp", opts: SideRenderOpts): string {
   const id = `pile-${role}-trash`;
   const count = side.discard.length;
   if (!count) {
     return `<div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-empty">없음</div></div></div>`;
   }
   const top = side.discard[count - 1];
-  const body = side.discard.map((card) => cardHtml(card, true)).join("");
+  const body = side.discard
+    .map((card, index) =>
+      cardHtml(card, {
+        caption: true,
+        spot: { playerIndex: opts.playerIndex, area: 3, index },
+        playable: opts.playable,
+        selected: opts.selected,
+        targets: opts.targets,
+      }),
+    )
+    .join("");
   return `<div class="ptcg-cards ptcg-pile-wrap">
     <button type="button" class="ptcg-pile ptcg-pile--trash" data-pile-open="${id}" aria-label="트래쉬 ${count}장">
       ${pileLayers(Math.min(count - 1, 3))}
@@ -139,17 +248,19 @@ function handKey(card: FaceCard): string {
   return `name:${card.name}|${card.image || ""}`;
 }
 
-export function groupHandCards(cards: FaceCard[]): { card: FaceCard; count: number }[] {
-  const groups: { card: FaceCard; count: number }[] = [];
+export function groupHandCards(cards: FaceCard[]): { card: FaceCard; count: number; indices: number[] }[] {
+  const groups: { card: FaceCard; count: number; indices: number[] }[] = [];
   const indexByKey = new Map<string, number>();
-  for (const card of cards) {
+  for (let i = 0; i < cards.length; i += 1) {
+    const card = cards[i];
     const key = handKey(card);
     const existing = indexByKey.get(key);
     if (existing == null) {
       indexByKey.set(key, groups.length);
-      groups.push({ card, count: 1 });
+      groups.push({ card, count: 1, indices: [i] });
     } else {
       groups[existing].count += 1;
+      groups[existing].indices.push(i);
     }
   }
   return groups;
@@ -169,7 +280,15 @@ function oppHandBacks(count: number): string {
   return `<div class="ptcg-opp-hand" aria-label="상대 패 ${count}"><div class="ptcg-cards ptcg-hand ptcg-hand--backs">${backs || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`}</div><span class="ptcg-count">패 ${count}</span></div>`;
 }
 
-function fanHand(cards: FaceCard[]): string {
+function pickHandIndex(indices: number[], opts: SideRenderOpts): number {
+  for (const index of indices) {
+    const spot = { playerIndex: opts.playerIndex, area: 2, index };
+    if (spotCanAct(spot, opts.playable, opts.targets, true)) return index;
+  }
+  return indices[0];
+}
+
+function fanHand(cards: FaceCard[], opts: SideRenderOpts): string {
   if (!cards.length) {
     return `<div class="ptcg-cards ptcg-hand ptcg-hand--fan" aria-label="패 0"><div class="ptcg-card"><div class="ptcg-empty">없음</div></div></div>`;
   }
@@ -177,34 +296,53 @@ function fanHand(cards: FaceCard[]): string {
   const mid = (groups.length - 1) / 2;
   const items = groups
     .map((group, index) => {
+      const handIndex = pickHandIndex(group.indices, opts);
+      const spot = { playerIndex: opts.playerIndex, area: 2, index: handIndex };
+      const canDrag =
+        opts.interactive &&
+        opts.playable.some((row) => row.area === 2 && row.index === handIndex && row.playerIndex === opts.playerIndex);
       const offset = index - mid;
       const rotate = offset * 4.5;
       const lift = Math.abs(offset) * 2;
       const badge = group.count > 1 ? `<span class="ptcg-hand-stack-badge">x${group.count}</span>` : "";
       const layers = handStackLayers(group.count);
-      return `<div class="ptcg-fan-card ptcg-hand-stack" data-card-id="${group.card.id ?? ""}" data-count="${group.count}" style="--fan-i:${offset};--fan-rot:${rotate}deg;--fan-lift:${lift}px">${layers}${cardHtml(group.card, false)}${badge}</div>`;
+      const front = cardHtml(group.card, {
+        caption: false,
+        spot,
+        playable: opts.playable,
+        selected: opts.selected,
+        targets: opts.targets,
+        draggable: canDrag,
+      });
+      return `<div class="ptcg-fan-card ptcg-hand-stack" data-card-id="${group.card.id ?? ""}" data-count="${group.count}" style="--fan-i:${offset};--fan-rot:${rotate}deg;--fan-lift:${lift}px">${layers}${front}${badge}</div>`;
     })
     .join("");
   return `<div class="ptcg-cards ptcg-hand ptcg-hand--fan" aria-label="패 ${cards.length}">${items}</div>`;
 }
 
-function sideHtml(title: string, side: GameView["you"], role: "you" | "opp"): string {
-  const status = side.conditions.length ? side.conditions.join(" ") : "";
+function sideHtml(
+  title: string,
+  side: GameView["you"],
+  role: "you" | "opp",
+  opts: SideRenderOpts,
+  highlights: BoardHighlight[] = [],
+): string {
   const active =
-    side.active.map((card) => cardHtml(card, true)).join("") ||
-    `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
+    side.active
+      .map((card, index) => playSpotHtml(card, true, { playerIndex: opts.playerIndex, area: 4, index }, opts))
+      .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   const handBlock =
     role === "opp"
-      ? `<div class="ptcg-zone ptcg-zone--hand"><span class="ptcg-zone-label">패</span>${oppHandBacks(side.handCount)}</div>`
+      ? `<div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패</span>${oppHandBacks(side.handCount)}</div>`
       : "";
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
-    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2>${status ? `<p class="ptcg-status">${esc(status)}</p>` : ""}</header>
+    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
     ${handBlock}
-    <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizePile(side.prizeCount, role)}</div>
-    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench)}</div></div>
-    <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>
-    <div class="ptcg-zone ptcg-zone--active"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
-    <div class="ptcg-zone ptcg-zone--trash"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role)}</div>
+    <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}"><span class="ptcg-zone-label">프라이즈</span>${prizePile(side.prizeCount, role)}</div>
+    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
+    <div class="ptcg-zone ptcg-zone--deck${flashClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>
+    <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
+    <div class="ptcg-zone ptcg-zone--trash${flashClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role, opts)}</div>
   </section>`;
 }
 
@@ -226,25 +364,53 @@ export function turnOwnerLabel(view: GameView): string {
 }
 
 function endTurnOption(view: GameView): GameView["options"][number] | null {
-  return view.options.find((option) => option.label === "턴 종료") || null;
+  return view.options.find((option) => option.kind === "end" || option.label === "턴 종료") || null;
 }
 
-function battleBoardHtml(view: GameView, note: string): string {
-  const endTurn = endTurnOption(view);
-  const options = view.options
-    .filter((option) => !endTurn || option.index !== endTurn.index)
-    .map((option) => optionHtml(option))
-    .join("");
-  const multi = view.phase === "choose" && view.maxCount >= 1 && !(view.maxCount === 1 && view.minCount >= 1);
-  const confirm = multi
-    ? `<button type="button" data-confirm${view.minCount > 0 ? " disabled" : ""}>${view.minCount === 0 ? "넘기기" : "결정"}</button>`
+function battleBoardHtml(
+  view: GameView,
+  note: string,
+  ui: ViewUiState = EMPTY_UI,
+  muted = true,
+  botTurn = false,
+  highlights: BoardHighlight[] = [],
+): string {
+  const playable = !botTurn && view.interaction === "board" ? boardPlayable(view) : [];
+  const youOpts: SideRenderOpts = {
+    playable,
+    selected: botTurn ? null : ui.selected,
+    targets: botTurn ? [] : ui.targets,
+    playerIndex: 0,
+    interactive: !botTurn && view.interaction === "board",
+  };
+  const oppOpts: SideRenderOpts = {
+    playable,
+    selected: botTurn ? null : ui.selected,
+    targets: botTurn ? [] : ui.targets,
+    playerIndex: 1,
+    interactive: false,
+  };
+  const endTurn = botTurn ? null : endTurnOption(view);
+  const banner =
+    view.phase === "over" && view.resultText
+      ? resultScreenHtml(view.resultText, resultOutcome(view.resultText))
+      : "";
+  const botBanner = botTurn
+    ? `<div class="ptcg-bot-banner" role="status"><span>상대 턴</span><button type="button" data-skip-bot>건너뛰기</button></div>`
     : "";
-  const banner = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
+  const stadiumSpot = { playerIndex: 0, area: 7, index: 0 };
+  const stadiumFlash = flashClass(highlights, "table", "stadium");
   const stadium = view.stadium
-    ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
-    : `<div class="ptcg-stadium ptcg-stadium--empty" aria-hidden="true"><span class="ptcg-zone-label">스타디움</span></div>`;
-  const myHand = view.you.hand ? fanHand(view.you.hand) : `<p class="ptcg-count">패 ${view.you.handCount}</p>`;
+    ? `<div class="ptcg-stadium${stadiumFlash}"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, {
+        caption: true,
+        spot: stadiumSpot,
+        playable,
+        selected: youOpts.selected,
+        targets: youOpts.targets,
+      })}</div></div>`
+    : `<div class="ptcg-stadium ptcg-stadium--empty${stadiumFlash}" aria-hidden="true"><span class="ptcg-zone-label">스타디움</span></div>`;
+  const myHand = view.you.hand ? fanHand(view.you.hand, youOpts) : `<p class="ptcg-count">패 ${view.you.handCount}</p>`;
   const endTurnBtn = endTurn
     ? `<button type="button" class="ptcg-hud-end" data-option="${endTurn.index}">턴 종료</button>`
     : `<button type="button" class="ptcg-hud-end" disabled>턴 종료</button>`;
@@ -252,41 +418,77 @@ function battleBoardHtml(view: GameView, note: string): string {
     view.phase === "over"
       ? `<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`
       : "";
+  const handMenu =
+    !botTurn && ui.sheet === "hand" && ui.selected
+      ? handActionMenuHtml(
+          view.options.filter(
+            (option) =>
+              option.source &&
+              option.source.area === ui.selected!.area &&
+              option.source.index === ui.selected!.index &&
+              option.source.playerIndex === ui.selected!.playerIndex &&
+              (option.kind === "play" || option.kind === "attach" || option.kind === "evolve"),
+          ),
+        )
+      : "";
+  const attackSheet = !botTurn && ui.sheet === "attack" ? attackSheetHtml(view) : "";
+  const picker = !botTurn && view.interaction === "picker" ? pickerHtml(view) : "";
+  const quick =
+    !botTurn && (view.interaction === "board" || view.interaction === "buttons") ? quickActionsHtml(view) : "";
+  const fallback = botTurn
+    ? ""
+    : fallbackOptionsHtml(
+        {
+          ...view,
+          options: view.options.filter((option) => !endTurn || option.index !== endTurn.index),
+        },
+        optionHtml,
+      );
+  const prompt = botTurn ? "상대가 두는 중" : note || view.prompt;
+  const who = botTurn ? "상대 턴" : turnOwnerLabel(view);
+  const logDrawer = botTurn
+    ? ""
+    : `<aside id="ptcg-log-drawer" class="ptcg-log-drawer" data-log-drawer hidden>
+      <div class="ptcg-log-drawer-head">
+        <h2 class="ptcg-log-title">기록</h2>
+        <button type="button" class="ptcg-log-close" data-log-close>닫기</button>
+      </div>
+      <ol class="ptcg-log">${log}</ol>
+    </aside>`;
 
   return `<div class="ptcg-battle" data-battle>
     <div class="ptcg-battle-hud" role="toolbar" aria-label="대전 정보">
       <button type="button" class="ptcg-hud-exit" data-exit>나가기</button>
       <div class="ptcg-hud-meta">
         <span class="ptcg-hud-turn">턴 ${view.turn}</span>
-        <span class="ptcg-hud-who">${esc(turnOwnerLabel(view))}</span>
+        <span class="ptcg-hud-who">${esc(who)}</span>
         <span class="ptcg-hud-prizes">프라이즈 나 ${view.you.prizeCount} / 상대 ${view.opp.prizeCount}</span>
       </div>
       ${endTurnBtn}
-      <button type="button" class="ptcg-hud-log" data-log-open aria-expanded="false" aria-controls="ptcg-log-drawer">기록</button>
+      <button type="button" class="ptcg-hud-log" data-log-open aria-expanded="false" aria-controls="ptcg-log-drawer" ${botTurn ? "disabled" : ""}>기록</button>
     </div>
-    ${banner}
+    ${banner}${botBanner}
     <div class="ptcg-battle-stage">
       <div class="ptcg-battle-board">
         <div class="ptcg-table">
-          ${sideHtml("상대", view.opp, "opp")}
+          ${sideHtml("상대", view.opp, "opp", oppOpts, highlights)}
           ${stadium}
-          ${sideHtml("나", view.you, "you")}
+          ${sideHtml("나", view.you, "you", youOpts, highlights)}
         </div>
-        <div class="ptcg-zone ptcg-zone--hand ptcg-zone--my-hand"><span class="ptcg-zone-label">패</span>${myHand}</div>
+        <div class="ptcg-zone ptcg-zone--hand ptcg-zone--my-hand${flashClass(highlights, "you", "hand")}"><span class="ptcg-zone-label">패</span>${myHand}</div>
       </div>
     </div>
     <div class="ptcg-controls ptcg-battle-controls">
-      <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
-      <div class="ptcg-options" role="group" aria-label="선택">${options}${confirm}</div>
+      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
+      <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
+      ${quick}
+      ${handMenu}
+      ${attackSheet}
+      ${picker}
+      ${fallback}
       ${actions}
     </div>
-    <aside id="ptcg-log-drawer" class="ptcg-log-drawer" data-log-drawer hidden>
-      <div class="ptcg-log-drawer-head">
-        <h2 class="ptcg-log-title">기록</h2>
-        <button type="button" class="ptcg-log-close" data-log-close>닫기</button>
-      </div>
-      <ol class="ptcg-log">${log}</ol>
-    </aside>
+    ${logDrawer}
     <dialog class="ptcg-pile-sheet" data-pile-sheet aria-label="카드 더미">
       <div class="ptcg-pile-sheet-head">
         <h2 class="ptcg-pile-sheet-title" data-pile-sheet-title>더미</h2>
@@ -297,8 +499,23 @@ function battleBoardHtml(view: GameView, note: string): string {
   </div>`;
 }
 
-export function boardHtml(view: GameView, note = ""): string {
-  return battleBoardHtml(view, note);
+export function boardHtml(
+  view: GameView,
+  note = "",
+  paintOrUi: BoardPaintOptions | ViewUiState = EMPTY_UI,
+  muted = true,
+): string {
+  if (isViewUiState(paintOrUi)) {
+    return battleBoardHtml(view, note, paintOrUi, muted);
+  }
+  return battleBoardHtml(
+    view,
+    paintOrUi.note || note,
+    paintOrUi.ui || EMPTY_UI,
+    paintOrUi.muted ?? muted,
+    Boolean(paintOrUi.botTurn),
+    paintOrUi.highlights || [],
+  );
 }
 
 export function setBattleChrome(active: boolean): void {
