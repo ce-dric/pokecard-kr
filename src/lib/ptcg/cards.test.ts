@@ -50,6 +50,8 @@ test("game text does not use a middle dot", () => {
     "src/components/Header.astro",
     "src/pages/game/index.astro",
     "src/pages/game/game.css",
+    "src/pages/game/rules/index.astro",
+    "src/pages/game/rules/rules.css",
     "src/data/game-cards.json",
     "src/lib/ptcg/decks.json",
   ];
@@ -268,17 +270,17 @@ test("discard, stadium, and choices carry thumbnails", () => {
     },
   } as Observation;
   const view = buildView(obs, 0, [], { cards: new Map(), attacks: new Map() }, mapping, undefined);
-  assert.equal(view.you.discard[0]?.image, "images/cards/m2a/217-thumb.webp");
-  assert.equal(view.opp.discard[1]?.image, "images/cards/m1s/018-thumb.webp");
-  assert.equal(view.options[0]?.image, "images/cards/m1s/016-thumb.webp");
+  assert.equal(view.you.discard[0]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.opp.discard[1]?.image, mapping.cards["723"]?.link?.image);
+  assert.equal(view.options[0]?.image, mapping.cards["721"]?.link?.image);
   assert.equal(view.options[0]?.fullImage, "images/cards/m1s/016.webp");
-  assert.equal(view.options[1]?.image, "images/cards/m2a/217-thumb.webp");
-  assert.equal(view.options[2]?.image, "images/cards/m2a/217-thumb.webp");
-  assert.equal(view.options[2]?.fullImage, "images/cards/m2a/217.webp");
-  assert.equal(view.options[3]?.image, "images/cards/m1s/018-thumb.webp");
-  assert.equal(view.options[4]?.image, "images/cards/m2/079-thumb.webp");
+  assert.equal(view.options[1]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.options[2]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.options[2]?.fullImage, mapping.cards["1121"]?.link?.image?.replace("-thumb.webp", ".webp"));
+  assert.equal(view.options[3]?.image, mapping.cards["723"]?.link?.image);
+  assert.equal(view.options[4]?.image, mapping.cards["1264"]?.link?.image);
   assert.equal(view.options[4]?.label, "특성");
-  assert.equal(view.stadium?.image, "images/cards/m2/079-thumb.webp");
+  assert.equal(view.stadium?.image, mapping.cards["1264"]?.link?.image);
   const page = readFileSync(new URL("src/lib/ptcg/ui.ts", root), "utf8");
   assert.match(page, /loading="lazy"/);
   assert.match(page, /data-zoom-open/);
@@ -296,6 +298,19 @@ test("the battle page credits the engine and the nav links to it", () => {
   assert.match(page, /비공식 팬 페이지/);
   assert.match(page, /포켓몬 공식 사이트가 아닙니다/);
   assert.match(page, /공식 스탠다드/);
+  assert.match(page, /game\/rules\//);
+  assert.match(page, /놀이방법/);
   assert.match(header, /대전/);
   assert.match(header, /game\//);
+});
+
+test("the how-to-play guide uses official terms and cites the official page", () => {
+  const page = readFileSync(new URL("src/pages/game/rules/index.astro", root), "utf8");
+  assert.match(page, /https:\/\/pokemoncard\.co\.kr\/card\/play/);
+  assert.match(page, /트래쉬/);
+  assert.match(page, /배틀필드/);
+  assert.match(page, /이 사이트 대전과 다른 점/);
+  assert.match(page, /트래시/);
+  assert.match(page, /손패/);
+  assert.equal(page.includes(middleDot), false);
 });

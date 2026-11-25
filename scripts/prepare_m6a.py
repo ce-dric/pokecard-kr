@@ -228,9 +228,11 @@ def parse_kr(card_id: str, html: str) -> list[dict]:
     product = text(soup.select_one("a.search_href"))
     regulation = ""
     for symbol in soup.select("div.pre_info_wrap img"):
-        src = symbol.get("src") or ""
-        if src.rstrip("/").endswith("/J.png"):
-            regulation = "J"
+        src = (symbol.get("src") or "").split("?")[0]
+        # Expansion marks look like M6a.png. A single capital letter is the regulation mark.
+        mark = re.search(r"/([A-Z])\.png$", src)
+        if mark:
+            regulation = mark.group(1)
     variants = []
     for el in soup.select("span.p_num"):
         rare_el = el.select_one("[id=no_wrap_by_admin]")
@@ -652,6 +654,7 @@ def build_card(kr: dict) -> dict:
         "nameStatus": "verified-kr",
         "nameJa": jp.get("jpName") or None,
         "rarity": rarity,
+        "regulation": kr.get("regulation") or "",
         "type": type_code or None,
         "typeKo": kr["typeKo"] or None,
         "category": group,
@@ -766,6 +769,9 @@ def main() -> None:
 
     numeric_printed = [int(card["printedIn"]) for card in cards if card["printedIn"].isdigit()]
     printed_total = Counter(numeric_printed).most_common(1)[0][0]
+    regulation_marks = sorted({row["regulation"] for row in kr_rows if row["regulation"]})
+    if not regulation_marks:
+        raise SystemExit("no regulation mark on official pages")
     payload = {
         "id": "m6a",
         "slug": "30th-celebration",
@@ -774,7 +780,7 @@ def main() -> None:
         "productNameKo": PRODUCT,
         "productNameJa": "ポケモンカードゲーム MEGA 拡張パック「30th CELEBRATION」",
         "series": "MEGA",
-        "regulation": "J",
+        "regulation": ", ".join(regulation_marks),
         "expansionMark": "M6a",
         "releaseDateKr": "2026-09-16",
         "releaseDateJp": "2026-09-16",
@@ -790,6 +796,7 @@ def main() -> None:
             "카드 이름, 번호, 레어도, 타입은 한국 공식 카드 상세에 적힌 것만 넣었다.",
             "레어도 칸이 비어 있는 카드는 레어도를 비워 두었다.",
             "상세 페이지가 열리지 않는 카드는 넣지 않았다.",
+            "각 카드의 레귤레이션 마크는 상세 페이지 기호 이미지를 적었다. 기본 에너지는 마크가 없다.",
         ],
         "cards": cards,
     }

@@ -31,20 +31,20 @@
     "linked": {
       "m1l": 40,
       "m1s": 47,
-      "m2": 86,
-      "m2a": 131,
+      "m2": 85,
+      "m2a": 126,
       "m3": 87,
-      "m4": 89,
-      "m5": 103,
+      "m4": 87,
+      "m5": 101,
       "m6": 5,
-      "m6a": 10,
+      "m6a": 16,
       "ma": 6,
-      "mbd": 10,
-      "mbg": 10,
-      "mc": 467,
-      "mee": 2,
-      "mem": 1,
-      "mez": 3,
+      "mbd": 9,
+      "mbg": 9,
+      "mc": 465,
+      "mee": 3,
+      "mem": 6,
+      "mez": 5,
       "sv5a": 17,
       "sv7": 25,
       "sv7a": 20,
@@ -1909,11 +1909,11 @@
       "number": "196/SV-P",
       "nameJa": "イーブイ",
       "link": {
-        "setId": "mc",
-        "slug": "start-deck-100",
-        "number": "564",
+        "setId": "mee",
+        "slug": "mega-starter-eevee",
+        "number": "008",
         "nameKo": "이브이",
-        "image": "images/cards/mc/564-thumb.webp"
+        "image": "images/cards/mee/008-thumb.webp"
       },
       "picture": null
     },
@@ -4331,11 +4331,11 @@
       "number": "003/022",
       "nameJa": "ホウオウ",
       "link": {
-        "setId": "m4",
-        "slug": "ninja-spinner",
-        "number": "010",
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "007",
         "nameKo": "칠색조",
-        "image": "images/cards/m4/010-thumb.webp"
+        "image": "images/cards/m6a/007-thumb.webp"
       },
       "picture": null
     },
@@ -4387,11 +4387,11 @@
       "number": "027/175",
       "nameJa": "ヤドン",
       "link": {
-        "setId": "m5",
-        "slug": "abyss-eye",
-        "number": "028",
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "010",
         "nameKo": "야돈",
-        "image": "images/cards/m5/028-thumb.webp"
+        "image": "images/cards/m6a/010-thumb.webp"
       },
       "picture": null
     },
@@ -4401,11 +4401,11 @@
       "number": "038/175",
       "nameJa": "ピカチュウex",
       "link": {
-        "setId": "mc",
-        "slug": "start-deck-100",
-        "number": "227",
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "047",
         "nameKo": "피카츄 ex",
-        "image": "images/cards/mc/227-thumb.webp"
+        "image": "images/cards/m6a/047-thumb.webp"
       },
       "picture": null
     },
@@ -7243,11 +7243,11 @@
       "number": "054/086",
       "nameJa": "ズルッグ",
       "link": {
-        "setId": "m2a",
-        "slug": "mega-dream-ex",
-        "number": "109",
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "078",
         "nameKo": "곤율랭",
-        "image": "images/cards/m2a/109-thumb.webp"
+        "image": "images/cards/m6a/078-thumb.webp"
       },
       "picture": null
     },
@@ -7369,11 +7369,11 @@
       "number": "064/086",
       "nameJa": "ナットレイ",
       "link": {
-        "setId": "m4",
-        "slug": "ninja-spinner",
-        "number": "061",
+        "setId": "m6a",
+        "slug": "30th-celebration",
+        "number": "083",
         "nameKo": "너트령",
-        "image": "images/cards/m4/061-thumb.webp"
+        "image": "images/cards/m6a/083-thumb.webp"
       },
       "picture": null
     },
@@ -13613,11 +13613,11 @@
       "number": "655/742",
       "nameJa": "ふしぎなアメ",
       "link": {
-        "setId": "mbg",
-        "slug": "mega-starter-gengar",
-        "number": "012",
+        "setId": "mem",
+        "slug": "sprigatito-meowscarada",
+        "number": "010",
         "nameKo": "이상한사탕",
-        "image": "images/cards/mbg/012-thumb.webp"
+        "image": "images/cards/mem/010-thumb.webp"
       },
       "picture": null
     },
@@ -14047,11 +14047,11 @@
       "number": "644/742",
       "nameJa": "クラッシュハンマー",
       "link": {
-        "setId": "m5",
-        "slug": "abyss-eye",
-        "number": "105",
+        "setId": "mez",
+        "slug": "mega-starter-zorua-zoroark",
+        "number": "011",
         "nameKo": "크래시 해머",
-        "image": "images/cards/m5/105-thumb.webp"
+        "image": "images/cards/mez/011-thumb.webp"
       },
       "picture": null
     },
@@ -14061,11 +14061,11 @@
       "number": "651/742",
       "nameJa": "ハイパーボール",
       "link": {
-        "setId": "m2a",
-        "slug": "mega-dream-ex",
-        "number": "217",
+        "setId": "mem",
+        "slug": "sprigatito-meowscarada",
+        "number": "012",
         "nameKo": "하이퍼볼",
-        "image": "images/cards/m2a/217-thumb.webp"
+        "image": "images/cards/mem/012-thumb.webp"
       },
       "picture": null
     },
@@ -14075,11 +14075,11 @@
       "number": "663/742",
       "nameJa": "ポケモンいれかえ",
       "link": {
-        "setId": "m2",
-        "slug": "inferno-x",
+        "setId": "m6a",
+        "slug": "30th-celebration",
         "number": "101",
         "nameKo": "포켓몬 교체",
-        "image": "images/cards/m2/101-thumb.webp"
+        "image": "images/cards/m6a/101-thumb.webp"
       },
       "picture": null
     },
@@ -14621,11 +14621,11 @@
       "number": "688/742",
       "nameJa": "ふうせん",
       "link": {
-        "setId": "m2a",
-        "slug": "mega-dream-ex",
-        "number": "166",
+        "setId": "mem",
+        "slug": "sprigatito-meowscarada",
+        "number": "013",
         "nameKo": "풍선",
-        "image": "images/cards/m2a/166-thumb.webp"
+        "image": "images/cards/mem/013-thumb.webp"
       },
       "picture": null
     },
@@ -14719,11 +14719,11 @@
       "number": "724/742",
       "nameJa": "ボスの指令",
       "link": {
-        "setId": "mbd",
-        "slug": "mega-starter-diancie",
-        "number": "019",
+        "setId": "mem",
+        "slug": "sprigatito-meowscarada",
+        "number": "016",
         "nameKo": "보스의 지령",
-        "image": "images/cards/mbd/019-thumb.webp"
+        "image": "images/cards/mem/016-thumb.webp"
       },
       "picture": null
     },
@@ -15041,11 +15041,11 @@
       "number": "694/742",
       "nameJa": "アイリスの闘志",
       "link": {
-        "setId": "m2a",
-        "slug": "mega-dream-ex",
-        "number": "178",
+        "setId": "mez",
+        "slug": "mega-starter-zorua-zoroark",
+        "number": "018",
         "nameKo": "아이리스의 투지",
-        "image": "images/cards/m2a/178-thumb.webp"
+        "image": "images/cards/mez/018-thumb.webp"
       },
       "picture": null
     },
@@ -15237,11 +15237,11 @@
       "number": "729/742",
       "nameJa": "リーリエの決心",
       "link": {
-        "setId": "m2a",
-        "slug": "mega-dream-ex",
-        "number": "173",
+        "setId": "mem",
+        "slug": "sprigatito-meowscarada",
+        "number": "015",
         "nameKo": "릴리에의 결심",
-        "image": "images/cards/m2a/173-thumb.webp"
+        "image": "images/cards/mem/015-thumb.webp"
       },
       "picture": null
     },

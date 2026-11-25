@@ -1,16 +1,20 @@
 ---
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { imageHref, withBase, type Card, type CardSet } from "../lib/sets";
+import { formatWon, imageHref, withBase, type Card, type CardSet } from "../lib/sets";
 
 interface Props {
   set: CardSet;
   href: string;
   eager?: boolean;
   useBox?: boolean;
+  layout?: "row" | "tile";
+  kind?: string;
+  countLabel?: string;
+  priceLabel?: string;
 }
 
-const { set, href, eager = false, useBox = false } = Astro.props;
+const { set, href, eager = false, useBox = false, layout = "row", kind, countLabel, priceLabel } = Astro.props;
 const boxName = `${set.id}.webp`;
 const boxExists = useBox && existsSync(join(process.cwd(), "public", "images", "boxes", boxName));
 const preferred = ["SAR", "MUR", "UR", "SR", "AR", "MA", "RR", "R"];
@@ -20,37 +24,77 @@ for (const code of preferred) {
   if (cover) break;
 }
 cover ??= set.cards.find((card) => card.thumb) ?? set.cards[0];
+const dateDot = set.releaseDateKr.replaceAll("-", ".");
+const priceLine =
+  set.packsPerBox > 1
+    ? `팩 ${formatWon(set.packPriceKr)}, 상자 ${formatWon(set.boxPriceKr)}`
+    : `덱 ${formatWon(set.packPriceKr)}`;
+const kindLabel = set.productNameKo
+  .replace(`「${set.nameKo}」`, "")
+  .replace(`"${set.nameKo}"`, "")
+  .trim();
 ---
-<a class:list={["set-row", { "has-box": boxExists }]} href={href}>
-  {boxExists ? (
-    <img
-      class="row-thumb row-box"
-      src={withBase(`images/boxes/${boxName}`)}
-      alt=""
-      width="72"
-      height="72"
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-    />
-  ) : cover?.thumb ? (
-    <img
-      class="row-thumb"
-      src={imageHref(set, cover.thumb)}
-      alt=""
-      width="63"
-      height="88"
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-    />
-  ) : (
-    <span class="row-thumb row-fallback" aria-hidden="true"></span>
-  )}
-  <span class="set-main">
-    <span class="set-title">{set.nameKo}</span>
-    <span class="set-product">
-      <span class="source">{set.expansionMark}</span>
-      {set.productNameKo}
+{layout === "tile" ? (
+  <a class="stile" href={href} data-set-row data-kind={kind}>
+    <div class="im">
+      {boxExists ? (
+        <img
+          src={withBase(`images/boxes/${boxName}`)}
+          alt=""
+          width="150"
+          height="188"
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+        />
+      ) : cover?.thumb ? (
+        <img
+          src={imageHref(set, cover.thumb)}
+          alt=""
+          width="63"
+          height="88"
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+        />
+      ) : null}
+    </div>
+    <div>
+      <b>{set.nameKo}</b>
+      <small class="num">{set.expansionMark}, {dateDot.slice(0, 7)}, {set.cardCount}장</small>
+    </div>
+  </a>
+) : (
+  <a class:list={["set-row", { "has-box": boxExists }]} href={href} data-set-row data-kind={kind}>
+    {boxExists ? (
+      <img
+        class="row-thumb row-box"
+        src={withBase(`images/boxes/${boxName}`)}
+        alt=""
+        width="72"
+        height="72"
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+    ) : cover?.thumb ? (
+      <img
+        class="row-thumb"
+        src={imageHref(set, cover.thumb)}
+        alt=""
+        width="63"
+        height="88"
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+    ) : (
+      <span class="row-thumb row-fallback" aria-hidden="true"></span>
+    )}
+    <span class="set-main">
+      <span class="set-title">{set.nameKo}</span>
+      <span class="set-product">{kindLabel || set.productNameKo}</span>
     </span>
-  </span>
-  <span class="set-stats"><slot /></span>
-</a>
+    <span class="set-code">{set.expansionMark}</span>
+    <span class="set-date">{dateDot}</span>
+    <span class="set-count">{countLabel ?? `${set.cardCount}장`}</span>
+    <span class="set-price">{priceLabel ?? priceLine}</span>
+    <span class="set-meta">{set.expansionMark}, {dateDot}, {priceLabel ?? priceLine}</span>
+  </a>
+)}

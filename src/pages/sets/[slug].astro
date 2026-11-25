@@ -1,4 +1,6 @@
 ---
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import Base from "../../layouts/Base.astro";
 import AdSlot from "../../components/AdSlot.astro";
 import CardTile from "../../components/CardTile.astro";
@@ -14,6 +16,7 @@ import {
   formatDate,
   formatWon,
   rarityCounts,
+  rarityOrder,
   sets,
   typeCounts,
   withBase,
@@ -59,72 +62,140 @@ const hitCount = hitSections.reduce((sum, group) => sum + group.cards.length, 0)
 const hitSummary = hitSections.map((group) => `${group.code} ${group.cards.length}장`).join(", ");
 const hitsNote = hitNote(set);
 const hitsHref = withBase(hitsSetPath(set));
+const boxName = `${set.id}.webp`;
+const boxExists = existsSync(join(process.cwd(), "public", "images", "boxes", boxName));
+const cover = set.cards.find((card) => card.thumb) ?? set.cards[0];
+const kindLabel = set.productNameKo
+  .replace(`「${set.nameKo}」`, "")
+  .replace(`"${set.nameKo}"`, "")
+  .trim();
+const barRows = rarityOrder
+  .map((code) => rarities.find((row) => row.code === code))
+  .filter((row): row is (typeof rarities)[number] => Boolean(row));
+const ledeText = hitsNote
+  ? hitsNote
+  : `${set.productNameKo}에 수록된 ${set.cardCount}장을 모았습니다. 번호는 한국 공식 카드 검색의 번호를 따릅니다.${set.id === "m6" ? " 065번부터 076번까지는 일본판 수록 순서와 다릅니다." : ""}`;
 ---
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
-    <header class="mast">
-      <p class="crumbs"><a href={withBase("")}>홈</a> / {set.nameKo}</p>
-      <div class="mast-row">
-        <h1>{set.nameKo} 카드 리스트</h1>
-        <a class="mast-aside" href={withBase("")}>모든 세트</a>
+    <nav class="crumbs"><a href={withBase("")}>세트</a><span>/</span><span>{set.nameKo}</span></nav>
+    <section class="shero">
+      <div class="im">
+        {boxExists ? (
+          <img src={withBase(`images/boxes/${boxName}`)} alt="" width="150" height="188" fetchpriority="high" decoding="async" />
+        ) : cover?.thumb ? (
+          <img src={withBase(`images/cards/${set.id}/${cover.thumb}`)} alt="" width="63" height="88" fetchpriority="high" decoding="async" />
+        ) : null}
       </div>
-      <p class="lede">
-        {set.productNameKo}에 수록된 {set.cardCount}장을 모았습니다. 번호는 한국 공식 카드 검색의 번호를 따릅니다.
-        {set.id === "m6" && " 065번부터 076번까지는 일본판 수록 순서와 다릅니다."}
-      </p>
-      {infoLinks.length > 0 && (
-        <p class="more-info">
-          {infoLinks.map((link) => (
-            <a href={link.href} target="_blank" rel="noopener">
-              {link.label}
-              <span class="sr-only"> (새 창)</span>
-            </a>
-          ))}
-        </p>
-      )}
-    </header>
+      <div>
+        <div class="eyebrow">
+          <span class="num">{set.expansionMark}</span>
+          <span>{kindLabel || set.productNameKo}</span>
+        </div>
+        <h1>{set.nameKo}</h1>
+        <p class="lede">{ledeText}</p>
+        {infoLinks.length > 0 && (
+          <p class="more-info">
+            {infoLinks.map((link) => (
+              <a href={link.href} target="_blank" rel="noopener">
+                {link.label}
+                <span class="sr-only"> (새 창)</span>
+              </a>
+            ))}
+          </p>
+        )}
+      </div>
+    </section>
+
     <dl class="facts">
-      <div><dt>한국 발매</dt><dd>{formatDate(set.releaseDateKr)}</dd></div>
-      <div><dt>일본 발매</dt><dd>{formatDate(set.releaseDateJp)}</dd></div>
+      <div>
+        <dt>한국 발매</dt>
+        <dd>
+          {formatDate(set.releaseDateKr)}
+          <small>일본 {formatDate(set.releaseDateJp)}</small>
+        </dd>
+      </div>
+      <div>
+        <dt>수록</dt>
+        <dd>
+          <span class="num">{set.cardCount}</span>종
+          <small>표기 {printed}번 + 시크릿</small>
+        </dd>
+      </div>
       {set.packsPerBox > 1 ? (
         <>
-          <div><dt>팩</dt><dd>{set.cardsPerPack}장, {formatWon(set.packPriceKr)}</dd></div>
-          <div><dt>상자</dt><dd>{set.packsPerBox}팩, {formatWon(set.boxPriceKr)}</dd></div>
+          <div>
+            <dt>팩</dt>
+            <dd>
+              {formatWon(set.packPriceKr)}
+              <small>{set.cardsPerPack}장 들이</small>
+            </dd>
+          </div>
+          <div>
+            <dt>상자</dt>
+            <dd>
+              {formatWon(set.boxPriceKr)}
+              <small>{set.packsPerBox}팩</small>
+            </dd>
+          </div>
         </>
       ) : (
-        <div><dt>가격</dt><dd>덱 {set.cardsPerPack}장, {formatWon(set.packPriceKr)}</dd></div>
+        <div>
+          <dt>덱</dt>
+          <dd>
+            {formatWon(set.packPriceKr)}
+            <small>{set.cardsPerPack}장</small>
+          </dd>
+        </div>
       )}
-      <div><dt>수록</dt><dd>{set.cardCount}종 ({printed}까지, 시크릿 포함)</dd></div>
-      <div><dt>확장 마크</dt><dd>{set.expansionMark} / 레귤레이션 {set.regulation}</dd></div>
+      <div>
+        <dt>레귤레이션</dt>
+        <dd>{set.regulation}</dd>
+      </div>
     </dl>
+
+    {barRows.length > 0 && (
+      <div class="rar">
+        <div>
+          <div class="rar-bar" aria-hidden="true">
+            {barRows.map((row) => (
+              <i
+                class={`rar-tone rar-tone-${row.code.toLowerCase()}`}
+                title={`${row.code} ${row.count}장`}
+                style={`flex:${row.count}`}
+              />
+            ))}
+          </div>
+          <div class="rar-legend">
+            {barRows.map((row) => (
+              <span><b>{row.code}</b>{row.count}</span>
+            ))}
+          </div>
+        </div>
+        <a class="more" href={hitsHref}>{HITS_NAV_LABEL} {hitCount}장 모아보기 →</a>
+      </div>
+    )}
+
     <ul class="text-links">
       <li><a href={set.krProductUrl} rel="noopener noreferrer">한국 공식 제품 페이지</a></li>
       <li><a href={set.jpSetUrl} rel="noopener noreferrer">일본 공식 세트 페이지</a></li>
       <li><a href={withBase("rarity/")}>레어도 일람</a></li>
-      <li><a href={hitsHref}>{HITS_NAV_LABEL}</a></li>
     </ul>
-    <section class="block" aria-labelledby="set-hits">
-      <div class="block-head">
-        <h2 id="set-hits">{HITS_NAV_LABEL}</h2>
-        {hitCount > 0 && <a href={hitsHref}>{hitCount}장</a>}
-      </div>
-      {hitsNote ? (
-        <p class="lede">{hitsNote}</p>
-      ) : (
-        <p class="lede">{hitSummary}. 이 세트의 높은 레어도만 모아 두었습니다.</p>
-      )}
-      <p class="more-info"><a href={hitsHref}>{hitCount > 0 ? "이 세트의 힛카드" : "안내 보기"}</a></p>
-    </section>
+
+    {hitSummary && <p class="sr-only">{hitSummary}</p>}
+
     <AdSlot id={`${set.id}-list`} />
     {opinion && <OpinionLine opinion={opinion} />}
+
     <div class="filters" data-card-filters>
       <div class="filter-row" data-group="rarity">
         <span class="filter-label">레어도</span>
         <div class="filter-options">
           <button type="button" data-value="all" aria-pressed="true">전체</button>
+          <button type="button" data-value="hit" aria-pressed="false">AR 이상</button>
           {rarities.map((row) => (
             <button type="button" data-value={row.code} aria-pressed="false">
-              {row.code}{row.label !== row.code ? ` ${row.label}` : ""} {row.count}
+              {row.code}<span class="c">{row.count}</span>
             </button>
           ))}
         </div>
@@ -136,12 +207,14 @@ const hitsHref = withBase(hitsSetPath(set));
           {types.map((row) => (
             <button type="button" data-value={row.code} aria-pressed="false">
               <span class={`swatch swatch-${row.code}`} aria-hidden="true"></span>
-              {row.label} {row.count}
+              {row.label}
             </button>
           ))}
         </div>
       </div>
-      <p class="result-count" data-result-count aria-live="polite">{set.cards.length}장</p>
+    </div>
+    <div class="reshd">
+      <span class="result-count" data-result-count aria-live="polite">{set.cards.length}장</span>
     </div>
     <p class="empty" data-empty hidden>해당하는 카드가 없습니다.</p>
     <div class="grid">
@@ -152,14 +225,18 @@ const hitsHref = withBase(hitsSetPath(set));
 <script is:inline>
   const root = document.querySelector("[data-card-filters]");
   if (root) {
+    const HIT = new Set(["AR", "SR", "SAR", "MA", "UR", "MUR", "FUR", "ACE"]);
     const state = { rarity: "all", type: "all" };
     const cards = [...document.querySelectorAll("[data-card]")];
-    const count = root.querySelector("[data-result-count]");
+    const count = document.querySelector("[data-result-count]");
     const empty = document.querySelector("[data-empty]");
     function apply() {
       let shown = 0;
       for (const card of cards) {
-        const rarityOk = state.rarity === "all" || card.dataset.rarity === state.rarity;
+        const rarity = card.dataset.rarity || "";
+        const rarityOk =
+          state.rarity === "all" ||
+          (state.rarity === "hit" ? HIT.has(rarity) : rarity === state.rarity);
         const typeOk = state.type === "all" || card.dataset.type === state.type;
         const visible = rarityOk && typeOk;
         card.hidden = !visible;

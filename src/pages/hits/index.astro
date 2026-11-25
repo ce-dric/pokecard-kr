@@ -38,11 +38,8 @@ const jsonLd = {
 <Base title={title} description={description} jsonLd={jsonLd}>
   <div class="wrap">
     <header class="mast">
-      <p class="crumbs"><a href={withBase("")}>홈</a> / {HITS_NAV_LABEL}</p>
-      <div class="mast-row">
-        <h1>박스별 힛카드</h1>
-        <p class="mast-aside">{sets.length}세트</p>
-      </div>
+      <nav class="crumbs"><a href={withBase("")}>세트</a><span>/</span><span>{HITS_NAV_LABEL}</span></nav>
+      <h1>박스별 힛카드</h1>
       <p class="lede">
         상자를 고르면 그 세트의 높은 레어도 카드를 크게 볼 수 있습니다.
         이름과 레어도는 수록 데이터에 있는 것만 보여 줍니다.
@@ -62,16 +59,14 @@ const jsonLd = {
             const note = hitNote(set);
             return (
               <li>
-                <SetRow set={set} href={withBase(hitsSetPath(set))} eager={group === groups[0] && index === 0}>
-                  {count > 0 ? (
-                    <>
-                      <span>{sections.map((section) => section.code).join(" ")}</span>
-                      <span>{count}장</span>
-                    </>
-                  ) : (
-                    <span>안내</span>
-                  )}
-                </SetRow>
+                <SetRow
+                  set={set}
+                  href={withBase(hitsSetPath(set))}
+                  eager={group === groups[0] && index === 0}
+                  useBox
+                  countLabel={count > 0 ? `${count}장` : "안내"}
+                  priceLabel={count > 0 ? sections.map((section) => section.code).join(", ") : ""}
+                />
                 {note && <p class="set-note">{note}</p>}
               </li>
             );
