@@ -9,6 +9,41 @@ import { buildView, cardFace, cleanText } from "./view.ts";
 const mapping = mappingFile as CardMapping;
 const middleDot = "\u00b7";
 const root = new URL("../../../", import.meta.url);
+const BASIC_ENERGY = new Set(["GRA", "FIR", "WAT", "LIG", "PSY", "FIG", "DAR", "MET"]);
+const STANDARD = new Set(["H", "I", "J"]);
+
+function setCards() {
+  const setsDir = new URL("../../data/sets/", import.meta.url);
+  const sets = new Map<
+    string,
+    {
+      id: string;
+      regulation: string;
+      cards: {
+        number: string;
+        nameKo: string | null;
+        nameStatus: string;
+        halfKo: string | null;
+        regulation?: string | null;
+        category?: string;
+      }[];
+    }
+  >();
+  for (const name of readdirSync(setsDir)) {
+    if (!name.endsWith(".json")) continue;
+    const set = JSON.parse(readFileSync(new URL(name, setsDir), "utf8"));
+    sets.set(set.id, set);
+  }
+  return sets;
+}
+
+function setMarksOnlyStandard(regulation: string) {
+  const marks = String(regulation || "")
+    .split(/[,\s]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return marks.length > 0 && marks.every((mark) => STANDARD.has(mark));
+}
 
 test("game text does not use a middle dot", () => {
   const files = [
@@ -42,6 +77,7 @@ test("decks are 60 cards and every deck card is in the mapping", () => {
   for (const deck of decks) {
     assert.equal(deck.cards.length, 60, deck.id);
     assert.equal(deck.titleKo.includes(middleDot), false);
+    assert.equal(deck.faceEn.includes(middleDot), false);
     for (const id of deck.cards) {
       ids.add(id);
       assert.ok(mapping.cards[String(id)], `missing card ${id}`);
@@ -55,14 +91,9 @@ test("decks are 60 cards and every deck card is in the mapping", () => {
 });
 
 test("Korean names come only from our verified card data", () => {
-  const setsDir = new URL("../../data/sets/", import.meta.url);
+  const sets = setCards();
   const verified = new Map<string, string>();
-  for (const name of readdirSync(setsDir)) {
-    if (!name.endsWith(".json")) continue;
-    const set = JSON.parse(readFileSync(new URL(name, setsDir), "utf8")) as {
-      id: string;
-      cards: { number: string; nameKo: string | null; nameStatus: string; halfKo: string | null }[];
-    };
+  for (const set of sets.values()) {
     for (const card of set.cards) {
       if (card.nameStatus === "verified-kr" && card.nameKo) {
         const shown = card.halfKo ? `${card.nameKo} ${card.halfKo}` : card.nameKo;
@@ -81,7 +112,7 @@ test("Korean names come only from our verified card data", () => {
   }
 });
 
-test("matched cards keep our name and unmatched cards keep the engine English name", () => {
+test("matched cards keep our Korean name and image", () => {
   const cards = new Map([
     [8, { cardId: 8, name: "Eevee", cardType: 0, hp: 70, energyType: 0, basic: true, ex: false, megaEx: false, weakness: null, resistance: null }],
     [721, { cardId: 721, name: "Kyogre", cardType: 0, hp: 150, energyType: 3, basic: true, ex: false, megaEx: false, weakness: 4, resistance: null }],
@@ -105,12 +136,13 @@ test("matched cards keep our name and unmatched cards keep the engine English na
   assert.equal(matched.fullImage, "images/cards/mee/008.webp");
 
   const kyogre = mapping.cards["721"];
-  assert.equal(kyogre?.link, null);
+  assert.equal(kyogre?.link?.nameKo, "가이오가");
+  assert.equal(kyogre?.link?.image, "images/cards/m1s/016-thumb.webp");
   const face = cardFace(721, cards, mapping);
-  assert.equal(face.name, "Kyogre");
-  assert.equal(face.nameKo, null);
-  assert.equal(face.image, "game/cards/721-thumb.webp");
-  assert.equal(face.fullImage, "game/cards/721.webp");
+  assert.equal(face.name, "가이오가");
+  assert.equal(face.nameKo, "가이오가");
+  assert.equal(face.image, "images/cards/m1s/016-thumb.webp");
+  assert.equal(face.fullImage, "images/cards/m1s/016.webp");
 
   const water = cardFace(3, new Map(), mapping);
   assert.equal(water.name, "기본 물 에너지");
@@ -120,10 +152,14 @@ test("matched cards keep our name and unmatched cards keep the engine English na
   assert.equal(cleanText("a\u00b7b"), "a b");
 });
 
-test("published set matches come from the engine set code and number", () => {
-  assert.deepEqual(mapping.source.matches, { m6: 0, m6a: 8, mee: 1, mem: 1, mez: 1 });
-  assert.deepEqual(mapping.source.linked, { m6: 0, m6a: 5, mee: 1, mem: 1, mez: 1 });
-  const linked: Record<string, number> = { m6: 0, m6a: 0, mee: 0, mem: 0, mez: 0 };
+test("mapping links cover published Korean sets and keep energy anchors", () => {
+  assert.ok(Object.keys(mapping.source.matches).length >= 20);
+  assert.equal(mapping.source.linked.m1s > 0, true);
+  assert.equal(mapping.source.linked.mc > 0, true);
+  assert.equal(mapping.source.linked.m2a > 0, true);
+  const linked: Record<string, number> = Object.fromEntries(
+    Object.keys(mapping.source.linked).map((id) => [id, 0]),
+  );
   for (const row of Object.values(mapping.cards)) {
     if (!row.link) continue;
     assert.ok(row.link.setId in linked, row.link.setId);
@@ -137,10 +173,11 @@ test("published set matches come from the engine set code and number", () => {
   assert.equal(mapping.cards["8"]?.link?.nameKo, "기본 강철 에너지");
 });
 
-test("every deck card has a small image and unmatched cards keep the official fallback", () => {
+test("every deck card uses a Korean image and is Standard-legal", () => {
+  const sets = setCards();
   const deckIds = new Set(decks.flatMap((deck) => deck.cards));
-  let jp = 0;
   let ours = 0;
+  let jp = 0;
   let text = 0;
   for (const row of Object.values(mapping.cards)) {
     const face = cardFace(row.id, new Map(), mapping);
@@ -148,32 +185,43 @@ test("every deck card has a small image and unmatched cards keep the official fa
       ours += 1;
       assert.equal(face.image, row.link.image);
       assert.equal(face.nameKo, row.link.nameKo);
+      const file = new URL(`../../../public/${row.link.image}`, import.meta.url);
+      assert.equal(statSync(file).size > 1000, true, row.link.image);
     } else if (row.picture) {
       jp += 1;
       assert.equal(face.nameKo, null);
       assert.equal(face.image, `game/cards/${row.id}-thumb.webp`);
-      assert.equal(face.fullImage, `game/cards/${row.id}.webp`);
       assert.match(row.picture.page, /^https:\/\/www\.pokemon-card\.com\/card-search\/details\.php\/card\/\d+\/regu\/all$/);
-      for (const path of [row.picture.thumb, row.picture.full]) {
-        const file = new URL(`../../../public/${path}`, import.meta.url);
-        const info = statSync(file);
-        const bytes = readFileSync(file);
-        assert.equal(bytes.subarray(0, 4).toString(), "RIFF");
-        assert.equal(bytes.subarray(8, 12).toString(), "WEBP");
-        const limit = path.endsWith("-thumb.webp") ? 35000 : 80000;
-        assert.equal(info.size < limit, true, `${path} is ${info.size} bytes`);
-      }
     } else {
       text += 1;
       assert.equal(face.image, null);
     }
-    if (deckIds.has(row.id)) assert.ok(face.image, `deck card ${row.id} has no image`);
+    if (deckIds.has(row.id)) {
+      assert.ok(row.link?.nameKo, `deck card ${row.id} missing Korean name`);
+      assert.ok(face.image, `deck card ${row.id} has no image`);
+      const set = sets.get(row.link.setId);
+      assert.ok(set, row.link.setId);
+      const card = set.cards.find((item) => item.number === row.link.number);
+      assert.ok(card, `${row.link.setId}:${row.link.number}`);
+      const basic = !row.setCode && BASIC_ENERGY.has(row.number);
+      const mark = card.regulation == null ? "" : String(card.regulation);
+      const ok =
+        basic ||
+        STANDARD.has(mark) ||
+        ((mark === "" || mark == null) && setMarksOnlyStandard(set.regulation));
+      assert.equal(ok, true, `deck card ${row.id} mark ${mark || set.regulation}`);
+    }
   }
   assert.equal(text, 0);
-  assert.equal(jp > ours, true);
+  assert.equal(ours > 0, true);
+  assert.equal(jp, 0);
   assert.deepEqual(
     decks.map((deck) => deck.id),
     ["sample", "crustle", "dragapult"],
+  );
+  assert.deepEqual(
+    decks.map((deck) => deck.faceEn),
+    ["가이오가", "암팰리스", "드래펄트 ex"],
   );
 });
 
@@ -222,23 +270,25 @@ test("discard, stadium, and choices carry thumbnails", () => {
     },
   } as Observation;
   const view = buildView(obs, 0, [], { cards: new Map(), attacks: new Map() }, mapping, undefined);
-  assert.equal(view.you.discard[0]?.image, "game/cards/1121-thumb.webp");
-  assert.equal(view.opp.discard[1]?.image, "game/cards/723-thumb.webp");
-  assert.equal(view.options[0]?.image, "game/cards/721-thumb.webp");
-  assert.equal(view.options[0]?.fullImage, "game/cards/721.webp");
-  assert.equal(view.options[1]?.image, "game/cards/1121-thumb.webp");
-  assert.equal(view.options[2]?.image, "game/cards/1121-thumb.webp");
-  assert.equal(view.options[2]?.fullImage, "game/cards/1121.webp");
-  assert.equal(view.options[3]?.image, "game/cards/723-thumb.webp");
-  assert.equal(view.options[4]?.image, "game/cards/1264-thumb.webp");
+  assert.equal(view.you.discard[0]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.opp.discard[1]?.image, mapping.cards["723"]?.link?.image);
+  assert.equal(view.options[0]?.image, mapping.cards["721"]?.link?.image);
+  assert.equal(view.options[0]?.fullImage, "images/cards/m1s/016.webp");
+  assert.equal(view.options[1]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.options[2]?.image, mapping.cards["1121"]?.link?.image);
+  assert.equal(view.options[2]?.fullImage, mapping.cards["1121"]?.link?.image?.replace("-thumb.webp", ".webp"));
+  assert.equal(view.options[3]?.image, mapping.cards["723"]?.link?.image);
+  assert.equal(view.options[4]?.image, mapping.cards["1264"]?.link?.image);
   assert.equal(view.options[4]?.label, "특성");
-  assert.equal(view.stadium?.image, "game/cards/1264-thumb.webp");
+  assert.equal(view.stadium?.image, mapping.cards["1264"]?.link?.image);
   const page = readFileSync(new URL("src/lib/ptcg/ui.ts", root), "utf8");
   assert.match(page, /loading="lazy"/);
   assert.match(page, /data-zoom-open/);
   assert.match(page, /트래시/);
   assert.match(page, /확대/);
   assert.match(page, /이미지 출처: 포켓몬 공식/);
+  assert.match(page, /스탠다드 레귤레이션/);
+  assert.match(page, /pokemoncard\.co\.kr\/card\/play_qna/);
 });
 
 test("the battle page credits the engine and the nav links to it", () => {
@@ -247,6 +297,7 @@ test("the battle page credits the engine and the nav links to it", () => {
   assert.match(page, /PTCG AI Battle Challenge/);
   assert.match(page, /비공식 팬 페이지/);
   assert.match(page, /포켓몬 공식 사이트가 아닙니다/);
+  assert.match(page, /공식 스탠다드/);
   assert.match(page, /game\/rules\//);
   assert.match(page, /놀이방법/);
   assert.match(header, /대전/);
