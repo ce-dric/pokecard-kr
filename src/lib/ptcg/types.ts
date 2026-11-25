@@ -91,6 +91,7 @@ export interface AttackData {
   attackId: number;
   name: string;
   damage: number;
+  energies?: number[];
 }
 
 export interface Catalogs {

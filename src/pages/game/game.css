@@ -785,3 +785,184 @@
     width: 4.2rem;
   }
 }
+
+/* Card-direct actions (#76) */
+.ptcg-card.is-playable {
+  outline: 2px solid var(--ptcg-accent);
+  outline-offset: 2px;
+}
+
+.ptcg-card.is-selected {
+  outline: 2px solid var(--ptcg-cta);
+  outline-offset: 2px;
+}
+
+.ptcg-card.is-target {
+  outline: 2px dashed var(--ptcg-tab);
+  outline-offset: 2px;
+}
+
+.ptcg-card[data-card-act] {
+  cursor: pointer;
+}
+
+.ptcg-card-zoom {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+  border: 1px solid var(--ptcg-rule-strong);
+  border-radius: 8px;
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.15rem 0.25rem;
+  cursor: pointer;
+}
+
+.ptcg-card-zoom:hover {
+  border-color: var(--ptcg-accent);
+}
+
+.ptcg-fallback {
+  margin: 0.55rem 0 0;
+}
+
+.ptcg-fallback > summary {
+  cursor: pointer;
+  color: var(--ptcg-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ptcg-quick,
+.ptcg-card-actions,
+.ptcg-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.55rem;
+}
+
+.ptcg-quick button,
+.ptcg-card-actions button,
+.ptcg-picker-actions button,
+.ptcg-attack-row,
+.ptcg-picker-card {
+  border: 1px solid #1a1c20;
+  border-radius: 999px;
+  background: #1a1c20;
+  color: #fff;
+  padding: 0.42rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ptcg-card-actions button[data-clear-selection],
+.ptcg-attack-sheet header button,
+.ptcg-picker-actions button[data-confirm]:disabled {
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+  border-color: var(--ptcg-rule-strong);
+}
+
+.ptcg-attack-sheet,
+.ptcg-picker {
+  margin: 0.45rem 0 0.7rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--ptcg-rule);
+  border-radius: var(--ptcg-radius);
+  background: var(--ptcg-bg);
+}
+
+.ptcg-attack-sheet header,
+.ptcg-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.55rem;
+}
+
+.ptcg-attack-sheet h3,
+.ptcg-picker h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ptcg-attack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ptcg-attack-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.45rem;
+  align-items: center;
+  width: 100%;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.ptcg-attack-row--retreat {
+  grid-template-columns: 1fr;
+}
+
+.ptcg-attack-cost {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.ptcg-attack-free,
+.ptcg-empty-note {
+  color: var(--ptcg-muted);
+  font-size: 12px;
+}
+
+.ptcg-attack-damage,
+.ptcg-attack-ready {
+  font-size: 12px;
+  color: #ffe8e8;
+}
+
+.ptcg-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ptcg-picker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 4.8rem;
+  border-radius: 10px;
+  padding: 0.3rem;
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+  border-color: var(--ptcg-rule-strong);
+}
+
+.ptcg-picker-card[aria-pressed="true"] {
+  background: var(--ptcg-accent);
+  border-color: var(--ptcg-accent);
+  color: #fff;
+}
+
+.ptcg-picker-card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.ptcg-picker-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 4.5rem;
+  font-size: 11px;
+  text-align: center;
+}
