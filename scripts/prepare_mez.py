@@ -647,6 +647,7 @@ def build_card(kr: dict) -> dict:
         "nameStatus": "verified-kr",
         "nameJa": jp.get("jpName") or None,
         "rarity": rarity,
+        "regulation": kr.get("regulation") or "",
         "type": type_code or None,
         "typeKo": kr["typeKo"] or None,
         "category": group,

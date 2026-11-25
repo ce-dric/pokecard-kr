@@ -5,6 +5,11 @@ import CardTile from "../../../components/CardTile.astro";
 import OpinionLine from "../../../components/OpinionLine.astro";
 import { presentCardOpinion } from "../../../lib/opinions.mjs";
 import opinions from "../../../data/community/opinions.json";
+import {
+  OFFICIAL_REGULATION_PDF,
+  OFFICIAL_REGULATION_QNA,
+  regulationStatus,
+} from "../../../lib/regulation.mjs";
 import { SITE_NAME } from "../../../lib/site";
 import {
   altText,
@@ -46,6 +51,7 @@ const { prev, next } = neighbors(set, card);
 const related = siblings(set, card);
 const pageUrl = Astro.url.href;
 const official = card.verifiedUrl || card.krUrl;
+const regulation = regulationStatus(card, set);
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -138,6 +144,21 @@ const jsonLd = {
               ? `${card.rarity}${rarityLabel[card.rarity] && rarityLabel[card.rarity] !== card.rarity ? ` ${rarityLabel[card.rarity]}` : ""}`
               : "표기 없음"}
           </dd>
+          <dt>레귤레이션</dt>
+          <dd class="regulation-cell">
+            <span class="regulation-mark" data-known={regulation.known ? "1" : "0"}>
+              {regulation.labelKo}
+            </span>
+            {regulation.standardLegal && (
+              <span class="standard-badge">{regulation.badgeKo}</span>
+            )}
+            <p class="regulation-cite">
+              {regulation.citeKo}.{" "}
+              <a href={OFFICIAL_REGULATION_QNA} rel="noopener noreferrer">공식 레귤레이션 안내</a>
+              {" / "}
+              <a href={OFFICIAL_REGULATION_PDF} rel="noopener noreferrer">2026 배틀 규정 PDF</a>
+            </p>
+          </dd>
           <dt>종류</dt>
           <dd>{card.categoryKo}</dd>
           {card.type && (
@@ -200,3 +221,47 @@ const jsonLd = {
     )}
   </div>
 </Base>
+
+<style>
+  .regulation-cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.55rem;
+  }
+
+  .regulation-mark {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .regulation-mark[data-known="0"] {
+    font-weight: 500;
+    color: var(--faint);
+  }
+
+  .standard-badge {
+    display: inline-block;
+    padding: 0.12rem 0.45rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--fill) 70%, transparent);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .regulation-cite {
+    flex: 1 0 100%;
+    margin: 0;
+    color: var(--faint);
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+
+  .regulation-cite a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+</style>

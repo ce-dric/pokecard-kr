@@ -173,6 +173,13 @@ def parse_kr(card_id: str, html: str) -> list[dict]:
     if img_match:
         img_num = img_match.group(1).zfill(3)
     product = text(soup.select_one("a.search_href"))
+    regulation = ""
+    for symbol in soup.select("div.pre_info_wrap img"):
+        src = (symbol.get("src") or "").split("?")[0]
+        # Expansion marks look like M6.png. A single capital letter is the regulation mark.
+        mark = re.search(r"/([A-Z])\.png$", src)
+        if mark:
+            regulation = mark.group(1)
     variants = []
     for el in soup.select("span.p_num"):
         raw_num = text(el)
@@ -206,6 +213,7 @@ def parse_kr(card_id: str, html: str) -> list[dict]:
                 "imageSrc": image_src,
                 "imageCrop": image_crop,
                 "productNameKo": product,
+                "regulation": regulation,
                 "pageHasImage": number == img_num or not img_num,
             }
         )
@@ -546,6 +554,7 @@ def build_card(kr: dict) -> dict:
         "nameStatus": name_status,
         "nameJa": jp.get("jpName") or None,
         "rarity": rarity,
+        "regulation": kr.get("regulation") or "",
         "type": type_code or None,
         "typeKo": kr["typeKo"] or jp.get("jpTypeKo") or None,
         "category": group,
@@ -611,6 +620,11 @@ def main() -> None:
     print("rarity disagree", disagree)
     empty_stage = [card["number"] for card in cards if not card["stage"]]
     print("empty stage", empty_stage)
+    regs = Counter(card["regulation"] or "(none)" for card in cards)
+    print("regulation", dict(regs))
+    regulation_marks = sorted({card["regulation"] for card in cards if card["regulation"]})
+    if not regulation_marks:
+        raise SystemExit("no regulation mark on official pages")
 
     if __import__("os").environ.get("SKIP_IMAGES") == "1":
         print("skip images")
@@ -626,7 +640,7 @@ def main() -> None:
         "productNameKo": "MEGA 확장팩 「스톰에메랄다」",
         "productNameJa": "ポケモンカードゲーム MEGA 拡張パック「ストームエメラルダ」",
         "series": "MEGA",
-        "regulation": "J",
+        "regulation": ", ".join(regulation_marks),
         "expansionMark": "M6",
         "releaseDateKr": "2026-08-21",
         "releaseDateJp": "2026-07-31",
