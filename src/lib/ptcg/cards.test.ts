@@ -282,13 +282,14 @@ test("discard, stadium, and choices carry thumbnails", () => {
   assert.equal(view.options[4]?.label, "특성");
   assert.equal(view.stadium?.image, mapping.cards["1264"]?.link?.image);
   const page = readFileSync(new URL("src/lib/ptcg/ui.ts", root), "utf8");
+  const lobby = readFileSync(new URL("src/lib/ptcg/lobby.ts", root), "utf8");
   assert.match(page, /loading="lazy"/);
   assert.match(page, /data-zoom-open/);
   assert.match(page, /트래쉬/);
   assert.match(page, /확대/);
   assert.match(page, /이미지 출처: 포켓몬 공식/);
-  assert.match(page, /스탠다드 레귤레이션/);
-  assert.match(page, /pokemoncard\.co\.kr\/card\/play_qna/);
+  assert.match(lobby, /스탠다드 레귤레이션/);
+  assert.match(lobby, /pokemoncard\.co\.kr\/card\/play_qna/);
 });
 
 test("the battle page credits the engine and the nav links to it", () => {

@@ -14,6 +14,8 @@ let obs: Observation | null = null;
 let committed: BattleLog[] = [];
 let pending: BattleLog[] = [];
 let endReason: number | undefined;
+/** Reserved for the smarter-bot issue; greedy bot is always used for now. */
+let difficulty: "easy" | "normal" | "hard" = "easy";
 
 function lines(): string[] {
   if (!catalogs) return [];
@@ -109,10 +111,21 @@ function choose(indices: number[]): void {
   runBots();
 }
 
-self.onmessage = (event: MessageEvent<{ type: string; engineUrl?: string; deck0?: number[]; deck1?: number[]; indices?: number[] }>) => {
+self.onmessage = (event: MessageEvent<{
+  type: string;
+  engineUrl?: string;
+  deck0?: number[];
+  deck1?: number[];
+  indices?: number[];
+  difficulty?: "easy" | "normal" | "hard";
+}>) => {
   const message = event.data;
   const run = async () => {
     if ((message.type === "start" || message.type === "restart") && message.engineUrl && message.deck0 && message.deck1) {
+      if (message.difficulty === "easy" || message.difficulty === "normal" || message.difficulty === "hard") {
+        difficulty = message.difficulty;
+      }
+      void difficulty;
       await boot(message.engineUrl, message.deck0, message.deck1);
       return;
     }

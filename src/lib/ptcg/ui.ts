@@ -1,4 +1,21 @@
 import { decks } from "./decks.ts";
+import {
+  isDifficulty,
+  loadPrefs,
+  lobbyHtml,
+  resolveOpponentDeck,
+  savePrefs,
+  type Difficulty,
+  type LobbyPrefs,
+} from "./lobby.ts";
+import {
+  coinMapsToFirst,
+  goFirstOptionIndex,
+  prebattleHtml,
+  prebattlePhase,
+  revealNote,
+  type CoinSide,
+} from "./prebattle.ts";
 import type { FaceCard, GameView } from "./view.ts";
 
 interface WorkerIn {
@@ -7,6 +24,7 @@ interface WorkerIn {
   deck0?: number[];
   deck1?: number[];
   indices?: number[];
+  difficulty?: Difficulty;
 }
 
 interface WorkerOut {
@@ -223,32 +241,36 @@ export function boardHtml(view: GameView, note = ""): string {
 export function mountGame(root: Element | null): void {
   if (!root) return;
   let worker: Worker | null = null;
-  let mine = decks[0]?.id ?? "sample";
-  let theirs = decks[1]?.id ?? decks[0]?.id ?? "sample";
+  let prefs: LobbyPrefs = loadPrefs();
+  let mine = prefs.mine;
+  let theirs = prefs.theirs;
+  let difficulty: Difficulty = prefs.difficulty;
   let picked = new Set<number>();
   let latest: GameView | null = null;
   let busy = false;
+  let coinFlipped = false;
+  let coinSide: CoinSide | null = null;
+  let wasSetup = false;
+  const reducedMotion = (): boolean =>
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
     return new URL("game/ptcg.mjs", window.location.origin + base).href;
   };
 
-  const deckButtons = (group: "mine" | "theirs", current: string): string =>
-    decks
-      .map((deck) => {
-        const pressed = deck.id === current ? "true" : "false";
-        return `<button type="button" data-deck="${group}" data-id="${esc(deck.id)}" aria-pressed="${pressed}">${esc(deck.titleKo)} <small>${esc(deck.faceEn)}</small></button>`;
-      })
-      .join("");
+  const persist = (): void => {
+    prefs = { mine, theirs, difficulty };
+    savePrefs(prefs);
+  };
 
   const paintLobby = (): void => {
-    root.innerHTML = `<div class="ptcg-setup">
-      <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
-      <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
-      <p class="ptcg-note">샘플 덱은 공식 스탠다드 레귤레이션(마크 H, I, J)을 따릅니다. 규정은 <a href="https://pokemoncard.co.kr/card/play_qna" rel="noopener noreferrer">포켓몬 카드 게임 공식 플레이 안내</a>를 보세요. 한국판 목록에 확인된 카드는 우리 이름과 이미지를 쓰고, 아직 없는 카드는 영문 이름과 일본 공식 이미지를 씁니다.</p>
-      <button type="button" data-start>대전 시작</button>
-    </div><div data-board hidden></div>`;
+    coinFlipped = false;
+    coinSide = null;
+    wasSetup = false;
+    root.innerHTML = lobbyHtml({ mine, theirs, difficulty });
   };
 
   const paintBoard = (view: GameView, note = ""): void => {
@@ -256,7 +278,28 @@ export function mountGame(root: Element | null): void {
     if (!board) return;
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(view, note)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    const phase = prebattlePhase(view);
+    if (phase === "setup") wasSetup = true;
+    let banner = note;
+    if (!phase && wasSetup && view.turn >= 1) {
+      banner = banner || revealNote();
+      wasSetup = false;
+    }
+    if (phase === "coin") {
+      board.innerHTML = `${prebattleHtml(view, {
+        flipped: coinFlipped,
+        side: coinSide,
+        reducedMotion: reducedMotion(),
+      }) || ""}<p class="ptcg-actions"><button type="button" data-decks>덱 고르기</button></p>`;
+    } else if (phase) {
+      coinFlipped = false;
+      coinSide = null;
+      board.innerHTML = `${prebattleHtml(view) || ""}<p class="ptcg-actions"><button type="button" data-decks>덱 고르기</button></p>`;
+    } else {
+      coinFlipped = false;
+      coinSide = null;
+      board.innerHTML = `${viewHtml(view, banner)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    }
     const log = board.querySelector(".ptcg-log");
     if (log) log.scrollTop = log.scrollHeight;
     board.scrollIntoView({ block: "start" });
@@ -296,9 +339,14 @@ export function mountGame(root: Element | null): void {
 
   const start = (): void => {
     const deck0 = decks.find((deck) => deck.id === mine);
-    const deck1 = decks.find((deck) => deck.id === theirs);
+    const theirId = resolveOpponentDeck(theirs, mine);
+    const deck1 = decks.find((deck) => deck.id === theirId);
     if (!deck0 || !deck1) return;
+    persist();
     busy = true;
+    coinFlipped = false;
+    coinSide = null;
+    wasSetup = false;
     const board = root.querySelector("[data-board]");
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     if (board) {
@@ -311,6 +359,7 @@ export function mountGame(root: Element | null): void {
       engineUrl: engineUrl(),
       deck0: deck0.cards,
       deck1: deck1.cards,
+      difficulty,
     } satisfies WorkerIn);
   };
 
@@ -368,8 +417,20 @@ export function mountGame(root: Element | null): void {
       if (!id) return;
       if (group === "mine") mine = id;
       if (group === "theirs") theirs = id;
+      persist();
       for (const button of root.querySelectorAll(`[data-deck="${group}"]`)) {
         button.setAttribute("aria-pressed", button.getAttribute("data-id") === id ? "true" : "false");
+      }
+      return;
+    }
+    const difficultyButton = target.closest("[data-difficulty]");
+    if (difficultyButton instanceof HTMLButtonElement) {
+      const id = difficultyButton.dataset.difficulty;
+      if (!id || !isDifficulty(id)) return;
+      difficulty = id;
+      persist();
+      for (const button of root.querySelectorAll("[data-difficulty]")) {
+        button.setAttribute("aria-pressed", button.getAttribute("data-difficulty") === id ? "true" : "false");
       }
       return;
     }
@@ -378,8 +439,22 @@ export function mountGame(root: Element | null): void {
       return;
     }
     if (target.closest("[data-decks]")) {
-      root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
+      latest = null;
+      paintLobby();
       root.querySelector(".ptcg-setup")?.scrollIntoView({ block: "start" });
+      return;
+    }
+    if (target.closest("[data-coin-flip]") && latest && prebattlePhase(latest) === "coin" && !busy) {
+      coinFlipped = true;
+      coinSide = Math.random() < 0.5 ? "heads" : "tails";
+      paintBoard(latest);
+      return;
+    }
+    if (target.closest("[data-coin-confirm]") && latest && prebattlePhase(latest) === "coin" && coinSide && !busy) {
+      const goFirst = coinMapsToFirst(coinSide);
+      const index = goFirstOptionIndex(latest.options, goFirst);
+      busy = true;
+      ensureWorker().postMessage({ type: "choose", indices: [index] } satisfies WorkerIn);
       return;
     }
     if (busy || !latest || latest.phase !== "choose") return;

@@ -33,6 +33,7 @@ function side(hand: FaceCard[] | null): SideView {
 const view: GameView = {
   phase: "choose",
   prompt: "손으로 가져올 카드를 고르세요",
+  context: 7,
   minCount: 1,
   maxCount: 1,
   options: [

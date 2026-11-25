@@ -785,3 +785,300 @@
     width: 4.2rem;
   }
 }
+
+/* Lobby deck cards and pre-battle screens (issue #79) */
+.ptcg-lobby-field {
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.75rem 0.9rem;
+  border: 1px solid var(--ptcg-rule);
+  border-radius: calc(var(--ptcg-radius) - 2px);
+  background: var(--ptcg-bg);
+}
+
+.ptcg-lobby-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 0.65rem;
+}
+
+.ptcg-lobby-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.65rem 0.65rem 0.8rem;
+  text-align: left;
+  border: 1px solid var(--ptcg-rule-strong);
+  border-radius: var(--ptcg-radius);
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ptcg-setup .ptcg-lobby-card[aria-pressed="true"],
+.ptcg-lobby-card[aria-pressed="true"] {
+  border-color: var(--ptcg-accent);
+  box-shadow: inset 0 0 0 2px var(--ptcg-accent);
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+}
+
+.ptcg-setup .ptcg-lobby-card[aria-pressed="true"] .ptcg-lobby-face,
+.ptcg-setup .ptcg-lobby-card[aria-pressed="true"] .ptcg-lobby-blurb,
+.ptcg-setup .ptcg-lobby-card[aria-pressed="true"] .ptcg-lobby-type {
+  color: var(--ptcg-muted);
+}
+
+.ptcg-setup .ptcg-lobby-card[aria-pressed="true"] .ptcg-lobby-type {
+  color: var(--ptcg-accent);
+}
+
+.ptcg-lobby-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8.5rem;
+  border-radius: calc(var(--ptcg-radius) - 4px);
+  background:
+    linear-gradient(160deg, #dfe6f2 0%, #f7f8fb 55%, #e8edf6 100%);
+  overflow: hidden;
+}
+
+.ptcg-lobby-art img {
+  width: 5.5rem;
+  height: auto;
+  border-radius: 4px;
+}
+
+.ptcg-lobby-fallback {
+  display: grid;
+  place-items: center;
+  width: 5.5rem;
+  height: 7.6rem;
+  border-radius: 4px;
+  background: #1a1c20;
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.ptcg-lobby-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ptcg-lobby-title {
+  font-size: 0.95rem;
+}
+
+.ptcg-lobby-face,
+.ptcg-lobby-type {
+  color: var(--ptcg-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ptcg-lobby-type {
+  color: var(--ptcg-accent);
+}
+
+.ptcg-lobby-blurb {
+  color: var(--ptcg-muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ptcg-lobby-card small,
+.ptcg-lobby button small {
+  color: inherit;
+}
+
+.ptcg-lobby-difficulty button[aria-pressed="true"] {
+  background: var(--ptcg-accent);
+  border-color: var(--ptcg-accent);
+  color: #fff;
+}
+
+.ptcg-prebattle {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: var(--ptcg-surface);
+  border: 1px solid var(--ptcg-rule);
+  border-radius: var(--ptcg-radius);
+}
+
+.ptcg-prebattle h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.ptcg-pre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.ptcg-pre-result {
+  margin: 0;
+  width: 100%;
+  color: var(--ptcg-ink);
+  font-weight: 700;
+}
+
+.ptcg-coin {
+  position: relative;
+  width: 6.5rem;
+  height: 6.5rem;
+  margin: 1rem auto;
+  border-radius: 50%;
+  border: 3px solid #1a1c20;
+  background: radial-gradient(circle at 35% 30%, #ffe56a, #e2b40f 55%, #b8860b);
+  transform-style: preserve-3d;
+}
+
+.ptcg-coin-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #1a1c20;
+  backface-visibility: hidden;
+}
+
+.ptcg-coin-tails {
+  transform: rotateY(180deg);
+}
+
+.ptcg-coin.is-flipped.is-heads {
+  animation: ptcg-coin-heads 0.9s ease forwards;
+}
+
+.ptcg-coin.is-flipped.is-tails {
+  animation: ptcg-coin-tails 0.9s ease forwards;
+}
+
+.ptcg-coin.is-reduced.is-heads {
+  animation: none;
+  transform: rotateY(0deg);
+}
+
+.ptcg-coin.is-reduced.is-tails {
+  animation: none;
+  transform: rotateY(180deg);
+}
+
+@keyframes ptcg-coin-heads {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(720deg); }
+}
+
+@keyframes ptcg-coin-tails {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(900deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptcg-coin.is-flipped.is-heads,
+  .ptcg-coin.is-flipped.is-tails {
+    animation: none;
+  }
+}
+
+.ptcg-pre-hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.ptcg-pre-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 5.4rem;
+  margin: 0;
+  padding: 0.3rem;
+  border: 1px solid var(--ptcg-rule-strong);
+  border-radius: 8px;
+  background: var(--ptcg-bg);
+  color: var(--ptcg-ink);
+  cursor: pointer;
+}
+
+button.ptcg-pre-card:hover,
+button.ptcg-pre-card[aria-pressed="true"] {
+  border-color: var(--ptcg-accent);
+  box-shadow: inset 0 0 0 1px var(--ptcg-accent);
+}
+
+.ptcg-pre-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.ptcg-pre-board {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.ptcg-pre-side {
+  padding: 0.65rem;
+  border-radius: calc(var(--ptcg-radius) - 2px);
+  background: linear-gradient(180deg, #c8e3a0, var(--ptcg-mat));
+  border: 1px solid var(--ptcg-mat-edge);
+}
+
+.ptcg-pre-side h3 {
+  margin: 0 0 0.4rem;
+  font-size: 12px;
+  color: #2c3a1f;
+}
+
+.ptcg-pre-active,
+.ptcg-pre-bench {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ptcg-pre-active {
+  margin-bottom: 0.35rem;
+}
+
+.ptcg-coin-screen .ptcg-pre-actions button,
+.ptcg-mulligan-screen .ptcg-pre-actions button,
+.ptcg-setup-screen .ptcg-pre-actions > button {
+  border: 1px solid #1a1c20;
+  border-radius: 999px;
+  background: #1a1c20;
+  color: #fff;
+  padding: 0.42rem 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ptcg-coin-screen .ptcg-pre-actions button[data-coin-confirm],
+.ptcg-setup-screen .ptcg-pre-actions > button[data-option] {
+  background: var(--ptcg-cta);
+  border-color: var(--ptcg-cta);
+}
+
+@media (max-width: 640px) {
+  .ptcg-lobby-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ptcg-lobby-card {
+    min-height: 100%;
+  }
+}
