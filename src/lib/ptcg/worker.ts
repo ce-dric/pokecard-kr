@@ -1,5 +1,6 @@
 import mappingFile from "../../data/game-cards.json" with { type: "json" };
 import { botChoice } from "./bot-choice.ts";
+import { botActionCaption, collectBotTurnSteps, type BotStep } from "./bot-turn.ts";
 import type { BotDifficulty } from "./difficulty.ts";
 import { parseBotDifficulty } from "./difficulty.ts";
 import { applySelect, finishBattle, loadCatalogs, loadEngine, readObservation, startBattle, startErrors } from "./engine.ts";
@@ -27,11 +28,17 @@ function lines(): string[] {
     .slice(-80);
 }
 
-function publish(message?: string): void {
-  if (!obs || !catalogs) return;
-  const view: GameView = buildView(obs, HUMAN, lines(), catalogs, mapping, endReason);
-  const payload: { type: "view"; view: GameView; message?: string } = { type: "view", view };
+function currentView(): GameView | null {
+  if (!obs || !catalogs) return null;
+  return buildView(obs, HUMAN, lines(), catalogs, mapping, endReason);
+}
+
+function publish(message?: string, steps?: BotStep[]): void {
+  const view = currentView();
+  if (!view) return;
+  const payload: { type: "view"; view: GameView; message?: string; steps?: BotStep[] } = { type: "view", view };
   if (message) payload.message = message;
+  if (steps && steps.length > 0) payload.steps = steps;
   self.postMessage(payload);
 }
 
@@ -50,22 +57,25 @@ function absorb(next: Observation): void {
 
 function runBots(): void {
   if (!engine || !catalogs || !obs) return;
-  let guard = 0;
-  while (obs.current.result === -1 && obs.current.yourIndex !== HUMAN && guard < 5000) {
-    const choice = botChoice(obs, catalogs, botDifficulty);
-    const error = applySelect(engine, battlePtr, choice);
-    if (error) {
-      self.postMessage({ type: "error", message: "봇이 고르지 못했습니다" });
-      return;
-    }
-    absorb(readObservation(engine, battlePtr));
-    guard += 1;
-  }
-  if (obs.current.result === -1 && obs.current.yourIndex !== HUMAN) {
-    self.postMessage({ type: "error", message: "대전이 너무 길어졌습니다" });
+  const catalogsRef = catalogs;
+  const result = collectBotTurnSteps({
+    humanSeat: HUMAN,
+    getObservation: () => obs!,
+    choose: (observation) => botChoice(observation, catalogsRef, botDifficulty),
+    applyChoice: (indices) => {
+      const error = applySelect(engine!, battlePtr, indices);
+      if (error) return error;
+      absorb(readObservation(engine!, battlePtr));
+      return null;
+    },
+    buildView: () => currentView()!,
+    caption: (observation, indices) => botActionCaption(observation, indices, catalogsRef, mapping),
+  });
+  if (result.error) {
+    self.postMessage({ type: "error", message: result.error });
     return;
   }
-  publish();
+  publish(undefined, result.steps);
 }
 
 async function boot(engineUrl: string, deck0: number[], deck1: number[], difficulty?: string): Promise<void> {

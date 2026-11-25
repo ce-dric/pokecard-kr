@@ -1,5 +1,7 @@
 import { findDropOption, handActions, targetsFor, type CardSpot } from "./actions.ts";
 import { playCardHtml } from "./board-card.ts";
+import { boardHighlights, flashClass, type BoardHighlight } from "./bot-highlight.ts";
+import { botStepDelayMs, playBotSteps, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
 import {
   BOT_DIFFICULTIES,
@@ -45,6 +47,7 @@ interface WorkerOut {
   type: "view" | "error";
   view?: GameView;
   message?: string;
+  steps?: BotPlaybackStep[];
 }
 
 const ENERGY_CLASS: Record<string, string> = {
@@ -238,11 +241,13 @@ function prizeGrid(count: number): string {
   return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
 }
 
-function benchSlots(cards: FaceCard[], opts: SideRenderOpts): string {
+function benchSlots(cards: FaceCard[], opts: SideRenderOpts, highlights: BoardHighlight[] = [], role: "you" | "opp" = "you"): string {
   return Array.from({ length: 5 }, (_, index) => {
     const spot = { playerIndex: opts.playerIndex, area: 5, index };
     const card = cards[index];
-    return card ? playSpotHtml(card, false, spot, opts) : emptySlot("빈자리", spot, opts.targets);
+    const body = card ? playSpotHtml(card, false, spot, opts) : emptySlot("빈자리", spot, opts.targets);
+    const flash = flashClass(highlights, role, "bench", index);
+    return flash ? `<div class="ptcg-flash-wrap${flash}">${body}</div>` : body;
   }).join("");
 }
 
@@ -252,6 +257,7 @@ function sideHtml(
   showHand: boolean,
   role: "you" | "opp",
   opts: SideRenderOpts,
+  highlights: BoardHighlight[] = [],
 ): string {
   const hand =
     showHand && side.hand
@@ -292,12 +298,12 @@ function sideHtml(
       .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
     <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
-    <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
-    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts)}</div></div>
-    <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
-    <div class="ptcg-zone ptcg-zone--active"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
-    <div class="ptcg-zone ptcg-zone--trash"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
-    <div class="ptcg-zone ptcg-zone--hand"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
+    <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
+    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
+    <div class="ptcg-zone ptcg-zone--deck${flashClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
+    <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
+    <div class="ptcg-zone ptcg-zone--trash${flashClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
+    <div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
   </section>`;
 }
 
@@ -318,21 +324,40 @@ interface ViewUiState {
   sheet: "none" | "hand" | "attack";
 }
 
+export interface BoardPaintOptions {
+  note?: string;
+  botTurn?: boolean;
+  highlights?: BoardHighlight[];
+  ui?: ViewUiState;
+  muted?: boolean;
+}
+
 const EMPTY_UI: ViewUiState = { selected: null, targets: [], sheet: "none" };
 
-function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI, muted = true): string {
-  const playable = view.interaction === "board" ? boardPlayable(view) : [];
+function isViewUiState(value: unknown): value is ViewUiState {
+  return Boolean(value && typeof value === "object" && "selected" in value && "targets" in value && "sheet" in value);
+}
+
+function viewHtml(
+  view: GameView,
+  note: string,
+  ui: ViewUiState = EMPTY_UI,
+  muted = true,
+  botTurn = false,
+  highlights: BoardHighlight[] = [],
+): string {
+  const playable = !botTurn && view.interaction === "board" ? boardPlayable(view) : [];
   const youOpts = {
     playable,
-    selected: ui.selected,
-    targets: ui.targets,
+    selected: botTurn ? null : ui.selected,
+    targets: botTurn ? [] : ui.targets,
     playerIndex: 0,
-    interactive: view.interaction === "board",
+    interactive: !botTurn && view.interaction === "board",
   };
   const oppOpts = {
     playable,
-    selected: ui.selected,
-    targets: ui.targets,
+    selected: botTurn ? null : ui.selected,
+    targets: botTurn ? [] : ui.targets,
     playerIndex: 1,
     interactive: false,
   };
@@ -340,19 +365,23 @@ function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI, mute
     view.phase === "over" && view.resultText
       ? resultScreenHtml(view.resultText, resultOutcome(view.resultText))
       : "";
+  const botBanner = botTurn
+    ? `<div class="ptcg-bot-banner" role="status"><span>상대 턴</span><button type="button" data-skip-bot>건너뛰기</button></div>`
+    : "";
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
   const stadiumSpot = { playerIndex: 0, area: 7, index: 0 };
+  const stadiumFlash = flashClass(highlights, "table", "stadium");
   const stadium = view.stadium
-    ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, {
+    ? `<div class="ptcg-stadium${stadiumFlash}"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, {
         caption: true,
         spot: stadiumSpot,
         playable,
-        selected: ui.selected,
-        targets: ui.targets,
+        selected: youOpts.selected,
+        targets: youOpts.targets,
       })}</div></div>`
     : "";
   const handMenu =
-    ui.sheet === "hand" && ui.selected
+    !botTurn && ui.sheet === "hand" && ui.selected
       ? handActionMenuHtml(
           view.options.filter(
             (option) =>
@@ -364,33 +393,54 @@ function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI, mute
           ),
         )
       : "";
-  const attackSheet = ui.sheet === "attack" ? attackSheetHtml(view) : "";
-  const picker = view.interaction === "picker" ? pickerHtml(view) : "";
-  const quick = view.interaction === "board" || view.interaction === "buttons" ? quickActionsHtml(view) : "";
-  return `${banner}
+  const attackSheet = !botTurn && ui.sheet === "attack" ? attackSheetHtml(view) : "";
+  const picker = !botTurn && view.interaction === "picker" ? pickerHtml(view) : "";
+  const quick =
+    !botTurn && (view.interaction === "board" || view.interaction === "buttons") ? quickActionsHtml(view) : "";
+  const fallback = botTurn ? "" : fallbackOptionsHtml(view, optionHtml);
+  const prompt = botTurn ? "상대가 두는 중" : note || view.prompt;
+  const logPanel = botTurn
+    ? ""
+    : `<details class="ptcg-log-panel" open>
+      <summary class="ptcg-log-title">기록</summary>
+      <ol class="ptcg-log">${log}</ol>
+    </details>`;
+  return `${banner}${botBanner}
     <div class="ptcg-controls">
       <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
-      <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
+      <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
       <p class="ptcg-turn">턴 ${view.turn}</p>
       ${quick}
       ${handMenu}
       ${attackSheet}
       ${picker}
-      ${fallbackOptionsHtml(view, optionHtml)}
+      ${fallback}
     </div>
     <div class="ptcg-table">
-      ${sideHtml("상대", view.opp, false, "opp", oppOpts)}
+      ${sideHtml("상대", view.opp, false, "opp", oppOpts, highlights)}
       ${stadium}
-      ${sideHtml("나", view.you, true, "you", youOpts)}
+      ${sideHtml("나", view.you, true, "you", youOpts, highlights)}
     </div>
-    <details class="ptcg-log-panel" open>
-      <summary class="ptcg-log-title">기록</summary>
-      <ol class="ptcg-log">${log}</ol>
-    </details>`;
+    ${logPanel}`;
 }
 
-export function boardHtml(view: GameView, note = "", ui: ViewUiState = EMPTY_UI, muted = true): string {
-  return viewHtml(view, note, ui, muted);
+export function boardHtml(
+  view: GameView,
+  note = "",
+  paintOrUi: BoardPaintOptions | ViewUiState = EMPTY_UI,
+  muted = true,
+): string {
+  if (isViewUiState(paintOrUi)) {
+    return viewHtml(view, note, paintOrUi, muted);
+  }
+  return viewHtml(
+    view,
+    paintOrUi.note || note,
+    paintOrUi.ui || EMPTY_UI,
+    paintOrUi.muted ?? muted,
+    Boolean(paintOrUi.botTurn),
+    paintOrUi.highlights || [],
+  );
 }
 
 export function mountGame(root: Element | null): void {
@@ -407,6 +457,8 @@ export function mountGame(root: Element | null): void {
   let uiState: ViewUiState = { ...EMPTY_UI };
   let dragSource: CardSpot | null = null;
   let noteText = "";
+  let skipBot: (() => void) | null = null;
+  let playbackToken = 0;
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
@@ -451,7 +503,7 @@ export function mountGame(root: Element | null): void {
     }
   };
 
-  const paintBoard = (view: GameView, note = ""): void => {
+  const paintBoard = (view: GameView, note = "", paint: BoardPaintOptions = {}): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
     const events = collectFxEvents(previous, view);
@@ -459,12 +511,58 @@ export function mountGame(root: Element | null): void {
     noteText = note;
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(view, note, uiState, muted)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    board.innerHTML = `${viewHtml(
+      view,
+      note,
+      paint.ui || uiState,
+      paint.muted ?? muted,
+      Boolean(paint.botTurn),
+      paint.highlights || [],
+    )}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
     applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
     const log = board.querySelector(".ptcg-log");
     if (log) log.scrollTop = log.scrollHeight;
-    syncPressed();
+    if (!paint.botTurn) syncPressed();
     board.scrollIntoView({ block: "start" });
+  };
+
+  const finishHumanView = (view: GameView, note = ""): void => {
+    latest = view;
+    picked = new Set();
+    uiState = { ...EMPTY_UI };
+    dragSource = null;
+    skipBot = null;
+    busy = false;
+    paintBoard(view, note);
+  };
+
+  const playIncoming = async (view: GameView, steps: BotPlaybackStep[] | undefined, note: string): Promise<void> => {
+    const token = ++playbackToken;
+    if (!steps || steps.length === 0) {
+      finishHumanView(view, note);
+      return;
+    }
+    busy = true;
+    let prior: GameView | null = previous;
+    await playBotSteps(steps, view, {
+      delayMs: botStepDelayMs(prefersReducedMotion()),
+      onStep: (step, controls) => {
+        if (token !== playbackToken) {
+          controls.skip();
+          return;
+        }
+        skipBot = () => controls.skip();
+        paintBoard(step.view, "상대가 두는 중", {
+          botTurn: true,
+          highlights: boardHighlights(prior, step.view),
+        });
+        prior = step.view;
+      },
+      onDone: (done) => {
+        if (token !== playbackToken) return;
+        finishHumanView(done, note);
+      },
+    });
   };
 
   const choose = (indices: number[]): void => {
@@ -483,9 +581,10 @@ export function mountGame(root: Element | null): void {
     if (worker) return worker;
     worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (event: MessageEvent<WorkerOut>) => {
-      busy = false;
       const data = event.data;
       if (data.type === "error") {
+        busy = false;
+        skipBot = null;
         const board = root.querySelector("[data-board]");
         if (board) {
           root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
@@ -495,11 +594,7 @@ export function mountGame(root: Element | null): void {
         return;
       }
       if (data.view) {
-        latest = data.view;
-        picked = new Set();
-        uiState = { ...EMPTY_UI };
-        dragSource = null;
-        paintBoard(data.view, data.message || "");
+        void playIncoming(data.view, data.steps, data.message || "");
       }
     };
     worker.onerror = () => {
@@ -774,12 +869,20 @@ export function mountGame(root: Element | null): void {
       }
       return;
     }
+    if (target.closest("[data-skip-bot]")) {
+      skipBot?.();
+      return;
+    }
     if (target.closest("[data-start]") || target.closest("[data-restart]")) {
+      skipBot?.();
+      playbackToken += 1;
       previous = null;
       start();
       return;
     }
     if (target.closest("[data-decks]")) {
+      skipBot?.();
+      playbackToken += 1;
       root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
       root.querySelector(".ptcg-setup")?.scrollIntoView({ block: "start" });
       return;
