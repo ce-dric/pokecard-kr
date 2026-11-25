@@ -86,12 +86,15 @@ export interface CardData {
   megaEx: boolean;
   weakness: number | null;
   resistance: number | null;
+  retreatCost?: number;
+  attacks?: number[];
 }
 
 export interface AttackData {
   attackId: number;
   name: string;
   damage: number;
+  text?: string;
   energies?: number[];
 }
 
