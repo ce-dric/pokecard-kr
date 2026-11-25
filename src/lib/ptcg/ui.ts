@@ -1,4 +1,14 @@
 import { decks } from "./decks.ts";
+import {
+  applyBoardFx,
+  collectFxEvents,
+  muteToggleHtml,
+  prefersReducedMotion,
+  resultOutcome,
+  resultScreenHtml,
+  sfxMutedDefault,
+  writeSfxMuted,
+} from "./fx.ts";
 import type { FaceCard, GameView } from "./view.ts";
 
 interface WorkerIn {
@@ -188,19 +198,23 @@ function optionHtml(option: GameView["options"][number]): string {
   return `<div class="ptcg-option">${image}${select}${zoom}</div>`;
 }
 
-function viewHtml(view: GameView, note: string): string {
+function viewHtml(view: GameView, note: string, muted = true): string {
   const options = view.options.map((option) => optionHtml(option)).join("");
   const multi = view.phase === "choose" && view.maxCount >= 1 && !(view.maxCount === 1 && view.minCount >= 1);
   const confirm = multi
     ? `<button type="button" data-confirm${view.minCount > 0 ? " disabled" : ""}>${view.minCount === 0 ? "넘기기" : "결정"}</button>`
     : "";
-  const banner = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
+  const banner =
+    view.phase === "over" && view.resultText
+      ? resultScreenHtml(view.resultText, resultOutcome(view.resultText))
+      : "";
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
   const stadium = view.stadium
     ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
     : "";
   return `${banner}
     <div class="ptcg-controls">
+      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
       <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
       <p class="ptcg-turn">턴 ${view.turn}</p>
       <div class="ptcg-options" role="group" aria-label="선택">${options}${confirm}</div>
@@ -216,8 +230,8 @@ function viewHtml(view: GameView, note: string): string {
     </details>`;
 }
 
-export function boardHtml(view: GameView, note = ""): string {
-  return viewHtml(view, note);
+export function boardHtml(view: GameView, note = "", muted = true): string {
+  return viewHtml(view, note, muted);
 }
 
 export function mountGame(root: Element | null): void {
@@ -227,7 +241,9 @@ export function mountGame(root: Element | null): void {
   let theirs = decks[1]?.id ?? decks[0]?.id ?? "sample";
   let picked = new Set<number>();
   let latest: GameView | null = null;
+  let previous: GameView | null = null;
   let busy = false;
+  let muted = sfxMutedDefault(typeof localStorage === "undefined" ? null : localStorage);
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
@@ -254,9 +270,12 @@ export function mountGame(root: Element | null): void {
   const paintBoard = (view: GameView, note = ""): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
+    const events = collectFxEvents(previous, view);
+    previous = view;
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(view, note)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    board.innerHTML = `${viewHtml(view, note, muted)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
     const log = board.querySelector(".ptcg-log");
     if (log) log.scrollTop = log.scrollHeight;
     board.scrollIntoView({ block: "start" });
@@ -373,7 +392,18 @@ export function mountGame(root: Element | null): void {
       }
       return;
     }
+    if (target.closest("[data-sfx-mute]")) {
+      muted = !muted;
+      if (typeof localStorage !== "undefined") writeSfxMuted(muted, localStorage);
+      const mute = root.querySelector("[data-sfx-mute]");
+      if (mute instanceof HTMLButtonElement) {
+        mute.setAttribute("aria-pressed", muted ? "true" : "false");
+        mute.textContent = muted ? "소리 켜기" : "소리 끄기";
+      }
+      return;
+    }
     if (target.closest("[data-start]") || target.closest("[data-restart]")) {
+      previous = null;
       start();
       return;
     }
