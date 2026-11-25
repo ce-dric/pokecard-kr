@@ -1,5 +1,6 @@
 ---
 import gameCss from "./game.css?raw";
+import battleCss from "./battle.css?raw";
 import fxCss from "./fx.css?raw";
 import Base from "../../layouts/Base.astro";
 import { withBase } from "../../lib/sets";
@@ -12,7 +13,7 @@ const description =
 
 <Base title={title} description={description}>
   <div class="wrap ptcg-page">
-    <Fragment set:html={`<style>${gameCss}${fxCss}</style>`} />
+    <Fragment set:html={`<style>${gameCss}${battleCss}${fxCss}</style>`} />
     <header class="ptcg-hero">
       <p class="ptcg-kicker">비공식 팬 페이지</p>
       <div class="ptcg-title-block">

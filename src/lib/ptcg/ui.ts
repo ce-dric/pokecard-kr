@@ -1,6 +1,16 @@
 import { findDropOption, handActions, targetsFor, type CardSpot } from "./actions.ts";
-import { playCardHtml } from "./board-card.ts";
-import { boardHighlights, flashClass, type BoardHighlight } from "./bot-highlight.ts";
+import {
+  boardHtml,
+  closeLogDrawer,
+  closePileSheet,
+  EMPTY_UI,
+  openLogDrawer,
+  openPileSheet,
+  setBattleChrome,
+  type BoardPaintOptions,
+  type ViewUiState,
+} from "./battle-board.ts";
+import { boardHighlights } from "./bot-highlight.ts";
 import { botStepDelayMs, playBotSteps, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
 import {
@@ -13,26 +23,15 @@ import {
 import {
   applyBoardFx,
   collectFxEvents,
-  muteToggleHtml,
   prefersReducedMotion,
-  resultOutcome,
-  resultScreenHtml,
   sfxMutedDefault,
   writeSfxMuted,
 } from "./fx.ts";
-import {
-  attackSheetHtml,
-  boardPlayable,
-  fallbackOptionsHtml,
-  handActionMenuHtml,
-  highlightClass,
-  mappedFromView,
-  parseSpot,
-  pickerHtml,
-  quickActionsHtml,
-  spotKey,
-} from "./interact-ui.ts";
-import type { FaceCard, GameView } from "./view.ts";
+import { mappedFromView, parseSpot } from "./interact-ui.ts";
+import type { GameView } from "./view.ts";
+
+export { boardHtml } from "./battle-board.ts";
+export type { BoardPaintOptions, ViewUiState } from "./battle-board.ts";
 
 interface WorkerIn {
   type: "start" | "restart" | "choose";
@@ -50,18 +49,6 @@ interface WorkerOut {
   steps?: BotPlaybackStep[];
 }
 
-const ENERGY_CLASS: Record<string, string> = {
-  colorless: "swatch-colorless",
-  grass: "swatch-grass",
-  fire: "swatch-fire",
-  water: "swatch-water",
-  electric: "swatch-electric",
-  psychic: "swatch-psychic",
-  fighting: "swatch-fighting",
-  dark: "swatch-dark",
-  steel: "swatch-steel",
-  dragon: "swatch-dragon",
-};
 
 function esc(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => {
@@ -73,13 +60,6 @@ function esc(value: string): string {
   });
 }
 
-function imageSrc(path: string | null): string | null {
-  if (!path || !/^(?:images\/cards\/[a-z0-9-]+\/[A-Za-z0-9.-]+|game\/cards\/\d+(?:-thumb)?\.webp)$/.test(path)) return null;
-  const base = import.meta.env?.BASE_URL || "/";
-  const root = base.endsWith("/") ? base : `${base}/`;
-  const origin = typeof window === "undefined" ? "http://localhost" : window.location.origin;
-  return new URL(path, origin + root).href;
-}
 
 interface Control {
   tagName: string;
@@ -144,305 +124,6 @@ export function actionFromKey(event: {
   return { type: "zoom", full, alt: zoom.getAttribute("data-alt") || "" };
 }
 
-function zoomButton(src: string, full: string, label: string, width: number, height: number): string {
-  return `<button type="button" class="ptcg-zoom-image" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대"><img src="${esc(src)}" alt="" width="${width}" height="${height}" loading="lazy" decoding="async" /></button>`;
-}
-
-interface CardRenderOpts {
-  caption: boolean;
-  spot?: CardSpot | null;
-  playable?: CardSpot[];
-  selected?: CardSpot | null;
-  targets?: CardSpot[];
-  draggable?: boolean;
-}
-
-interface SideRenderOpts {
-  playable: CardSpot[];
-  selected: CardSpot | null;
-  targets: CardSpot[];
-  playerIndex: number;
-  interactive: boolean;
-}
-
-function spotCanAct(
-  spot: CardSpot | null | undefined,
-  playable: CardSpot[],
-  targets: CardSpot[],
-  draggable?: boolean,
-): boolean {
-  if (!spot) return false;
-  if (draggable) return true;
-  return (
-    playable.some((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex) ||
-    targets.some((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex)
-  );
-}
-
-function spotAttrs(spot: CardSpot | null | undefined, canAct: boolean, draggable: boolean): string {
-  if (!spot) return "";
-  const parts = [` data-spot="${spotKey(spot)}"`];
-  if (draggable) parts.push(` draggable="true" tabindex="0" data-card-act`);
-  else if (canAct) parts.push(` tabindex="0" data-card-act`);
-  return parts.join("");
-}
-
-function playSpotHtml(card: FaceCard, active: boolean, spot: CardSpot, opts: SideRenderOpts): string {
-  const hi = highlightClass(spot, opts.playable, opts.selected, opts.targets);
-  const canAct = spotCanAct(spot, opts.playable, opts.targets, false);
-  return playCardHtml(card, {
-    active,
-    className: hi,
-    attrs: spotAttrs(spot, canAct, false),
-  });
-}
-
-function cardHtml(card: FaceCard, opts: CardRenderOpts): string {
-  const playable = opts.playable || [];
-  const targets = opts.targets || [];
-  const hi = highlightClass(opts.spot, playable, opts.selected || null, targets);
-  const canAct = spotCanAct(opts.spot, playable, targets, opts.draggable);
-  const shell = spotAttrs(opts.spot, canAct, Boolean(opts.draggable));
-  if (card.hidden) {
-    return `<div class="ptcg-card ${hi}"${shell}><div class="ptcg-back" aria-label="뒷면"></div></div>`;
-  }
-  const src = imageSrc(card.image);
-  const full = imageSrc(card.fullImage || card.image);
-  const name = esc(card.name);
-  const hp = card.hp != null && card.maxHp != null ? `${card.hp}/${card.maxHp}` : "";
-  const energies = card.energies
-    .map((energy) => `<i class="swatch ${ENERGY_CLASS[energy] || "swatch-colorless"}"></i>`)
-    .join("");
-  // Keep data-zoom-open so long-press / right-click can enlarge; short click acts when data-card-act is set.
-  const body =
-    src && full
-      ? zoomButton(src, full, name, 120, 168)
-      : src
-        ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
-        : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
-  const meta = opts.caption ? `<span class="ptcg-caption">${name}${hp ? ` ${esc(hp)}` : ""}</span>${energies ? `<span class="ptcg-energies">${energies}</span>` : ""}` : "";
-  return `<div class="ptcg-card ${hi}"${shell}>${body}${meta}</div>`;
-}
-
-function emptySlot(label: string, spot?: CardSpot | null, targets: CardSpot[] = []): string {
-  const hi = highlightClass(spot, [], null, targets);
-  const spotAttr = spot ? ` data-spot="${spotKey(spot)}" data-drop-slot` : "";
-  return `<div class="ptcg-card ${hi}"${spotAttr}><div class="ptcg-empty ptcg-slot" aria-label="${esc(label)}">${esc(label)}</div></div>`;
-}
-
-function prizeGrid(count: number): string {
-  const capped = Math.max(0, Math.min(6, count));
-  const cells = Array.from({ length: 6 }, (_, index) => {
-    if (index < capped) {
-      return `<div class="ptcg-card ptcg-prize-card"><div class="ptcg-back" aria-hidden="true"></div></div>`;
-    }
-    return `<div class="ptcg-card ptcg-prize-card ptcg-prize-card--gone"><div class="ptcg-empty" aria-hidden="true"></div></div>`;
-  }).join("");
-  return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
-}
-
-function benchSlots(cards: FaceCard[], opts: SideRenderOpts, highlights: BoardHighlight[] = [], role: "you" | "opp" = "you"): string {
-  return Array.from({ length: 5 }, (_, index) => {
-    const spot = { playerIndex: opts.playerIndex, area: 5, index };
-    const card = cards[index];
-    const body = card ? playSpotHtml(card, false, spot, opts) : emptySlot("빈자리", spot, opts.targets);
-    const flash = flashClass(highlights, role, "bench", index);
-    return flash ? `<div class="ptcg-flash-wrap${flash}">${body}</div>` : body;
-  }).join("");
-}
-
-function sideHtml(
-  title: string,
-  side: GameView["you"],
-  showHand: boolean,
-  role: "you" | "opp",
-  opts: SideRenderOpts,
-  highlights: BoardHighlight[] = [],
-): string {
-  const hand =
-    showHand && side.hand
-      ? side.hand
-          .map((card, index) => {
-            const spot = { playerIndex: opts.playerIndex, area: 2, index };
-            const canDrag =
-              opts.interactive &&
-              opts.playable.some((row) => row.area === 2 && row.index === index && row.playerIndex === opts.playerIndex);
-            return cardHtml(card, {
-              caption: false,
-              spot,
-              playable: opts.playable,
-              selected: opts.selected,
-              targets: opts.targets,
-              draggable: canDrag,
-            });
-          })
-          .join("")
-      : `<p class="ptcg-count">패 ${side.handCount}</p>`;
-  const discard =
-    side.discard
-      .map((card, index) =>
-        cardHtml(card, {
-          caption: false,
-          spot: { playerIndex: opts.playerIndex, area: 3, index },
-          playable: opts.playable,
-          selected: opts.selected,
-          targets: opts.targets,
-        }),
-      )
-      .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
-  const active =
-    side.active
-      .map((card, index) =>
-        playSpotHtml(card, true, { playerIndex: opts.playerIndex, area: 4, index }, opts),
-      )
-      .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
-  return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
-    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
-    <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
-    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
-    <div class="ptcg-zone ptcg-zone--deck${flashClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
-    <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
-    <div class="ptcg-zone ptcg-zone--trash${flashClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
-    <div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
-  </section>`;
-}
-
-function optionHtml(option: GameView["options"][number]): string {
-  const src = imageSrc(option.image);
-  const full = imageSrc(option.fullImage || option.image);
-  const label = esc(option.label);
-  const select = `<button type="button" data-option="${option.index}"><span>${label}</span></button>`;
-  if (!src || !full) return select;
-  const image = zoomButton(src, full, label, 72, 100);
-  const zoom = `<button type="button" class="ptcg-enlarge" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대">확대</button>`;
-  return `<div class="ptcg-option">${image}${select}${zoom}</div>`;
-}
-
-interface ViewUiState {
-  selected: CardSpot | null;
-  targets: CardSpot[];
-  sheet: "none" | "hand" | "attack";
-}
-
-export interface BoardPaintOptions {
-  note?: string;
-  botTurn?: boolean;
-  highlights?: BoardHighlight[];
-  ui?: ViewUiState;
-  muted?: boolean;
-}
-
-const EMPTY_UI: ViewUiState = { selected: null, targets: [], sheet: "none" };
-
-function isViewUiState(value: unknown): value is ViewUiState {
-  return Boolean(value && typeof value === "object" && "selected" in value && "targets" in value && "sheet" in value);
-}
-
-function viewHtml(
-  view: GameView,
-  note: string,
-  ui: ViewUiState = EMPTY_UI,
-  muted = true,
-  botTurn = false,
-  highlights: BoardHighlight[] = [],
-): string {
-  const playable = !botTurn && view.interaction === "board" ? boardPlayable(view) : [];
-  const youOpts = {
-    playable,
-    selected: botTurn ? null : ui.selected,
-    targets: botTurn ? [] : ui.targets,
-    playerIndex: 0,
-    interactive: !botTurn && view.interaction === "board",
-  };
-  const oppOpts = {
-    playable,
-    selected: botTurn ? null : ui.selected,
-    targets: botTurn ? [] : ui.targets,
-    playerIndex: 1,
-    interactive: false,
-  };
-  const banner =
-    view.phase === "over" && view.resultText
-      ? resultScreenHtml(view.resultText, resultOutcome(view.resultText))
-      : "";
-  const botBanner = botTurn
-    ? `<div class="ptcg-bot-banner" role="status"><span>상대 턴</span><button type="button" data-skip-bot>건너뛰기</button></div>`
-    : "";
-  const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
-  const stadiumSpot = { playerIndex: 0, area: 7, index: 0 };
-  const stadiumFlash = flashClass(highlights, "table", "stadium");
-  const stadium = view.stadium
-    ? `<div class="ptcg-stadium${stadiumFlash}"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, {
-        caption: true,
-        spot: stadiumSpot,
-        playable,
-        selected: youOpts.selected,
-        targets: youOpts.targets,
-      })}</div></div>`
-    : "";
-  const handMenu =
-    !botTurn && ui.sheet === "hand" && ui.selected
-      ? handActionMenuHtml(
-          view.options.filter(
-            (option) =>
-              option.source &&
-              option.source.area === ui.selected!.area &&
-              option.source.index === ui.selected!.index &&
-              option.source.playerIndex === ui.selected!.playerIndex &&
-              (option.kind === "play" || option.kind === "attach" || option.kind === "evolve"),
-          ),
-        )
-      : "";
-  const attackSheet = !botTurn && ui.sheet === "attack" ? attackSheetHtml(view) : "";
-  const picker = !botTurn && view.interaction === "picker" ? pickerHtml(view) : "";
-  const quick =
-    !botTurn && (view.interaction === "board" || view.interaction === "buttons") ? quickActionsHtml(view) : "";
-  const fallback = botTurn ? "" : fallbackOptionsHtml(view, optionHtml);
-  const prompt = botTurn ? "상대가 두는 중" : note || view.prompt;
-  const logPanel = botTurn
-    ? ""
-    : `<details class="ptcg-log-panel" open>
-      <summary class="ptcg-log-title">기록</summary>
-      <ol class="ptcg-log">${log}</ol>
-    </details>`;
-  return `${banner}${botBanner}
-    <div class="ptcg-controls">
-      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
-      <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
-      <p class="ptcg-turn">턴 ${view.turn}</p>
-      ${quick}
-      ${handMenu}
-      ${attackSheet}
-      ${picker}
-      ${fallback}
-    </div>
-    <div class="ptcg-table">
-      ${sideHtml("상대", view.opp, false, "opp", oppOpts, highlights)}
-      ${stadium}
-      ${sideHtml("나", view.you, true, "you", youOpts, highlights)}
-    </div>
-    ${logPanel}`;
-}
-
-export function boardHtml(
-  view: GameView,
-  note = "",
-  paintOrUi: BoardPaintOptions | ViewUiState = EMPTY_UI,
-  muted = true,
-): string {
-  if (isViewUiState(paintOrUi)) {
-    return viewHtml(view, note, paintOrUi, muted);
-  }
-  return viewHtml(
-    view,
-    paintOrUi.note || note,
-    paintOrUi.ui || EMPTY_UI,
-    paintOrUi.muted ?? muted,
-    Boolean(paintOrUi.botTurn),
-    paintOrUi.highlights || [],
-  );
-}
-
 export function mountGame(root: Element | null): void {
   if (!root) return;
   let worker: Worker | null = null;
@@ -479,7 +160,20 @@ export function mountGame(root: Element | null): void {
       return `<button type="button" data-difficulty="${id}" aria-pressed="${pressed}">${esc(BOT_DIFFICULTY_LABELS[id])}</button>`;
     }).join("");
 
+  const showLobby = (): void => {
+    setBattleChrome(false);
+    skipBot?.();
+    playbackToken += 1;
+    root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
+    const board = root.querySelector("[data-board]");
+    if (board) {
+      board.setAttribute("hidden", "");
+      board.innerHTML = "";
+    }
+  };
+
   const paintLobby = (): void => {
+    setBattleChrome(false);
     root.innerHTML = `<div class="ptcg-setup">
       <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
       <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
@@ -509,21 +203,18 @@ export function mountGame(root: Element | null): void {
     const events = collectFxEvents(previous, view);
     previous = view;
     noteText = note;
+    setBattleChrome(true);
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(
-      view,
+    board.innerHTML = boardHtml(view, note, {
       note,
-      paint.ui || uiState,
-      paint.muted ?? muted,
-      Boolean(paint.botTurn),
-      paint.highlights || [],
-    )}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+      botTurn: Boolean(paint.botTurn),
+      highlights: paint.highlights || [],
+      ui: paint.ui || uiState,
+      muted: paint.muted ?? muted,
+    }, paint.muted ?? muted);
     applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
-    const log = board.querySelector(".ptcg-log");
-    if (log) log.scrollTop = log.scrollHeight;
     if (!paint.botTurn) syncPressed();
-    board.scrollIntoView({ block: "start" });
   };
 
   const finishHumanView = (view: GameView, note = ""): void => {
@@ -587,9 +278,10 @@ export function mountGame(root: Element | null): void {
         skipBot = null;
         const board = root.querySelector("[data-board]");
         if (board) {
+          setBattleChrome(true);
           root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
           board.removeAttribute("hidden");
-          board.innerHTML = `<p class="ptcg-result" role="status">${esc(data.message || "대전을 진행하지 못했습니다")}</p><p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+          board.innerHTML = `<div class="ptcg-battle" data-battle><div class="ptcg-battle-hud"><button type="button" class="ptcg-hud-exit" data-exit>나가기</button></div><p class="ptcg-result" role="status">${esc(data.message || "대전을 진행하지 못했습니다")}</p><p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p></div>`;
         }
         return;
       }
@@ -601,8 +293,9 @@ export function mountGame(root: Element | null): void {
       busy = false;
       const board = root.querySelector("[data-board]");
       if (board) {
+        setBattleChrome(true);
         board.removeAttribute("hidden");
-        board.innerHTML = `<p class="ptcg-result" role="status">엔진을 읽지 못했습니다</p>`;
+        board.innerHTML = `<div class="ptcg-battle" data-battle><p class="ptcg-result" role="status">엔진을 읽지 못했습니다</p></div>`;
       }
     };
     return worker;
@@ -614,11 +307,11 @@ export function mountGame(root: Element | null): void {
     if (!deck0 || !deck1) return;
     busy = true;
     const board = root.querySelector("[data-board]");
+    setBattleChrome(true);
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     if (board) {
       board.removeAttribute("hidden");
-      board.innerHTML = `<p class="ptcg-prompt" role="status">엔진을 읽고 있습니다</p>`;
-      board.scrollIntoView({ block: "start" });
+      board.innerHTML = `<div class="ptcg-battle" data-battle><p class="ptcg-prompt" role="status">엔진을 읽고 있습니다</p></div>`;
     }
     ensureWorker().postMessage({
       type: latest ? "restart" : "start",
@@ -668,9 +361,19 @@ export function mountGame(root: Element | null): void {
   root.addEventListener("keydown", (event) => {
     const action = actionFromKey(event);
     if (action?.type === "close") {
-      const dialog = root.querySelector("[data-zoom]");
-      if (dialog instanceof HTMLDialogElement && dialog.open) {
-        dialog.close();
+      const zoom = root.querySelector("[data-zoom]");
+      if (zoom instanceof HTMLDialogElement && zoom.open) {
+        zoom.close();
+        return;
+      }
+      const pile = root.querySelector("[data-pile-sheet]");
+      if (pile instanceof HTMLDialogElement && pile.open) {
+        pile.close();
+        return;
+      }
+      const drawer = root.querySelector("[data-log-drawer]");
+      if (drawer instanceof HTMLElement && !drawer.hidden) {
+        closeLogDrawer(root);
         return;
       }
       if (uiState.sheet !== "none") {
@@ -836,6 +539,29 @@ export function mountGame(root: Element | null): void {
       openZoom(action.full, action.alt);
       return;
     }
+    if (target.closest("[data-log-open]")) {
+      openLogDrawer(root);
+      return;
+    }
+    if (target.closest("[data-log-close]")) {
+      closeLogDrawer(root);
+      return;
+    }
+    const pileOpen = target.closest("[data-pile-open]");
+    if (pileOpen instanceof HTMLElement) {
+      const pileId = pileOpen.getAttribute("data-pile-open");
+      if (pileId) openPileSheet(root, pileId);
+      return;
+    }
+    if (target.closest("[data-pile-sheet-close]")) {
+      closePileSheet(root);
+      return;
+    }
+    const pileSheet = root.querySelector("[data-pile-sheet]");
+    if (pileSheet instanceof HTMLDialogElement && target === pileSheet) {
+      pileSheet.close();
+      return;
+    }
     const deckButton = target.closest("[data-deck]");
     if (deckButton instanceof HTMLButtonElement) {
       const group = deckButton.dataset.deck;
@@ -880,11 +606,8 @@ export function mountGame(root: Element | null): void {
       start();
       return;
     }
-    if (target.closest("[data-decks]")) {
-      skipBot?.();
-      playbackToken += 1;
-      root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
-      root.querySelector(".ptcg-setup")?.scrollIntoView({ block: "start" });
+    if (target.closest("[data-exit]") || target.closest("[data-decks]")) {
+      showLobby();
       return;
     }
     if (target.closest("[data-clear-selection]")) {

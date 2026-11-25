@@ -66,6 +66,7 @@ export function cardName(id: number | undefined, cards: Map<number, CardData>, m
 }
 
 export interface FaceCard {
+  id?: number | null;
   hidden?: boolean;
   name: string;
   nameKo: string | null;
@@ -90,6 +91,7 @@ function fullFromThumb(path: string | null | undefined): string | null {
 }
 
 const EMPTY_FACE: FaceCard = {
+  id: null,
   hidden: true,
   name: "뒷면",
   nameKo: null,
@@ -131,6 +133,7 @@ export function cardFace(
   const ex = Boolean(data?.ex);
   const megaEx = Boolean(data?.megaEx);
   return {
+    id,
     name,
     nameKo,
     image: thumb,
