@@ -15,6 +15,8 @@ test("game text does not use a middle dot", () => {
     "src/components/Header.astro",
     "src/pages/game/index.astro",
     "src/pages/game/game.css",
+    "src/pages/game/rules/index.astro",
+    "src/pages/game/rules/rules.css",
     "src/data/game-cards.json",
     "src/lib/ptcg/decks.json",
   ];
@@ -245,6 +247,19 @@ test("the battle page credits the engine and the nav links to it", () => {
   assert.match(page, /PTCG AI Battle Challenge/);
   assert.match(page, /비공식 팬 페이지/);
   assert.match(page, /포켓몬 공식 사이트가 아닙니다/);
+  assert.match(page, /game\/rules\//);
+  assert.match(page, /놀이방법/);
   assert.match(header, /대전/);
   assert.match(header, /game\//);
+});
+
+test("the how-to-play guide uses official terms and cites the official page", () => {
+  const page = readFileSync(new URL("src/pages/game/rules/index.astro", root), "utf8");
+  assert.match(page, /https:\/\/pokemoncard\.co\.kr\/card\/play/);
+  assert.match(page, /트래쉬/);
+  assert.match(page, /배틀필드/);
+  assert.match(page, /이 사이트 대전과 다른 점/);
+  assert.match(page, /트래시/);
+  assert.match(page, /손패/);
+  assert.equal(page.includes(middleDot), false);
 });
