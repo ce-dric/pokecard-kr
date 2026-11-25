@@ -16,7 +16,7 @@ export interface PlayBotStepsOptions {
   wait?: (ms: number, signal: { skipped: boolean }) => Promise<void>;
 }
 
-export const BOT_STEP_DELAY_MS = 750;
+export const BOT_STEP_DELAY_MS = 620;
 
 export function botStepDelayMs(reducedMotion: boolean): number {
   return reducedMotion ? 0 : BOT_STEP_DELAY_MS;

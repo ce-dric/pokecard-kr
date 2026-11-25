@@ -195,7 +195,13 @@ function trashPile(side: GameView["you"], role: "you" | "opp", opts: SideRenderO
   const id = `pile-${role}-trash`;
   const count = side.discard.length;
   if (!count) {
-    return `<div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-empty">없음</div></div></div>`;
+    return `<div class="ptcg-cards ptcg-pile-wrap ptcg-pile-wrap--empty">
+    <button type="button" class="ptcg-pile ptcg-pile--trash" data-pile-open="${id}" aria-label="트래쉬 비어 있음" disabled>
+      <span class="ptcg-pile-top ptcg-card"><span class="ptcg-empty">없음</span></span>
+      <span class="ptcg-pile-badge">0</span>
+    </button>
+  </div>
+  <template data-pile-body="${id}" data-pile-title="트래쉬 (0)"><p class="ptcg-pile-note">트래쉬가 비어 있습니다</p></template>`;
   }
   const top = side.discard[count - 1];
   const body = side.discard
@@ -343,13 +349,16 @@ function sideHtml(
   const deckBlock = `<div class="ptcg-rail-item ptcg-zone--deck${flashClass(highlights, role, "deck")}" data-tutorial-target="${role}-deck" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>`;
   const trashBlock = `<div class="ptcg-rail-item ptcg-zone--trash${flashClass(highlights, role, "trash")}" data-tutorial-target="${role}-discard" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role, opts)}</div>`;
   const rails = `<div class="ptcg-zone ptcg-zone--rails">${deckBlock}${trashBlock}</div>`;
+  const bench = `<div class="ptcg-zone ptcg-zone--bench" data-tutorial-target="${role}-bench" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>`;
+  const activeZone = `<div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}" data-tutorial-target="${role}-active" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>`;
+  // Opponent: bench above active (toward own edge). You: active above bench (toward center line).
+  const field = role === "opp" ? `${bench}${activeZone}` : `${activeZone}${bench}`;
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}" data-tutorial-target="${role}-playmat" data-tutorial-zone tabindex="-1">
     <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
     ${handBlock}
     <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}" data-tutorial-target="${role}-prize" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">프라이즈</span>${prizePile(side.prizeCount, role)}</div>
-    <div class="ptcg-zone ptcg-zone--bench" data-tutorial-target="${role}-bench" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
+    <div class="ptcg-field">${field}</div>
     ${rails}
-    <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}" data-tutorial-target="${role}-active" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
   </section>`;
 }
 
@@ -403,8 +412,8 @@ function battleBoardHtml(
     view.phase === "over" && view.resultText
       ? resultScreenHtml(view.resultText, resultOutcome(view.resultText))
       : "";
-  const botBanner = botTurn
-    ? `<div class="ptcg-bot-banner" role="status"><span>상대 턴</span><button type="button" data-skip-bot>건너뛰기</button></div>`
+  const botSkip = botTurn
+    ? `<button type="button" class="ptcg-hud-skip" data-skip-bot>건너뛰기</button>`
     : "";
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
   const stadiumSpot = { playerIndex: 0, area: 7, index: 0 };
@@ -462,6 +471,18 @@ function battleBoardHtml(
       );
   const prompt = botTurn ? "상대가 두는 중" : note || view.prompt;
   const who = botTurn ? "상대 턴" : turnOwnerLabel(view);
+  const sheetOpen =
+    !botTurn &&
+    Boolean(
+      handMenu ||
+        attackSheet ||
+        picker ||
+        (view.interaction === "buttons" && quick) ||
+        view.phase === "over" ||
+        ui.sheet === "hand" ||
+        ui.sheet === "attack",
+    );
+  const sheetBody = `${handHint}${quick}${handMenu}${attackSheet}${picker}${fallback}${actions}`;
   const logDrawer = botTurn
     ? ""
     : `<aside id="ptcg-log-drawer" class="ptcg-log-drawer" data-log-drawer hidden>
@@ -472,19 +493,20 @@ function battleBoardHtml(
       <ol class="ptcg-log">${log}</ol>
     </aside>`;
 
-  return `<div class="ptcg-battle" data-battle>
+  return `<div class="ptcg-battle" data-battle${botTurn ? ' data-bot-turn="true"' : ""}>
     <div class="ptcg-battle-hud" role="toolbar" aria-label="대전 정보">
       <button type="button" class="ptcg-hud-exit" data-exit>나가기</button>
       <div class="ptcg-hud-meta">
         <span class="ptcg-hud-turn">턴 ${view.turn}</span>
         <span class="ptcg-hud-who">${esc(who)}</span>
         <span class="ptcg-hud-prizes">프라이즈 나 ${view.you.prizeCount} / 상대 ${view.opp.prizeCount}</span>
+        ${botSkip}
       </div>
       ${endTurnBtn}
       <button type="button" class="ptcg-hud-log" data-log-open aria-expanded="false" aria-controls="ptcg-log-drawer" ${botTurn ? "disabled" : ""}>기록</button>
     </div>
-    ${banner}${botBanner}
-    <div class="ptcg-battle-stage">
+    ${banner}
+    <div class="ptcg-battle-stage" data-battle-stage>
       <div class="ptcg-battle-board">
         <div class="ptcg-table">
           ${sideHtml("상대", view.opp, "opp", oppOpts, highlights)}
@@ -494,16 +516,21 @@ function battleBoardHtml(
         <div class="ptcg-zone ptcg-zone--hand ptcg-zone--my-hand${flashClass(highlights, "you", "hand")}" data-tutorial-target="you-hand" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">패</span>${myHand}</div>
       </div>
     </div>
-    <div class="ptcg-controls ptcg-battle-controls">
-      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
+    <div class="ptcg-battle-dock" data-battle-dock>
       <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
-      ${handHint}
-      ${quick}
-      ${handMenu}
-      ${attackSheet}
-      ${picker}
-      ${fallback}
-      ${actions}
+      ${
+        !botTurn && !sheetOpen && view.interaction !== "none" && view.phase !== "over"
+          ? `<button type="button" class="ptcg-dock-sheet" data-action-sheet-open>선택</button>`
+          : ""
+      }
+      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
+    </div>
+    <div class="ptcg-action-sheet ptcg-controls ptcg-battle-controls" data-action-sheet ${sheetOpen ? "" : "hidden"}>
+      <div class="ptcg-action-sheet-head">
+        <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
+        <button type="button" data-action-sheet-close>닫기</button>
+      </div>
+      ${sheetBody}
     </div>
     ${logDrawer}
     <dialog class="ptcg-pile-sheet" data-pile-sheet aria-label="카드 더미">

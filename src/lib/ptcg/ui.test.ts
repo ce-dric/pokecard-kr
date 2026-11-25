@@ -134,7 +134,7 @@ test("bot turn board shows a banner and skip without action text or the log pane
     botTurn: true,
     highlights: [{ side: "opp", zone: "active" }],
   });
-  assert.match(html, /class="ptcg-bot-banner"/);
+  assert.match(html, /ptcg-hud-skip[^>]*data-skip-bot/);
   assert.match(html, /상대 턴/);
   assert.match(html, /data-skip-bot/);
   assert.match(html, /건너뛰기/);

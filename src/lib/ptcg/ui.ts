@@ -257,6 +257,11 @@ export function mountGame(root: Element | null): void {
     coinAdvance.clear();
     coinFlipped = false;
     coinSide = null;
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
     board.innerHTML = boardHtml(view, banner, {
       note: banner,
       botTurn: Boolean(paint.botTurn),
@@ -266,6 +271,11 @@ export function mountGame(root: Element | null): void {
       showHandHint: !paint.botTurn && showHandHint,
     }, paint.muted ?? muted);
     applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
+    const stage = board.querySelector("[data-battle-stage]");
+    if (stage instanceof HTMLElement) {
+      stage.scrollTop = 0;
+      if (paint.botTurn) stage.scrollIntoView({ block: "nearest", behavior: "auto" });
+    }
     if (!paint.botTurn) syncPressed();
   };
 
@@ -303,6 +313,7 @@ export function mountGame(root: Element | null): void {
           return;
         }
         skipBot = () => controls.skip();
+        uiState = { ...EMPTY_UI };
         paintBoard(step.view, "상대가 두는 중", {
           botTurn: true,
           highlights: boardHighlights(prior, step.view),
@@ -681,6 +692,17 @@ export function mountGame(root: Element | null): void {
     }
     if (target.closest("[data-clear-selection]")) {
       clearUi();
+      return;
+    }
+    if (target.closest("[data-action-sheet-open]")) {
+      const sheet = root.querySelector("[data-action-sheet]");
+      if (sheet instanceof HTMLElement) sheet.hidden = false;
+      return;
+    }
+    if (target.closest("[data-action-sheet-close]")) {
+      const sheet = root.querySelector("[data-action-sheet]");
+      if (sheet instanceof HTMLElement) sheet.hidden = true;
+      if (uiState.sheet !== "none") clearUi();
       return;
     }
     if (target.closest("[data-coin-flip]") && latest && prebattlePhase(latest) === "coin" && !busy) {

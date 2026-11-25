@@ -2,9 +2,11 @@
 
 html.ptcg-battle-active,
 body.ptcg-battle-active {
-  overflow: hidden;
+  overflow: hidden !important;
   height: 100%;
+  max-height: 100%;
   overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 body.ptcg-battle-active .site-header,
@@ -17,36 +19,50 @@ body.ptcg-battle-active .ptcg-credit {
 
 body.ptcg-battle-active main#content {
   padding: 0;
-  height: 100dvh;
-  max-height: 100dvh;
+  height: 100%;
+  max-height: 100%;
   overflow: hidden;
 }
 
 body.ptcg-battle-active .ptcg-page {
   width: 100%;
   max-width: none;
-  height: 100dvh;
+  height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
-body.ptcg-battle-active [data-ptcg] {
+body.ptcg-battle-active [data-ptcg],
+body.ptcg-battle-active [data-board] {
   height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
 .ptcg-battle {
-  --battle-hud: 2.75rem;
-  --battle-controls: auto;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --battle-hud: 2.9rem;
+  --battle-dock: 2.7rem;
   --board-max-w: 26rem;
-  --card-w: clamp(2.1rem, 9.2cqw, 3.6rem);
-  --card-active-w: clamp(2.6rem, 11.5cqw, 4.4rem);
-  --card-edge-w: clamp(1.9rem, 8cqw, 3.1rem);
+  /* Width-first sizing: fill the board, not empty green. */
+  --card-w: clamp(3.6rem, 17.5cqw, 4.5rem);
+  --card-active-w: clamp(5.2rem, 25cqw, 6.4rem);
+  --card-edge-w: clamp(3.4rem, 14.5cqw, 3.9rem);
+  --card-hand-w: clamp(3.6rem, 16cqw, 4.2rem);
+  position: fixed;
+  inset: 0;
+  z-index: 20;
   display: grid;
-  grid-template-rows: var(--battle-hud) minmax(0, 1fr) auto;
-  height: 100dvh;
+  grid-template-rows: calc(var(--battle-hud) + var(--safe-top)) minmax(0, 1fr) calc(var(--battle-dock) + var(--safe-bottom));
+  width: 100%;
+  height: 100%;
+  height: 100svh;
+  max-height: 100svh;
   max-height: 100dvh;
   overflow: hidden;
+  box-sizing: border-box;
   background:
     radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.35), transparent 55%),
     linear-gradient(180deg, #d7e8b8 0%, var(--ptcg-mat, #b7d98a) 42%, #9ec86e 100%);
@@ -72,8 +88,9 @@ body.ptcg-battle-active [data-ptcg] {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  height: var(--battle-hud);
-  padding: 0 0.45rem;
+  height: 100%;
+  padding: var(--safe-top) 0.45rem 0;
+  box-sizing: border-box;
   background: color-mix(in srgb, var(--ptcg-surface, #fff) 88%, transparent);
   border-bottom: 1px solid var(--ptcg-rule, #e6e8ec);
   backdrop-filter: blur(8px);
@@ -101,17 +118,25 @@ body.ptcg-battle-active [data-ptcg] {
   font-weight: 600;
 }
 
+.ptcg-hud-skip {
+  flex: 0 0 auto;
+  border: 1px solid var(--ptcg-accent, #3355d1) !important;
+  background: color-mix(in srgb, var(--ptcg-accent, #3355d1) 14%, #fff) !important;
+  color: var(--ptcg-accent, #3355d1) !important;
+}
+
 .ptcg-battle-hud button {
   flex: 0 0 auto;
   border: 1px solid var(--ptcg-rule-strong, #d7dbe1);
   border-radius: 999px;
   background: var(--ptcg-surface, #fff);
   color: var(--ptcg-ink, #16181d);
-  padding: 0.28rem 0.65rem;
-  font-size: 12px;
+  padding: 0.35rem 0.75rem;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  min-height: 2.5rem;
 }
 
 .ptcg-battle-hud button:hover:not(:disabled) {
@@ -136,11 +161,12 @@ body.ptcg-battle-active [data-ptcg] {
 }
 
 .ptcg-battle-stage {
+  position: relative;
   display: grid;
-  place-items: center;
+  place-items: stretch center;
   min-height: 0;
   overflow: hidden;
-  padding: 0.25rem 0.35rem;
+  padding: 0.15rem 0.25rem;
 }
 
 .ptcg-battle-board {
@@ -150,26 +176,37 @@ body.ptcg-battle-active [data-ptcg] {
   width: min(100%, var(--board-max-w));
   height: 100%;
   max-height: 100%;
-  aspect-ratio: 10 / 16;
   min-height: 0;
+  overflow: hidden;
 }
 
 .ptcg-battle .ptcg-table {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.06rem;
   min-height: 0;
+  overflow: hidden;
+  justify-content: center;
 }
 
+.ptcg-battle .ptcg-stadium,
+.ptcg-battle .ptcg-stadium--empty {
+  flex: 0 0 auto;
+  max-height: 1.6rem;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* Compact halves hug the center line. Side piles overlay so the bench can use ~90% width. */
 .ptcg-battle .ptcg-playmat {
-  --edge-col: calc(var(--card-edge-w) + 0.85rem);
-  flex: 1;
+  position: relative;
+  flex: 1 1 auto;
   display: grid;
-  grid-template-columns: var(--edge-col) minmax(0, 1fr) var(--edge-col);
-  gap: 0.25rem 0.4rem;
-  min-height: 0;
-  padding: 0.35rem;
+  grid-template-columns: 1fr;
+  gap: 0.1rem;
+  min-height: min-content;
+  padding: 0.3rem 0.25rem;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 40%),
     var(--ptcg-mat, #b7d98a);
@@ -177,114 +214,205 @@ body.ptcg-battle-active [data-ptcg] {
   border-radius: var(--ptcg-radius, 12px);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
   overflow: hidden;
-  align-content: stretch;
 }
 
-/* Active sits toward the stadium (center line); bench toward each player's own edge.
-   Deck + trash share one rail column so the piles never collide on short phones. */
 .ptcg-battle .ptcg-playmat--you {
-  grid-template-rows: auto minmax(0, auto) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
-    "head head head"
-    "prizes active rails"
-    "prizes bench rails";
+    "head"
+    "field";
+  align-content: start;
+  justify-items: center;
 }
 
 .ptcg-battle .ptcg-playmat--opp {
-  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, auto);
+  grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-areas:
-    "head head head"
-    "hand hand hand"
-    "rails bench prizes"
-    "rails active prizes";
+    "head"
+    "hand"
+    "field";
+  align-content: end;
+  justify-items: center;
+}
+
+.ptcg-battle .ptcg-field {
+  grid-area: field;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.12rem;
+  width: 96%;
+  max-width: 24rem;
+  min-height: 0;
+  z-index: 1;
+}
+
+.ptcg-battle .ptcg-playmat--opp .ptcg-field {
+  justify-content: flex-end;
+}
+
+.ptcg-battle .ptcg-playmat--you .ptcg-field {
+  justify-content: flex-start;
 }
 
 .ptcg-battle .ptcg-playmat-head {
   grid-area: head;
+  position: relative;
+  z-index: 4;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.15rem 0.5rem;
-  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  margin: 0 auto;
+  padding: 0.12rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ptcg-surface, #fff) 88%, transparent);
+  box-shadow: 0 1px 4px rgba(22, 24, 29, 0.1);
+  pointer-events: none;
 }
 
 .ptcg-battle .ptcg-playmat-head h2 {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .ptcg-battle .ptcg-status {
   margin: 0;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .ptcg-battle .ptcg-zone {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.12rem;
   min-width: 0;
   min-height: 0;
+}
+
+.ptcg-battle .ptcg-zone--bench,
+.ptcg-battle .ptcg-zone--active {
+  min-height: min-content;
 }
 
 .ptcg-battle .ptcg-zone--prizes {
-  grid-area: prizes;
-  width: 100%;
-  max-width: var(--edge-col);
-  justify-self: stretch;
-  align-self: start;
+  position: absolute;
+  z-index: 3;
+  width: var(--card-edge-w);
+  max-width: 22%;
 }
-.ptcg-battle .ptcg-zone--bench { grid-area: bench; min-width: 0; align-self: center; }
-.ptcg-battle .ptcg-zone--rails {
-  grid-area: rails;
+
+/* Opponent: deck/trash left, prizes right, sitting with the active/bench cluster. */
+.ptcg-battle .ptcg-playmat--opp .ptcg-zone--prizes {
+  right: 0.28rem;
+  bottom: 0.4rem;
+}
+
+.ptcg-battle .ptcg-playmat--opp .ptcg-zone--rails {
+  left: 0.28rem;
+  bottom: 0.4rem;
+}
+
+/* You: prizes left, deck/trash right, sitting with the active/bench cluster. */
+.ptcg-battle .ptcg-playmat--you .ptcg-zone--prizes {
+  left: 0.28rem;
+  top: 0.4rem;
+}
+
+.ptcg-battle .ptcg-playmat--you .ptcg-zone--rails {
+  right: 0.28rem;
+  bottom: 0.4rem;
+  left: auto;
+}
+
+.ptcg-battle .ptcg-zone--bench {
   width: 100%;
-  max-width: var(--edge-col);
-  justify-self: stretch;
-  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  z-index: 1;
+}
+
+.ptcg-battle .ptcg-zone--rails {
+  position: absolute;
+  z-index: 3;
+  width: var(--card-edge-w);
+  max-width: 22%;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: 0.55rem;
   min-height: 0;
-  overflow: hidden;
 }
+
 .ptcg-battle .ptcg-rail-item {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  align-items: center;
+  gap: 0.12rem;
   min-width: 0;
   min-height: 0;
+  flex: 0 0 auto;
 }
+
 .ptcg-battle .ptcg-zone--active {
-  grid-area: active;
-  justify-self: center;
-  align-self: center;
-  z-index: 1;
+  width: auto;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  overflow: visible;
 }
+
+/* Pull active toward the center line so halves stay compact without tiny cards. */
+.ptcg-battle .ptcg-playmat--opp .ptcg-zone--active {
+  margin-top: calc(var(--card-active-w) * -0.42);
+}
+
+.ptcg-battle .ptcg-playmat--you .ptcg-zone--active {
+  margin-bottom: calc(var(--card-active-w) * -0.28);
+}
+
+.ptcg-battle .ptcg-playmat--you .ptcg-zone--bench {
+  margin-top: calc(var(--card-active-w) * -0.12);
+}
+
 .ptcg-battle .ptcg-zone--hand {
   grid-area: hand;
+  width: 70%;
+  max-width: 14rem;
   min-width: 0;
   overflow: hidden;
   flex-shrink: 0;
+  align-items: center;
 }
 
 .ptcg-battle .ptcg-zone-label {
-  font-size: 10px;
-  color: rgba(22, 24, 29, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: rgba(22, 24, 29, 0.78);
+  text-align: center;
 }
 
 .ptcg-battle .ptcg-cards {
   display: flex;
-  gap: 0.18rem;
+  align-items: flex-start;
+  gap: 0.22rem;
   overflow: visible;
   padding: 0;
   min-height: 0;
+  justify-content: center;
 }
 
 .ptcg-battle .ptcg-bench {
   justify-content: center;
+  align-items: flex-start;
   flex-wrap: nowrap;
   width: 100%;
+  gap: 0.16rem;
 }
 
 .ptcg-battle .ptcg-bench .ptcg-card {
@@ -292,19 +420,60 @@ body.ptcg-battle-active [data-ptcg] {
   width: auto;
   min-width: 0;
   max-width: var(--card-w);
+  height: calc(var(--card-w) * 88 / 63);
+  aspect-ratio: auto;
 }
 
 .ptcg-battle .ptcg-card {
+  position: relative;
+  display: block;
   width: var(--card-w);
+  max-width: 100%;
   flex: 0 0 auto;
+  height: calc(var(--card-w) * 88 / 63);
+  aspect-ratio: auto;
+  align-self: flex-start;
+}
+
+.ptcg-battle .ptcg-card__face {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ptcg-battle .ptcg-card img,
+.ptcg-battle .ptcg-card .ptcg-back,
+.ptcg-battle .ptcg-card .ptcg-empty,
+.ptcg-battle .ptcg-card .ptcg-textcard,
+.ptcg-battle .ptcg-zoom-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: cover;
+}
+
+.ptcg-battle .ptcg-zone--active .ptcg-cards {
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .ptcg-battle .ptcg-zone--active .ptcg-card {
   width: var(--card-active-w);
+  height: calc(var(--card-active-w) * 88 / 63);
 }
 
 .ptcg-battle .ptcg-zone--deck .ptcg-card,
-.ptcg-battle .ptcg-zone--trash .ptcg-card {
+.ptcg-battle .ptcg-zone--trash .ptcg-card,
+.ptcg-battle .ptcg-zone--prizes .ptcg-card,
+.ptcg-battle .ptcg-pile-top {
+  width: 100%;
+}
+
+.ptcg-battle .ptcg-zone--deck,
+.ptcg-battle .ptcg-zone--trash,
+.ptcg-battle .ptcg-zone--prizes {
   width: var(--card-edge-w);
 }
 
@@ -375,33 +544,50 @@ body.ptcg-battle-active [data-ptcg] {
 .ptcg-battle .ptcg-zone--my-hand {
   flex: 0 0 auto;
   margin-top: 0.15rem;
-  padding: 0.2rem 0.25rem 0.35rem;
+  padding: 0.2rem 0.3rem 0.3rem;
+  max-height: calc(var(--card-hand-w) * 88 / 63 + 1.25rem);
   background: var(--ptcg-hand-well, #23272e);
   border-radius: calc(var(--ptcg-radius, 12px) - 2px);
+  overflow: hidden;
 }
 
 .ptcg-battle .ptcg-zone--my-hand .ptcg-zone-label {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.85);
   text-shadow: none;
+  font-size: 12px;
+}
+
+.ptcg-battle .ptcg-zone--my-hand .ptcg-hp,
+.ptcg-battle .ptcg-zone--my-hand .ptcg-hp-bar,
+.ptcg-battle .ptcg-zone--my-hand .ptcg-energies,
+.ptcg-battle .ptcg-zone--my-hand .ptcg-caption {
+  display: none !important;
 }
 
 .ptcg-battle .ptcg-hand--fan {
   position: relative;
   justify-content: center;
   align-items: flex-end;
-  min-height: calc(var(--card-w) * 1.45);
-  padding: 0.35rem 0.5rem 0.15rem;
-  overflow: visible;
+  min-height: calc(var(--card-hand-w) * 88 / 63);
+  max-height: calc(var(--card-hand-w) * 88 / 63 + 0.4rem);
+  padding: 0.2rem 0.5rem 0.15rem;
+  overflow: hidden;
 }
 
 .ptcg-battle .ptcg-fan-card {
   position: relative;
-  width: var(--card-w);
-  margin-inline: calc(var(--card-w) * -0.28);
-  transform: translateY(var(--fan-lift, 0px)) rotate(var(--fan-rot, 0deg));
+  width: var(--card-hand-w);
+  margin-inline: calc(var(--card-hand-w) * -0.3);
+  transform: translateY(calc(var(--fan-lift, 0px) * 0.35)) rotate(var(--fan-rot, 0deg));
   transform-origin: 50% 110%;
   transition: transform 160ms ease, z-index 0s;
   z-index: calc(20 + var(--fan-i, 0));
+}
+
+.ptcg-battle .ptcg-fan-card .ptcg-card {
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  height: auto;
 }
 
 .ptcg-battle .ptcg-fan-card:hover,
@@ -458,9 +644,13 @@ body.ptcg-battle-active [data-ptcg] {
   display: block;
   width: var(--card-edge-w);
   margin: 0 auto;
-  padding: 0.28rem 0.22rem 0.28rem 0.3rem;
+  padding: 0.2rem;
   box-sizing: border-box;
   max-width: 100%;
+}
+
+.ptcg-battle .ptcg-pile-wrap--empty {
+  opacity: 0.85;
 }
 
 .ptcg-battle .ptcg-pile {
@@ -513,18 +703,30 @@ body.ptcg-battle-active [data-ptcg] {
 
 .ptcg-battle .ptcg-pile-badge {
   position: absolute;
-  right: -0.25rem;
-  bottom: -0.2rem;
+  right: -0.3rem;
+  bottom: -0.25rem;
   z-index: 3;
-  min-width: 1.2rem;
-  padding: 0.05rem 0.3rem;
+  min-width: 1.35rem;
+  min-height: 1.25rem;
+  padding: 0.1rem 0.35rem;
   border-radius: 999px;
   background: #1a1c20;
   color: #fff;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   line-height: 1.2;
   pointer-events: none;
+}
+
+.ptcg-battle .ptcg-card--play .ptcg-hp {
+  top: 0.2rem;
+  right: 0.2rem;
+  font-size: 13px;
+  font-weight: 800;
+  min-width: 1.55rem;
+  min-height: 1.3rem;
+  padding: 0.12rem 0.32rem;
+  border-radius: 999px;
 }
 
 
@@ -597,20 +799,99 @@ body.ptcg-battle-active [data-ptcg] {
   }
 }
 
-.ptcg-battle-controls {
-  flex: 0 0 auto;
-  max-height: 22dvh;
-  margin: 0;
-  padding: 0.45rem 0.55rem 0.55rem;
-  overflow: auto;
+.ptcg-battle-dock {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 100%;
+  padding: 0 0.55rem var(--safe-bottom);
+  box-sizing: border-box;
   background: color-mix(in srgb, var(--ptcg-surface, #fff) 94%, transparent);
   border-top: 1px solid var(--ptcg-rule, #e6e8ec);
-  border-radius: 0;
+  z-index: 5;
+}
+
+.ptcg-battle-dock .ptcg-prompt {
+  flex: 1;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ptcg-battle-dock .ptcg-fx-toolbar {
+  flex: 0 0 auto;
+}
+
+.ptcg-dock-sheet,
+.ptcg-action-sheet-head button {
+  flex: 0 0 auto;
+  border: 1px solid var(--ptcg-rule-strong, #d7dbe1);
+  border-radius: 999px;
+  background: #1a1c20;
+  color: #fff;
+  padding: 0.35rem 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.ptcg-action-sheet-head button {
+  background: var(--ptcg-surface, #fff);
+  color: var(--ptcg-ink, #16181d);
+}
+
+.ptcg-action-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: min(42svh, 20rem);
+  padding: 0.55rem 0.65rem calc(0.55rem + var(--safe-bottom));
+  overflow: auto;
+  background: var(--ptcg-surface, #fff);
+  border-top: 1px solid var(--ptcg-rule-strong, #d7dbe1);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -10px 28px rgba(22, 24, 29, 0.16);
+  isolation: isolate;
+}
+
+.ptcg-action-sheet[hidden] {
+  display: none !important;
+}
+
+.ptcg-action-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ptcg-action-sheet-head .ptcg-prompt {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.ptcg-battle-controls {
+  /* legacy alias kept for tests/selectors */
+  margin: 0;
 }
 
 .ptcg-battle .ptcg-prompt {
   margin: 0 0 0.35rem;
   font-size: 0.88rem;
+}
+
+/* Bot skip lives in the HUD (.ptcg-hud-skip); keep a no-op for legacy selectors. */
+.ptcg-battle .ptcg-bot-banner {
+  display: none !important;
 }
 
 .ptcg-battle .ptcg-options {
@@ -676,61 +957,53 @@ body.ptcg-battle-active [data-ptcg] {
   font-size: 12px;
 }
 
-/* Phone portrait: use width for readable cards and 44px tap targets. */
+/* Phone portrait: keep cards large from board width; compact rows hug the center line. */
 @media (max-width: 520px) {
   .ptcg-battle {
     --board-max-w: 100%;
-    --battle-hud: 3.1rem;
-    --card-w: clamp(2.55rem, 15.5vw, 3.55rem);
-    --card-active-w: clamp(3.1rem, 18.5vw, 4.4rem);
-    --card-edge-w: clamp(2.35rem, 13.5vw, 3.25rem);
+    --battle-hud: 2.85rem;
+    --battle-dock: 2.55rem;
+    --card-w: clamp(3.85rem, 17vw, 4.5rem);
+    --card-active-w: clamp(5.5rem, 24.5vw, 6.4rem);
+    --card-edge-w: clamp(3.5rem, 14.8vw, 3.9rem);
+    --card-hand-w: clamp(3.6rem, 16vw, 4.1rem);
   }
 
   .ptcg-battle-board {
     width: 100%;
-    aspect-ratio: auto;
     height: 100%;
   }
 
+  .ptcg-battle-stage {
+    padding: 0.1rem 0.2rem;
+  }
+
   .ptcg-battle .ptcg-playmat {
-    --edge-col: calc(var(--card-edge-w) + 0.85rem);
-    gap: 0.22rem 0.32rem;
-    padding: 0.32rem;
+    gap: 0.08rem;
+    padding: 0.28rem 0.22rem;
   }
 
-  .ptcg-battle .ptcg-playmat--opp {
-    grid-template-rows: auto auto minmax(0, 1.15fr) minmax(0, 0.9fr);
-  }
-
-  .ptcg-battle .ptcg-playmat--you {
-    grid-template-rows: auto minmax(0, 0.9fr) minmax(0, 1.15fr);
+  .ptcg-battle .ptcg-playmat-head h2 {
+    font-size: 0.78rem;
   }
 
   .ptcg-battle .ptcg-zone--rails {
-    gap: 0.5rem;
-    justify-content: flex-start;
-  }
-
-  .ptcg-battle .ptcg-rail-item {
-    flex: 0 0 auto;
+    gap: 0.4rem;
   }
 
   .ptcg-battle .ptcg-hand--backs .ptcg-card {
-    width: calc(var(--card-edge-w) * 0.68);
-    margin-inline: -0.42rem;
+    width: calc(var(--card-edge-w) * 0.55);
+    margin-inline: -0.45rem;
   }
 
   .ptcg-battle .ptcg-opp-hand {
-    max-height: calc(var(--card-edge-w) * 1.15);
+    max-height: calc(var(--card-edge-w) * 0.7);
     overflow: hidden;
-  }
-
-  .ptcg-battle .ptcg-zone--hand {
-    gap: 0;
   }
 
   .ptcg-battle .ptcg-zone-label {
     font-size: 11px;
+    line-height: 1.15;
   }
 
   .ptcg-battle .ptcg-caption {
@@ -738,21 +1011,13 @@ body.ptcg-battle-active [data-ptcg] {
   }
 
   .ptcg-battle .ptcg-empty {
-    font-size: 10px;
-    min-height: 2.6rem;
-  }
-
-  .ptcg-battle .ptcg-pile-badge,
-  .ptcg-battle .ptcg-hp {
-    font-size: 12px;
-    min-width: 1.4rem;
-    min-height: 1.25rem;
-    padding: 0.1rem 0.32rem;
+    font-size: 11px;
+    font-weight: 700;
   }
 
   .ptcg-hud-meta {
     font-size: 12px;
-    gap: 0.2rem 0.45rem;
+    gap: 0.15rem 0.4rem;
   }
 
   .ptcg-battle-hud button {
@@ -762,18 +1027,98 @@ body.ptcg-battle-active [data-ptcg] {
     font-size: 13px;
   }
 
-  .ptcg-battle-controls {
-    max-height: 26dvh;
+  .ptcg-battle .ptcg-zone--my-hand {
+    margin-top: 0.1rem;
+    padding: 0.15rem 0.22rem 0.2rem;
+    max-height: calc(var(--card-hand-w) * 88 / 63 + 1.1rem);
+  }
+
+  .ptcg-battle .ptcg-hand--fan {
+    min-height: calc(var(--card-hand-w) * 88 / 63);
+    max-height: calc(var(--card-hand-w) * 88 / 63 + 0.25rem);
+    padding: 0.12rem 0.35rem 0.08rem;
+  }
+
+  .ptcg-battle .ptcg-fan-card {
+    margin-inline: calc(var(--card-hand-w) * -0.32);
+  }
+
+  .ptcg-battle .ptcg-fan-card:hover,
+  .ptcg-battle .ptcg-fan-card:focus-within {
+    transform: translateY(calc(var(--fan-lift, 0px) - 0.3rem)) rotate(var(--fan-rot, 0deg)) scale(1.04);
   }
 
   .ptcg-battle .ptcg-option {
-    width: 4.1rem;
+    width: 3.75rem;
   }
 
+  .ptcg-action-sheet button,
   .ptcg-card-actions button,
-  .ptcg-quick button,
-  .ptcg-battle-controls button {
+  .ptcg-quick button {
     min-height: 44px;
+  }
+}
+
+/* Short Safari toolbar: keep cards large (~60/90/56) but fit both halves. */
+@media (max-width: 520px) and (max-height: 700px) {
+  .ptcg-battle {
+    --battle-hud: 2.55rem;
+    --battle-dock: 2.35rem;
+    --card-w: clamp(3.75rem, 16.5vw, 4.25rem);
+    --card-active-w: clamp(5.2rem, 23.5vw, 6rem);
+    --card-edge-w: clamp(3.5rem, 14.5vw, 3.85rem);
+    --card-hand-w: clamp(3.5rem, 15.5vw, 3.95rem);
+  }
+
+  .ptcg-battle .ptcg-playmat--opp .ptcg-zone--hand {
+    max-height: 1.2rem;
+  }
+
+  .ptcg-battle .ptcg-zone--bench .ptcg-zone-label,
+  .ptcg-battle .ptcg-zone--active .ptcg-zone-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .ptcg-battle .ptcg-zone--bench,
+  .ptcg-battle .ptcg-zone--active {
+    position: relative;
+  }
+
+  .ptcg-battle .ptcg-stadium,
+  .ptcg-battle .ptcg-stadium--empty {
+    max-height: 1.05rem;
+    min-height: 0.9rem;
+    padding: 0.04rem 0.28rem;
+  }
+
+  .ptcg-battle .ptcg-playmat--opp {
+    align-content: end;
+    padding-bottom: 0.15rem;
+  }
+
+  .ptcg-battle .ptcg-playmat--you {
+    align-content: start;
+    padding-top: 0.15rem;
+  }
+
+  .ptcg-battle .ptcg-playmat--opp .ptcg-zone--active {
+    margin-top: calc(var(--card-active-w) * -0.48);
+  }
+
+  .ptcg-battle .ptcg-playmat--you .ptcg-zone--active {
+    margin-bottom: calc(var(--card-active-w) * -0.22);
+  }
+
+  .ptcg-battle .ptcg-playmat--you .ptcg-zone--bench {
+    margin-top: calc(var(--card-active-w) * -0.2);
+  }
+
+  .ptcg-battle .ptcg-zone--my-hand {
+    max-height: calc(var(--card-hand-w) * 88 / 63 + 0.85rem);
   }
 }
 
@@ -781,9 +1126,10 @@ body.ptcg-battle-active [data-ptcg] {
 @media (max-height: 480px) and (orientation: landscape) {
   .ptcg-battle {
     --battle-hud: 2.35rem;
-    --card-w: clamp(1.4rem, 7vh, 2.2rem);
-    --card-active-w: clamp(1.7rem, 9vh, 2.7rem);
-    --card-edge-w: clamp(1.25rem, 6.5vh, 2rem);
+    --card-w: clamp(2.8rem, 12vh, 3.6rem);
+    --card-active-w: clamp(3.6rem, 16vh, 4.8rem);
+    --card-edge-w: clamp(2.6rem, 11vh, 3.4rem);
+    --card-hand-w: clamp(2.8rem, 12vh, 3.5rem);
   }
 
   .ptcg-battle-controls {
