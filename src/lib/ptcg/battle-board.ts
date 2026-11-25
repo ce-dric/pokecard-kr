@@ -223,7 +223,7 @@ function deckPile(count: number, role: "you" | "opp"): string {
   return `<div class="ptcg-cards ptcg-pile-wrap">
     <button type="button" class="ptcg-pile ptcg-pile--deck" data-pile-open="${id}" aria-label="덱 ${count}장">
       ${pileLayers(Math.min(3, Math.max(1, Math.ceil(count / 20))))}
-      <span class="ptcg-pile-top ptcg-card"><span class="ptcg-back" aria-hidden="true"><span class="ptcg-stack-count">${count}</span></span></span>
+      <span class="ptcg-pile-top ptcg-card"><span class="ptcg-back" aria-hidden="true"></span></span>
       <span class="ptcg-pile-badge">${count}</span>
     </button>
   </div>
@@ -277,7 +277,7 @@ function handStackLayers(count: number): string {
 function oppHandBacks(count: number): string {
   const n = Math.max(0, Math.min(count, 10));
   const backs = Array.from({ length: Math.min(n, 5) }, () => `<div class="ptcg-card ptcg-hand-back"><div class="ptcg-back" aria-hidden="true"></div></div>`).join("");
-  return `<div class="ptcg-opp-hand" aria-label="상대 패 ${count}"><div class="ptcg-cards ptcg-hand ptcg-hand--backs">${backs || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`}</div><span class="ptcg-count">패 ${count}</span></div>`;
+  return `<div class="ptcg-opp-hand" aria-label="상대 패 ${count}"><div class="ptcg-cards ptcg-hand ptcg-hand--backs">${backs || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`}</div></div>`;
 }
 
 function pickHandIndex(indices: number[], opts: SideRenderOpts): number {
@@ -333,16 +333,18 @@ function sideHtml(
       .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   const handBlock =
     role === "opp"
-      ? `<div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패</span>${oppHandBacks(side.handCount)}</div>`
+      ? `<div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패 ${side.handCount}</span>${oppHandBacks(side.handCount)}</div>`
       : "";
+  const deckBlock = `<div class="ptcg-rail-item ptcg-zone--deck${flashClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>`;
+  const trashBlock = `<div class="ptcg-rail-item ptcg-zone--trash${flashClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role, opts)}</div>`;
+  const rails = `<div class="ptcg-zone ptcg-zone--rails">${deckBlock}${trashBlock}</div>`;
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
     <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
     ${handBlock}
     <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}"><span class="ptcg-zone-label">프라이즈</span>${prizePile(side.prizeCount, role)}</div>
     <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
-    <div class="ptcg-zone ptcg-zone--deck${flashClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>
+    ${rails}
     <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
-    <div class="ptcg-zone ptcg-zone--trash${flashClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role, opts)}</div>
   </section>`;
 }
 

@@ -180,22 +180,23 @@ body.ptcg-battle-active [data-ptcg] {
   align-content: stretch;
 }
 
-/* Active sits toward the stadium (center line); bench toward each player's own edge. */
+/* Active sits toward the stadium (center line); bench toward each player's own edge.
+   Deck + trash share one rail column so the piles never collide on short phones. */
 .ptcg-battle .ptcg-playmat--you {
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, auto) minmax(0, 1fr);
   grid-template-areas:
     "head head head"
-    "prizes active deck"
-    "prizes bench trash";
+    "prizes active rails"
+    "prizes bench rails";
 }
 
 .ptcg-battle .ptcg-playmat--opp {
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(0, auto);
   grid-template-areas:
     "head head head"
     "hand hand hand"
-    "deck bench prizes"
-    "trash active prizes";
+    "rails bench prizes"
+    "rails active prizes";
 }
 
 .ptcg-battle .ptcg-playmat-head {
@@ -231,24 +232,41 @@ body.ptcg-battle-active [data-ptcg] {
   width: 100%;
   max-width: var(--edge-col);
   justify-self: stretch;
+  align-self: start;
 }
-.ptcg-battle .ptcg-zone--bench { grid-area: bench; min-width: 0; }
-.ptcg-battle .ptcg-zone--deck {
-  grid-area: deck;
+.ptcg-battle .ptcg-zone--bench { grid-area: bench; min-width: 0; align-self: center; }
+.ptcg-battle .ptcg-zone--rails {
+  grid-area: rails;
   width: 100%;
   max-width: var(--edge-col);
   justify-self: stretch;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.35rem;
+  min-height: 0;
+  overflow: hidden;
+}
+.ptcg-battle .ptcg-rail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  min-height: 0;
+}
+.ptcg-battle .ptcg-zone--active {
+  grid-area: active;
+  justify-self: center;
+  align-self: center;
   z-index: 1;
 }
-.ptcg-battle .ptcg-zone--active { grid-area: active; justify-self: center; align-self: center; }
-.ptcg-battle .ptcg-zone--trash {
-  grid-area: trash;
-  width: 100%;
-  max-width: var(--edge-col);
-  justify-self: stretch;
-  z-index: 1;
+.ptcg-battle .ptcg-zone--hand {
+  grid-area: hand;
+  min-width: 0;
+  overflow: hidden;
+  flex-shrink: 0;
 }
-.ptcg-battle .ptcg-zone--hand { grid-area: hand; min-width: 0; }
 
 .ptcg-battle .ptcg-zone-label {
   font-size: 10px;
@@ -440,8 +458,9 @@ body.ptcg-battle-active [data-ptcg] {
   display: block;
   width: var(--card-edge-w);
   margin: 0 auto;
-  padding: 0.4rem 0.35rem 0.35rem 0.45rem;
-  box-sizing: content-box;
+  padding: 0.28rem 0.22rem 0.28rem 0.3rem;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .ptcg-battle .ptcg-pile {
@@ -661,9 +680,9 @@ body.ptcg-battle-active [data-ptcg] {
 @media (max-width: 520px) {
   .ptcg-battle {
     --board-max-w: 100%;
-    --card-w: clamp(1.7rem, 10.5vw, 2.8rem);
-    --card-active-w: clamp(2.1rem, 13vw, 3.3rem);
-    --card-edge-w: clamp(1.55rem, 9vw, 2.4rem);
+    --card-w: clamp(1.55rem, 9.5vw, 2.5rem);
+    --card-active-w: clamp(1.9rem, 12vw, 3rem);
+    --card-edge-w: clamp(1.4rem, 8.2vw, 2.15rem);
   }
 
   .ptcg-battle-board {
@@ -673,13 +692,44 @@ body.ptcg-battle-active [data-ptcg] {
   }
 
   .ptcg-battle .ptcg-playmat {
-    --edge-col: calc(var(--card-edge-w) + 0.95rem);
-    gap: 0.2rem 0.3rem;
-    padding: 0.3rem;
+    --edge-col: calc(var(--card-edge-w) + 0.7rem);
+    gap: 0.18rem 0.28rem;
+    padding: 0.28rem;
+  }
+
+  .ptcg-battle .ptcg-playmat--opp {
+    grid-template-rows: auto auto minmax(0, 1.15fr) minmax(0, 0.9fr);
+  }
+
+  .ptcg-battle .ptcg-playmat--you {
+    grid-template-rows: auto minmax(0, 0.9fr) minmax(0, 1.15fr);
+  }
+
+  .ptcg-battle .ptcg-zone--rails {
+    gap: 0.45rem;
+    justify-content: flex-start;
+  }
+
+  .ptcg-battle .ptcg-hand--backs .ptcg-card {
+    width: calc(var(--card-edge-w) * 0.62);
+    margin-inline: -0.48rem;
+  }
+
+  .ptcg-battle .ptcg-opp-hand {
+    max-height: calc(var(--card-edge-w) * 1.05);
+    overflow: hidden;
+  }
+
+  .ptcg-battle .ptcg-zone--hand {
+    gap: 0;
   }
 
   .ptcg-battle .ptcg-zone-label {
     font-size: 9px;
+  }
+
+  .ptcg-battle .ptcg-caption {
+    display: none;
   }
 
   .ptcg-hud-meta {
@@ -693,11 +743,11 @@ body.ptcg-battle-active [data-ptcg] {
   }
 
   .ptcg-battle-controls {
-    max-height: 24dvh;
+    max-height: 22dvh;
   }
 
   .ptcg-battle .ptcg-option {
-    width: 3.6rem;
+    width: 3.4rem;
   }
 }
 

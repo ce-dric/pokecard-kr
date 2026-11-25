@@ -106,6 +106,9 @@ test("battle board is a fixed app shell with HUD, fan hand, and log drawer", () 
   assert.match(html, /ptcg-fan-card/);
   assert.match(html, /ptcg-hand--backs/);
   assert.match(html, /aria-label="상대 패 5"/);
+  assert.match(html, /ptcg-zone-label">패 5</);
+  assert.doesNotMatch(html, /ptcg-opp-hand[\s\S]*ptcg-count/);
+  assert.doesNotMatch(html, /ptcg-stack-count/);
   assert.doesNotMatch(html, /<details class="ptcg-log-panel"/);
 });
 
@@ -156,12 +159,13 @@ test("battle CSS puts active toward the center and bench toward each edge", () =
   assert.match(css, /aspect-ratio:\s*10\s*\/\s*16/);
   assert.match(
     css,
-    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"prizes active deck"[\s\S]*"prizes bench trash"/,
+    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"prizes active rails"[\s\S]*"prizes bench rails"/,
   );
   assert.match(
     css,
-    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"deck bench prizes"[\s\S]*"trash active prizes"/,
+    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"rails bench prizes"[\s\S]*"rails active prizes"/,
   );
+  assert.match(css, /ptcg-zone--rails/);
 });
 
 test("the game page loads battle CSS next to the lobby styles", () => {
