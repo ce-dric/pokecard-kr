@@ -36,7 +36,7 @@ const view: GameView = {
   minCount: 1,
   maxCount: 1,
   options: [
-    { index: 0, label: "손패 이브이", image: card.image, fullImage: card.fullImage },
+    { index: 0, label: "패 이브이", image: card.image, fullImage: card.fullImage },
     { index: 1, label: "턴 종료", image: null, fullImage: null },
   ],
   log: ["내 턴"],
@@ -76,7 +76,9 @@ function fake(tagName: string, attrs: Record<string, string>, parent: Fake | nul
 
 function zones(html: string): Map<string, string[]> {
   const found = new Map<string, string[]>();
-  for (const match of html.matchAll(/<div class="ptcg-zone"><span>([^<]+)<\/span><div class="ptcg-cards">([\s\S]*?)<\/div><\/div>/g)) {
+  for (const match of html.matchAll(
+    /<span class="ptcg-zone-label">([^<]+)<\/span>(?:(?!<span class="ptcg-zone-label">)[\s\S])*?<div class="ptcg-cards[^"]*">([\s\S]*?)<\/div>/g,
+  )) {
     const list = found.get(match[1]) || [];
     list.push(match[2]);
     found.set(match[1], list);
@@ -97,15 +99,15 @@ test("board card images are zoom controls in every zone", () => {
   const html = boardHtml(view);
   assert.equal(html.includes("\u00b7"), false);
   const found = zones(html);
-  for (const label of ["스타디움", "배틀", "벤치", "트래시"]) {
+  for (const label of ["스타디움", "배틀필드", "벤치", "트래쉬"]) {
     const parts = found.get(label) || [];
     assert.equal(parts.length > 0, true, label);
     for (const part of parts) assertZoomThumb(part);
   }
-  const hands = found.get("손패") || [];
+  const hands = found.get("패") || [];
   assert.equal(hands.length, 2);
-  assertZoomThumb(hands[0]);
-  assert.equal(hands[1].includes("<img"), false);
+  assert.equal(hands[0].includes("<img"), false);
+  assertZoomThumb(hands[1]);
 });
 
 test("a choice image enlarges without sitting inside the select button", () => {
@@ -119,7 +121,7 @@ test("a choice image enlarges without sitting inside the select button", () => {
   assert.match(buttons[0], /<img\b/);
   assert.match(buttons[0], /721\.webp/);
   assert.match(buttons[1], /data-option="0"/);
-  assert.match(buttons[1], /손패 이브이/);
+  assert.match(buttons[1], /패 이브이/);
   assert.doesNotMatch(buttons[1], /<img/);
   assert.match(buttons[2], /class="ptcg-enlarge"/);
   assert.match(buttons[2], />확대</);
@@ -131,7 +133,7 @@ test("tapping a choice image stops propagation and does not select", () => {
   const option = fake("button", { "data-option": "0" });
   const zoom = fake(
     "button",
-    { "data-zoom-open": "", "data-full": "http://localhost/game/cards/721.webp", "data-alt": "손패 이브이" },
+    { "data-zoom-open": "", "data-full": "http://localhost/game/cards/721.webp", "data-alt": "패 이브이" },
     option,
   );
   const image = fake("img", {}, zoom);
@@ -143,7 +145,7 @@ test("tapping a choice image stops propagation and does not select", () => {
     },
   });
   assert.equal(stopped, true);
-  assert.deepEqual(action, { type: "zoom", full: "http://localhost/game/cards/721.webp", alt: "손패 이브이" });
+  assert.deepEqual(action, { type: "zoom", full: "http://localhost/game/cards/721.webp", alt: "패 이브이" });
 
   let textStopped = false;
   const text = actionFromPointer({

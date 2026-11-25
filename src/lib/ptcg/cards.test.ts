@@ -234,7 +234,7 @@ test("discard, stadium, and choices carry thumbnails", () => {
   const page = readFileSync(new URL("src/lib/ptcg/ui.ts", root), "utf8");
   assert.match(page, /loading="lazy"/);
   assert.match(page, /data-zoom-open/);
-  assert.match(page, /트래시/);
+  assert.match(page, /트래쉬/);
   assert.match(page, /확대/);
   assert.match(page, /이미지 출처: 포켓몬 공식/);
 });
