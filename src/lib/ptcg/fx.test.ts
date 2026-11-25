@@ -85,6 +85,13 @@ test("eventsFromLogLines maps turn, draw, attack, trash, coin, and prize cues", 
   assert.equal(events.find((event) => event.kind === "attack")?.side, "opp");
 });
 
+test("first paint does not replay the full log as motion", () => {
+  assert.deepEqual(collectFxEvents(null, view({ log: ["내 턴", "나 드로우", "코인 앞"] })), []);
+  const ended = collectFxEvents(null, view({ phase: "over", resultText: "졌습니다.", log: ["내 턴"] }));
+  assert.equal(ended.length, 1);
+  assert.equal(ended[0]?.kind, "result");
+});
+
 test("collectFxEvents merges log cues with board diffs for play, prize, ko, and result", () => {
   const prev = view({
     log: ["내 턴"],
