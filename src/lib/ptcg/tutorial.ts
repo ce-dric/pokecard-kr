@@ -72,6 +72,7 @@ function faceFromId(
   const nameKo = row?.link?.nameKo ? cleanText(row.link.nameKo) : null;
   const thumb = row?.link?.image || row?.picture?.thumb || null;
   return {
+    id,
     name: nameKo || `카드 ${id}`,
     nameKo,
     image: thumb,
@@ -81,7 +82,31 @@ function faceFromId(
     energies: extras.energies ?? [],
     kind: extras.kind ?? null,
     typeLabel: extras.typeLabel ?? null,
+    tools: extras.tools ?? [],
+    conditions: extras.conditions ?? [],
+    ex: extras.ex ?? false,
+    megaEx: extras.megaEx ?? false,
+    prizeValue: extras.prizeValue ?? null,
     hidden: extras.hidden,
+  };
+}
+
+function choice(
+  index: number,
+  label: string,
+  kind: GameView["options"][number]["kind"],
+  face: FaceCard | null = null,
+  extra: Partial<GameView["options"][number]> = {},
+): GameView["options"][number] {
+  return {
+    index,
+    label,
+    image: face?.image || null,
+    fullImage: face?.fullImage || null,
+    kind,
+    source: extra.source ?? null,
+    target: extra.target ?? null,
+    ...extra,
   };
 }
 
@@ -322,58 +347,47 @@ function optionsForStep(stepId: TutorialStepId): GameView["options"] {
   const energy = faceFromId(TUTORIAL_CARD_IDS.energy);
   const trainer = faceFromId(TUTORIAL_CARD_IDS.trainer);
   const kyogre = faceFromId(TUTORIAL_CARD_IDS.active);
+  const end = choice(99, "턴 종료", "end");
   switch (stepId) {
     case "bench":
       return [
-        {
-          index: 0,
-          label: `사용 ${snover.name}`,
-          image: snover.image,
-          fullImage: snover.fullImage,
-        },
-        { index: 1, label: "턴 종료", image: null, fullImage: null },
+        choice(0, `사용 ${snover.name}`, "play", snover, {
+          source: { playerIndex: 0, area: 2, index: 0 },
+          playAs: "bench",
+        }),
+        { ...end, index: 1 },
       ];
     case "energy":
       return [
-        {
-          index: 0,
-          label: `에너지 부착 ${energy.name}`,
-          image: energy.image,
-          fullImage: energy.fullImage,
-        },
-        {
-          index: 1,
-          label: `사용 ${trainer.name}`,
-          image: trainer.image,
-          fullImage: trainer.fullImage,
-        },
-        { index: 2, label: "턴 종료", image: null, fullImage: null },
+        choice(0, `에너지 부착 ${energy.name}`, "attach", energy, {
+          source: { playerIndex: 0, area: 2, index: 0 },
+          target: { playerIndex: 0, area: 4, index: 0 },
+        }),
+        choice(1, `사용 ${trainer.name}`, "play", trainer, {
+          source: { playerIndex: 0, area: 2, index: 1 },
+          playAs: "use",
+        }),
+        { ...end, index: 2 },
       ];
     case "trainer":
       return [
-        {
-          index: 0,
-          label: `사용 ${trainer.name}`,
-          image: trainer.image,
-          fullImage: trainer.fullImage,
-        },
-        {
-          index: 1,
-          label: `공격 Wave Splash 30`,
-          image: kyogre.image,
-          fullImage: kyogre.fullImage,
-        },
-        { index: 2, label: "턴 종료", image: null, fullImage: null },
+        choice(0, `사용 ${trainer.name}`, "play", trainer, {
+          source: { playerIndex: 0, area: 2, index: 0 },
+          playAs: "use",
+        }),
+        choice(1, `공격 Wave Splash 30`, "attack", kyogre, {
+          source: { playerIndex: 0, area: 4, index: 0 },
+          damage: 30,
+        }),
+        { ...end, index: 2 },
       ];
     case "attack":
       return [
-        {
-          index: 0,
-          label: `공격 Wave Splash 30`,
-          image: kyogre.image,
-          fullImage: kyogre.fullImage,
-        },
-        { index: 1, label: "턴 종료", image: null, fullImage: null },
+        choice(0, `공격 Wave Splash 30`, "attack", kyogre, {
+          source: { playerIndex: 0, area: 4, index: 0 },
+          damage: 30,
+        }),
+        { ...end, index: 1 },
       ];
     default:
       return [];
@@ -426,12 +440,16 @@ function logForStep(stepId: TutorialStepId): string[] {
 /** Scripted board view for the current tutorial step. Fixed seed scenario (no wasm shuffle). */
 export function tutorialViewForStep(stepId: TutorialStepId): GameView {
   const options = optionsForStep(stepId);
+  const actionStep = stepId === "bench" || stepId === "energy" || stepId === "trainer" || stepId === "attack";
   return {
     phase: stepId === "done" ? "over" : "choose",
     prompt: promptForStep(stepId),
+    context: actionStep ? 0 : null,
     minCount: options.length ? 1 : 0,
     maxCount: options.length ? 1 : 0,
     options,
+    // Picker keeps scripted option buttons visible on the landscape board.
+    interaction: actionStep ? "picker" : "none",
     log: logForStep(stepId),
     you: youForStep(stepId),
     opp: oppForStep(stepId),

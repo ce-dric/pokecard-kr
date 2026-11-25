@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { boardHtml } from "./battle-board.ts";
 import {
   TUTORIAL_STORAGE_KEY,
   TUTORIAL_STEP_COUNT,
@@ -8,10 +9,12 @@ import {
   currentTutorialStep,
   isTutorialComplete,
   markTutorialComplete,
+  optionKeyForLabel,
   progressLabel,
   readTutorialComplete,
   shouldOfferTutorial,
   tutorialScenarioCards,
+  tutorialViewForStep,
 } from "./tutorial.ts";
 
 test("tutorial starts on the board overview step", () => {
@@ -124,6 +127,42 @@ test("localStorage helpers remember completion and never force a repeat offer", 
   assert.equal(readTutorialComplete(storage), true);
   assert.equal(shouldOfferTutorial(storage), false);
   assert.equal(storage.getItem(TUTORIAL_STORAGE_KEY), "1");
+});
+
+test("landscape board HTML keeps stable tutorial targets for every step", () => {
+  const zones = [
+    "you-playmat",
+    "you-deck",
+    "you-bench",
+    "you-prize",
+    "you-discard",
+    "you-hand",
+    "you-active",
+    "opp-playmat",
+  ];
+  for (const step of [
+    "board",
+    "draw",
+    "bench",
+    "energy",
+    "trainer",
+    "attack",
+    "bot",
+    "done",
+  ] as const) {
+    const view = tutorialViewForStep(step);
+    const html = boardHtml(view);
+    assert.equal(html.includes("\u00b7"), false);
+    for (const zone of zones) {
+      assert.match(html, new RegExp(`data-tutorial-target="${zone}"`));
+    }
+    if (step === "bench" || step === "energy" || step === "trainer" || step === "attack") {
+      const key = step === "bench" ? "bench" : step === "energy" ? "energy" : step === "trainer" ? "trainer" : "attack";
+      const option = view.options.find((row) => optionKeyForLabel(row.label) === key);
+      assert.ok(option, step);
+      assert.match(html, new RegExp(`data-option="${option.index}"`));
+    }
+  }
 });
 
 test("tutorial captions stay Korean and avoid the middle dot", () => {

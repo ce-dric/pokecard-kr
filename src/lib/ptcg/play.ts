@@ -1,4 +1,5 @@
-import { greedyChoice } from "./bot.ts";
+import { botChoice } from "./bot-choice.ts";
+import type { BotDifficulty } from "./difficulty.ts";
 import { applySelect, finishBattle, readObservation, startBattle } from "./engine.ts";
 import type { Catalogs, PtcgModule } from "./types.ts";
 
@@ -20,6 +21,8 @@ export function playBotGame(
   deck1: number[],
   catalogs: Catalogs,
   maxSteps = 5000,
+  difficulty0: BotDifficulty = "easy",
+  difficulty1: BotDifficulty = "easy",
 ): BotGameResult {
   const started = startBattle(engine, deck0, deck1);
   if (!started.battlePtr || started.errorType) {
@@ -39,7 +42,8 @@ export function playBotGame(
   let attacks = 0;
   try {
     while (obs.current.result === -1 && steps < maxSteps) {
-      const choice = greedyChoice(obs, catalogs);
+      const difficulty = obs.current.yourIndex === 0 ? difficulty0 : difficulty1;
+      const choice = botChoice(obs, catalogs, difficulty);
       const error = applySelect(engine, started.battlePtr, choice);
       if (error) {
         return { ok: false, result: -1, turn: obs.current.turn, steps, attacks, reason: null, error };
