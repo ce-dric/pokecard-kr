@@ -488,3 +488,21 @@ test("option-to-card mapping covers play, attach, evolve, attack, retreat, and s
     "picker",
   );
 });
+
+test("board html includes mute control and a Korean result screen when the match ends", () => {
+  const live = boardHtml(view);
+  assert.match(live, /data-sfx-mute/);
+  assert.match(live, /소리 켜기/);
+  assert.equal(live.includes("\u00b7"), false);
+
+  const over = boardHtml({
+    ...view,
+    phase: "over",
+    resultText: "이겼습니다. 프라이즈가 없습니다",
+    options: [],
+  });
+  assert.match(over, /ptcg-fx-result/);
+  assert.match(over, /다시 하기/);
+  assert.match(over, /덱 고르기/);
+  assert.match(over, /이겼습니다/);
+});

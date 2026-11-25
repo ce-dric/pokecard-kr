@@ -9,6 +9,16 @@ import {
   writeStoredBotDifficulty,
 } from "./difficulty.ts";
 import {
+  applyBoardFx,
+  collectFxEvents,
+  muteToggleHtml,
+  prefersReducedMotion,
+  resultOutcome,
+  resultScreenHtml,
+  sfxMutedDefault,
+  writeSfxMuted,
+} from "./fx.ts";
+import {
   attackSheetHtml,
   boardPlayable,
   fallbackOptionsHtml,
@@ -310,7 +320,7 @@ interface ViewUiState {
 
 const EMPTY_UI: ViewUiState = { selected: null, targets: [], sheet: "none" };
 
-function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI): string {
+function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI, muted = true): string {
   const playable = view.interaction === "board" ? boardPlayable(view) : [];
   const youOpts = {
     playable,
@@ -326,7 +336,10 @@ function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI): str
     playerIndex: 1,
     interactive: false,
   };
-  const banner = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
+  const banner =
+    view.phase === "over" && view.resultText
+      ? resultScreenHtml(view.resultText, resultOutcome(view.resultText))
+      : "";
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
   const stadiumSpot = { playerIndex: 0, area: 7, index: 0 };
   const stadium = view.stadium
@@ -356,6 +369,7 @@ function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI): str
   const quick = view.interaction === "board" || view.interaction === "buttons" ? quickActionsHtml(view) : "";
   return `${banner}
     <div class="ptcg-controls">
+      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
       <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
       <p class="ptcg-turn">턴 ${view.turn}</p>
       ${quick}
@@ -375,8 +389,8 @@ function viewHtml(view: GameView, note: string, ui: ViewUiState = EMPTY_UI): str
     </details>`;
 }
 
-export function boardHtml(view: GameView, note = "", ui: ViewUiState = EMPTY_UI): string {
-  return viewHtml(view, note, ui);
+export function boardHtml(view: GameView, note = "", ui: ViewUiState = EMPTY_UI, muted = true): string {
+  return viewHtml(view, note, ui, muted);
 }
 
 export function mountGame(root: Element | null): void {
@@ -387,7 +401,9 @@ export function mountGame(root: Element | null): void {
   let difficulty: BotDifficulty = readStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage);
   let picked = new Set<number>();
   let latest: GameView | null = null;
+  let previous: GameView | null = null;
   let busy = false;
+  let muted = sfxMutedDefault(typeof localStorage === "undefined" ? null : localStorage);
   let uiState: ViewUiState = { ...EMPTY_UI };
   let dragSource: CardSpot | null = null;
   let noteText = "";
@@ -438,10 +454,13 @@ export function mountGame(root: Element | null): void {
   const paintBoard = (view: GameView, note = ""): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
+    const events = collectFxEvents(previous, view);
+    previous = view;
     noteText = note;
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(view, note, uiState)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    board.innerHTML = `${viewHtml(view, note, uiState, muted)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    applyBoardFx(board, events, { reduced: prefersReducedMotion(), muted });
     const log = board.querySelector(".ptcg-log");
     if (log) log.scrollTop = log.scrollHeight;
     syncPressed();
@@ -745,7 +764,18 @@ export function mountGame(root: Element | null): void {
       }
       return;
     }
+    if (target.closest("[data-sfx-mute]")) {
+      muted = !muted;
+      if (typeof localStorage !== "undefined") writeSfxMuted(muted, localStorage);
+      const mute = root.querySelector("[data-sfx-mute]");
+      if (mute instanceof HTMLButtonElement) {
+        mute.setAttribute("aria-pressed", muted ? "true" : "false");
+        mute.textContent = muted ? "소리 켜기" : "소리 끄기";
+      }
+      return;
+    }
     if (target.closest("[data-start]") || target.closest("[data-restart]")) {
+      previous = null;
       start();
       return;
     }
