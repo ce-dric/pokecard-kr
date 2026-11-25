@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  activeActions,
+  findDropOption,
+  handActions,
+  interactionMode,
+  mapOptions,
+  playableSpots,
+  targetsFor,
+} from "./actions.ts";
+import type { Observation } from "./types.ts";
 import { actionFromKey, actionFromPointer, boardHtml } from "./ui.ts";
 import type { FaceCard, GameView, SideView } from "./view.ts";
 
@@ -14,6 +24,11 @@ const card: FaceCard = {
   energies: ["colorless"],
   kind: "포켓몬",
   typeLabel: "무색",
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
 
 function side(hand: FaceCard[] | null): SideView {
@@ -36,9 +51,26 @@ const view: GameView = {
   minCount: 1,
   maxCount: 1,
   options: [
-    { index: 0, label: "패 이브이", image: card.image, fullImage: card.fullImage },
-    { index: 1, label: "턴 종료", image: null, fullImage: null },
+    {
+      index: 0,
+      label: "패 이브이",
+      image: card.image,
+      fullImage: card.fullImage,
+      kind: "select",
+      source: { area: 2, index: 0, playerIndex: 0 },
+      target: null,
+    },
+    {
+      index: 1,
+      label: "턴 종료",
+      image: null,
+      fullImage: null,
+      kind: "end",
+      source: null,
+      target: null,
+    },
   ],
+  interaction: "picker",
   log: ["내 턴"],
   you: side([card]),
   opp: side(null),
@@ -125,6 +157,32 @@ test("board card images are zoom controls in every zone", () => {
   assert.equal(hands.length, 2);
   assert.equal(hands[0].includes("<img"), false);
   assertZoomThumb(hands[1]);
+});
+
+test("battlefield and bench cards expose HP energy and status overlays", () => {
+  const damaged: FaceCard = {
+    ...card,
+    name: "드래펄트 ex",
+    hp: 250,
+    maxHp: 350,
+    energies: ["water", "water"],
+    tools: ["럭키 헬멧"],
+    conditions: ["마비"],
+    ex: true,
+    prizeValue: 2,
+  };
+  const html = boardHtml({
+    ...view,
+    you: { ...view.you, active: [damaged], bench: [damaged], conditions: ["마비"] },
+  });
+  assert.match(html, /ptcg-card--play/);
+  assert.match(html, /data-hp-badge/);
+  assert.match(html, /data-damage/);
+  assert.match(html, /swatch-water/);
+  assert.match(html, /data-tool/);
+  assert.match(html, /data-prize/);
+  assert.match(html, /data-condition="마비"/);
+  assert.match(html, /ptcg-card--tilt-paralyze/);
 });
 
 test("a choice image enlarges without sitting inside the select button", () => {
@@ -230,5 +288,238 @@ test("the battle page wires image keys and clicks to the enlarged view", () => {
   assert.match(source, /addEventListener\("click",[\s\S]*actionFromPointer/);
   assert.match(source, /addEventListener\("keydown",[\s\S]*actionFromKey/);
   assert.match(source, /key === "Escape"/);
+  assert.match(source, /addEventListener\("contextmenu"/);
+  assert.match(source, /addEventListener\("pointerdown"/);
+  assert.match(source, /450/);
   assert.equal(source.includes("\u00b7"), false);
+});
+
+const mapCards = new Map([
+  [1, { cardId: 1, name: "Basic", cardType: 0, hp: 60, energyType: 0, basic: true, ex: false, megaEx: false, weakness: null, resistance: null }],
+  [2, { cardId: 2, name: "Stage", cardType: 0, hp: 120, energyType: 0, basic: false, ex: false, megaEx: false, weakness: null, resistance: null }],
+  [3, { cardId: 3, name: "Energy", cardType: 5, hp: 0, energyType: 3, basic: false, ex: false, megaEx: false, weakness: null, resistance: null }],
+  [4, { cardId: 4, name: "Item", cardType: 1, hp: 0, energyType: 0, basic: false, ex: false, megaEx: false, weakness: null, resistance: null }],
+]);
+
+function obsWith(options: Observation["select"]): Observation {
+  return {
+    select: options,
+    logs: [],
+    current: {
+      turn: 2,
+      yourIndex: 0,
+      result: -1,
+      energyAttached: false,
+      stadium: [],
+      players: [
+        {
+          active: [{ id: 1, serial: 1, hp: 60, maxHp: 60, energies: [3] }],
+          bench: [{ id: 1, serial: 2, hp: 60, maxHp: 60, energies: [] }],
+          benchMax: 5,
+          deckCount: 40,
+          discard: [],
+          prize: [],
+          handCount: 4,
+          hand: [
+            { id: 1, serial: 3 },
+            { id: 3, serial: 4 },
+            { id: 2, serial: 5 },
+            { id: 4, serial: 6 },
+          ],
+          poisoned: false,
+          burned: false,
+          asleep: false,
+          paralyzed: false,
+          confused: false,
+        },
+        {
+          active: [{ id: 1, serial: 7, hp: 60, maxHp: 60, energies: [] }],
+          bench: [],
+          benchMax: 5,
+          deckCount: 40,
+          discard: [],
+          prize: [],
+          handCount: 5,
+          hand: null,
+          poisoned: false,
+          burned: false,
+          asleep: false,
+          paralyzed: false,
+          confused: false,
+        },
+      ],
+    },
+  };
+}
+
+test("board mode marks playable cards and keeps the text option list as a fallback", () => {
+  const boardView: GameView = {
+    ...view,
+    prompt: "할 일을 고르세요",
+    interaction: "board",
+    options: [
+      {
+        index: 0,
+        label: "사용 이브이",
+        image: card.image,
+        fullImage: card.fullImage,
+        kind: "play",
+        source: { area: 2, index: 0, playerIndex: 0 },
+        target: null,
+        playAs: "bench",
+      },
+      {
+        index: 1,
+        label: "공격 Splash 60",
+        image: null,
+        fullImage: null,
+        kind: "attack",
+        source: { area: 4, index: 0, playerIndex: 0 },
+        target: null,
+        attackId: 10,
+        damage: 60,
+        energies: ["colorless"],
+      },
+      {
+        index: 2,
+        label: "턴 종료",
+        image: null,
+        fullImage: null,
+        kind: "end",
+        source: null,
+        target: null,
+      },
+    ],
+  };
+  const html = boardHtml(boardView);
+  assert.match(html, /data-spot="0:2:0"/);
+  assert.match(html, /data-spot="0:4:0"/);
+  assert.match(html, /is-playable/);
+  assert.match(html, /data-card-act/);
+  assert.match(html, /ptcg-card--play[^"]*is-playable|is-playable[^"]*ptcg-card--play/);
+  assert.match(html, /텍스트로 고르기/);
+  assert.match(html, /data-option="2"[^>]*>[\s\S]*턴 종료/);
+  assert.equal(html.includes("\u00b7"), false);
+});
+
+test("option-to-card mapping covers play, attach, evolve, attack, retreat, and selection", () => {
+  const mapped = mapOptions(
+    obsWith({
+      type: 0,
+      context: 0,
+      minCount: 1,
+      maxCount: 1,
+      option: [
+        { type: 7, index: 0 },
+        { type: 7, index: 3 },
+        { type: 8, area: 2, index: 1, inPlayArea: 4, inPlayIndex: 0 },
+        { type: 8, area: 2, index: 1, inPlayArea: 5, inPlayIndex: 0 },
+        { type: 9, area: 2, index: 2, inPlayArea: 5, inPlayIndex: 0 },
+        { type: 13, attackId: 10 },
+        { type: 12 },
+        { type: 14 },
+      ],
+    }),
+    mapCards,
+  );
+
+  assert.equal(mapped[0]?.kind, "play");
+  assert.equal(mapped[0]?.playAs, "bench");
+  assert.deepEqual(mapped[0]?.source, { playerIndex: 0, area: 2, index: 0 });
+
+  assert.equal(mapped[1]?.kind, "play");
+  assert.equal(mapped[1]?.playAs, "use");
+
+  assert.equal(mapped[2]?.kind, "attach");
+  assert.deepEqual(mapped[2]?.source, { playerIndex: 0, area: 2, index: 1 });
+  assert.deepEqual(mapped[2]?.target, { playerIndex: 0, area: 4, index: 0 });
+
+  assert.equal(mapped[4]?.kind, "evolve");
+  assert.deepEqual(mapped[4]?.target, { playerIndex: 0, area: 5, index: 0 });
+
+  assert.equal(mapped[5]?.kind, "attack");
+  assert.deepEqual(mapped[5]?.source, { playerIndex: 0, area: 4, index: 0 });
+  assert.equal(mapped[5]?.attackId, 10);
+
+  assert.equal(mapped[6]?.kind, "retreat");
+  assert.deepEqual(mapped[6]?.source, { playerIndex: 0, area: 4, index: 0 });
+
+  assert.equal(mapped[7]?.kind, "end");
+  assert.equal(mapped[7]?.source, null);
+
+  const hand0 = handActions(mapped, 0, 0);
+  assert.equal(hand0.length, 1);
+  assert.equal(hand0[0]?.playAs, "bench");
+
+  const energyTargets = targetsFor(mapped, "attach", 1, 0);
+  assert.equal(energyTargets.length, 2);
+
+  const active = activeActions(mapped, 0);
+  assert.equal(active.some((row) => row.kind === "attack"), true);
+  assert.equal(active.some((row) => row.kind === "retreat"), true);
+
+  const drop = findDropOption(
+    mapped,
+    { playerIndex: 0, area: 2, index: 1 },
+    { playerIndex: 0, area: 4, index: 0 },
+  );
+  assert.equal(drop?.kind, "attach");
+  assert.equal(drop?.optionIndex, 2);
+
+  const benchDrop = findDropOption(
+    mapped,
+    { playerIndex: 0, area: 2, index: 0 },
+    { playerIndex: 0, area: 5, index: 2 },
+  );
+  assert.equal(benchDrop?.kind, "play");
+
+  const spots = playableSpots(mapped);
+  assert.equal(
+    spots.some((spot) => spot.area === 2 && spot.index === 0),
+    true,
+  );
+  assert.equal(
+    spots.some((spot) => spot.area === 4 && spot.index === 0),
+    true,
+  );
+
+  const pick = mapOptions(
+    obsWith({
+      type: 1,
+      context: 8,
+      minCount: 1,
+      maxCount: 1,
+      option: [{ type: 3, area: 2, index: 3, playerIndex: 0 }],
+    }),
+    mapCards,
+  );
+  assert.equal(pick[0]?.kind, "select");
+  assert.deepEqual(pick[0]?.source, { playerIndex: 0, area: 2, index: 3 });
+  assert.equal(interactionMode(obsWith({ type: 0, context: 0, minCount: 1, maxCount: 1, option: [] }).select, "choose", true), "board");
+  assert.equal(
+    interactionMode(
+      { type: 1, context: 8, minCount: 1, maxCount: 1, option: [{ type: 3, area: 3, index: 0, playerIndex: 0 }] },
+      "choose",
+      true,
+    ),
+    "picker",
+  );
+});
+
+test("board html includes mute control and a Korean result screen when the match ends", () => {
+  const live = boardHtml(view);
+  assert.match(live, /data-sfx-mute/);
+  assert.match(live, /소리 켜기/);
+  assert.equal(live.includes("\u00b7"), false);
+
+  const over = boardHtml({
+    ...view,
+    phase: "over",
+    resultText: "이겼습니다. 프라이즈가 없습니다",
+    options: [],
+  });
+  assert.match(over, /ptcg-fx-result/);
+  assert.match(over, /다시 하기/);
+  assert.match(over, /덱 고르기/);
+  assert.match(over, /이겼습니다/);
 });

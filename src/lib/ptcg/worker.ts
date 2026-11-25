@@ -1,5 +1,8 @@
 import mappingFile from "../../data/game-cards.json" with { type: "json" };
-import { collectGreedyBotTurn, type BotStep } from "./bot-turn.ts";
+import { botChoice } from "./bot-choice.ts";
+import { botActionCaption, collectBotTurnSteps, type BotStep } from "./bot-turn.ts";
+import type { BotDifficulty } from "./difficulty.ts";
+import { parseBotDifficulty } from "./difficulty.ts";
 import { applySelect, finishBattle, loadCatalogs, loadEngine, readObservation, startBattle, startErrors } from "./engine.ts";
 import type { BattleLog, CardMapping, Catalogs, Observation, PtcgModule } from "./types.ts";
 import { buildView, formatLog, redactLogs, type GameView } from "./view.ts";
@@ -14,6 +17,7 @@ let obs: Observation | null = null;
 let committed: BattleLog[] = [];
 let pending: BattleLog[] = [];
 let endReason: number | undefined;
+let botDifficulty: BotDifficulty = "normal";
 
 function lines(): string[] {
   if (!catalogs) return [];
@@ -53,11 +57,11 @@ function absorb(next: Observation): void {
 
 function runBots(): void {
   if (!engine || !catalogs || !obs) return;
-  const result = collectGreedyBotTurn({
+  const catalogsRef = catalogs;
+  const result = collectBotTurnSteps({
     humanSeat: HUMAN,
-    catalogs,
-    mapping,
     getObservation: () => obs!,
+    choose: (observation) => botChoice(observation, catalogsRef, botDifficulty),
     applyChoice: (indices) => {
       const error = applySelect(engine!, battlePtr, indices);
       if (error) return error;
@@ -65,6 +69,7 @@ function runBots(): void {
       return null;
     },
     buildView: () => currentView()!,
+    caption: (observation, indices) => botActionCaption(observation, indices, catalogsRef, mapping),
   });
   if (result.error) {
     self.postMessage({ type: "error", message: result.error });
@@ -73,7 +78,8 @@ function runBots(): void {
   publish(undefined, result.steps);
 }
 
-async function boot(engineUrl: string, deck0: number[], deck1: number[]): Promise<void> {
+async function boot(engineUrl: string, deck0: number[], deck1: number[], difficulty?: string): Promise<void> {
+  botDifficulty = parseBotDifficulty(difficulty);
   if (!engine) {
     engine = await loadEngine(engineUrl);
     catalogs = loadCatalogs(engine);
@@ -117,11 +123,11 @@ function choose(indices: number[]): void {
   runBots();
 }
 
-self.onmessage = (event: MessageEvent<{ type: string; engineUrl?: string; deck0?: number[]; deck1?: number[]; indices?: number[] }>) => {
+self.onmessage = (event: MessageEvent<{ type: string; engineUrl?: string; deck0?: number[]; deck1?: number[]; indices?: number[]; difficulty?: string }>) => {
   const message = event.data;
   const run = async () => {
     if ((message.type === "start" || message.type === "restart") && message.engineUrl && message.deck0 && message.deck1) {
-      await boot(message.engineUrl, message.deck0, message.deck1);
+      await boot(message.engineUrl, message.deck0, message.deck1, message.difficulty);
       return;
     }
     if (message.type === "choose" && message.indices) choose(message.indices);

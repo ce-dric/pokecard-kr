@@ -54,7 +54,7 @@ export function boardHighlights(prev: GameView | null | undefined, next: GameVie
   return out;
 }
 
-export function highlightClass(highlights: BoardHighlight[], side: "you" | "opp" | "table", zone: HighlightZone, index?: number): string {
+export function flashClass(highlights: BoardHighlight[], side: "you" | "opp" | "table", zone: HighlightZone, index?: number): string {
   const hit = highlights.some((row) => {
     if (row.side !== side || row.zone !== zone) return false;
     if (zone === "bench" && row.index != null) return row.index === index;
@@ -62,3 +62,6 @@ export function highlightClass(highlights: BoardHighlight[], side: "you" | "opp"
   });
   return hit ? " ptcg-flash" : "";
 }
+
+/** @deprecated Prefer flashClass to avoid clashing with interact-ui highlightClass. */
+export const highlightClass = flashClass;

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { boardHighlights, highlightClass } from "./bot-highlight.ts";
+import { boardHighlights, flashClass } from "./bot-highlight.ts";
 import type { FaceCard, GameView, SideView } from "./view.ts";
 
 const card = (name: string, extras: Partial<FaceCard> = {}): FaceCard => ({
@@ -52,8 +52,8 @@ test("boardHighlights marks opponent active and energy changes", () => {
   const after = view(side([card("이브이", { energies: ["water"] })]));
   const marks = boardHighlights(before, after);
   assert.ok(marks.some((row) => row.side === "opp" && row.zone === "active"));
-  assert.equal(highlightClass(marks, "opp", "active").includes("ptcg-flash"), true);
-  assert.equal(highlightClass(marks, "opp", "hand").includes("ptcg-flash"), false);
+  assert.equal(flashClass(marks, "opp", "active").includes("ptcg-flash"), true);
+  assert.equal(flashClass(marks, "opp", "hand").includes("ptcg-flash"), false);
 });
 
 test("boardHighlights marks a newly filled bench slot", () => {
