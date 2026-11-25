@@ -490,20 +490,6 @@
   width: 100%;
 }
 
-.ptcg-prize-card {
-  width: 100%;
-  min-width: 0;
-}
-
-.ptcg-prize-card .ptcg-back,
-.ptcg-prize-card .ptcg-empty {
-  width: 100%;
-}
-
-.ptcg-prize-card--gone {
-  opacity: 0.28;
-}
-
 .ptcg-card {
   width: 4.4rem;
   flex: 0 0 auto;
@@ -516,6 +502,21 @@
 .ptcg-zone--deck .ptcg-card,
 .ptcg-zone--trash .ptcg-card {
   width: 3.6rem;
+}
+
+.ptcg-card.ptcg-prize-card {
+  width: 100%;
+  min-width: 0;
+  flex: none;
+}
+
+.ptcg-card.ptcg-prize-card .ptcg-back,
+.ptcg-card.ptcg-prize-card .ptcg-empty {
+  width: 100%;
+}
+
+.ptcg-prize-card--gone {
+  opacity: 0.28;
 }
 
 .ptcg-zoom-image {
