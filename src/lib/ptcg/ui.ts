@@ -1,3 +1,4 @@
+import { playCardHtml } from "./board-card.ts";
 import { decks } from "./decks.ts";
 import {
   applyBoardFx,
@@ -160,12 +161,11 @@ function prizeGrid(count: number): string {
 function benchSlots(cards: FaceCard[]): string {
   return Array.from({ length: 5 }, (_, index) => {
     const card = cards[index];
-    return card ? cardHtml(card, true) : emptySlot("빈자리");
+    return card ? playCardHtml(card, { active: false }) : emptySlot("빈자리");
   }).join("");
 }
 
 function sideHtml(title: string, side: GameView["you"], showHand: boolean, role: "you" | "opp"): string {
-  const status = side.conditions.length ? side.conditions.join(" ") : "";
   const hand =
     showHand && side.hand
       ? side.hand.map((card) => cardHtml(card, false)).join("")
@@ -174,10 +174,10 @@ function sideHtml(title: string, side: GameView["you"], showHand: boolean, role:
     side.discard.map((card) => cardHtml(card, false)).join("") ||
     `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   const active =
-    side.active.map((card) => cardHtml(card, true)).join("") ||
+    side.active.map((card) => playCardHtml(card, { active: true })).join("") ||
     `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
-    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2>${status ? `<p class="ptcg-status">${esc(status)}</p>` : ""}</header>
+    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
     <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
     <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench)}</div></div>
     <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
@@ -372,7 +372,42 @@ export function mountGame(root: Element | null): void {
     if (action?.type === "zoom") openZoom(action.full, action.alt);
   });
 
+  let pressTimer: ReturnType<typeof setTimeout> | null = null;
+  let longPressed = false;
+  const clearPress = (): void => {
+    if (pressTimer != null) clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+  root.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const target = asControl(event.target);
+    if (!target) return;
+    const zoom = closestButton(target, "[data-zoom-open]");
+    if (!zoom) return;
+    longPressed = false;
+    clearPress();
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      openZoom(zoom.getAttribute("data-full") || "", zoom.getAttribute("data-alt") || "");
+    }, 450);
+  });
+  root.addEventListener("pointerup", clearPress);
+  root.addEventListener("pointercancel", clearPress);
+  root.addEventListener("pointerleave", clearPress);
+  root.addEventListener("contextmenu", (event) => {
+    const action = actionFromPointer(event);
+    if (action?.type !== "zoom") return;
+    event.preventDefault();
+    openZoom(action.full, action.alt);
+  });
+
   root.addEventListener("click", (event) => {
+    if (longPressed) {
+      longPressed = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     const action = actionFromPointer(event);
     if (action?.type === "zoom") {
       openZoom(action.full, action.alt);

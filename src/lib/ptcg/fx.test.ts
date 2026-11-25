@@ -24,6 +24,11 @@ const card: FaceCard = {
   energies: ["colorless"],
   kind: "포켓몬",
   typeLabel: "무색",
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
 
 function side(overrides: Partial<SideView> = {}): SideView {

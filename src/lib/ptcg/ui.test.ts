@@ -14,6 +14,11 @@ const card: FaceCard = {
   energies: ["colorless"],
   kind: "포켓몬",
   typeLabel: "무색",
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
 
 function side(hand: FaceCard[] | null): SideView {
@@ -108,6 +113,32 @@ test("board card images are zoom controls in every zone", () => {
   assert.equal(hands.length, 2);
   assert.equal(hands[0].includes("<img"), false);
   assertZoomThumb(hands[1]);
+});
+
+test("battlefield and bench cards expose HP energy and status overlays", () => {
+  const damaged: FaceCard = {
+    ...card,
+    name: "드래펄트 ex",
+    hp: 250,
+    maxHp: 350,
+    energies: ["water", "water"],
+    tools: ["럭키 헬멧"],
+    conditions: ["마비"],
+    ex: true,
+    prizeValue: 2,
+  };
+  const html = boardHtml({
+    ...view,
+    you: { ...view.you, active: [damaged], bench: [damaged], conditions: ["마비"] },
+  });
+  assert.match(html, /ptcg-card--play/);
+  assert.match(html, /data-hp-badge/);
+  assert.match(html, /data-damage/);
+  assert.match(html, /swatch-water/);
+  assert.match(html, /data-tool/);
+  assert.match(html, /data-prize/);
+  assert.match(html, /data-condition="마비"/);
+  assert.match(html, /ptcg-card--tilt-paralyze/);
 });
 
 test("a choice image enlarges without sitting inside the select button", () => {
@@ -213,6 +244,9 @@ test("the battle page wires image keys and clicks to the enlarged view", () => {
   assert.match(source, /addEventListener\("click",[\s\S]*actionFromPointer/);
   assert.match(source, /addEventListener\("keydown",[\s\S]*actionFromKey/);
   assert.match(source, /key === "Escape"/);
+  assert.match(source, /addEventListener\("contextmenu"/);
+  assert.match(source, /addEventListener\("pointerdown"/);
+  assert.match(source, /450/);
   assert.equal(source.includes("\u00b7"), false);
 });
 
