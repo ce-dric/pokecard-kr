@@ -5,6 +5,7 @@ import { actionFromKey, actionFromPointer, boardHtml } from "./ui.ts";
 import type { FaceCard, GameView, SideView } from "./view.ts";
 
 const card: FaceCard = {
+  id: 721,
   name: "이브이",
   nameKo: "이브이",
   image: "game/cards/721-thumb.webp",
@@ -99,15 +100,16 @@ test("board card images are zoom controls in every zone", () => {
   const html = boardHtml(view);
   assert.equal(html.includes("\u00b7"), false);
   const found = zones(html);
-  for (const label of ["스타디움", "배틀필드", "벤치", "트래쉬"]) {
+  for (const label of ["스타디움", "배틀필드", "벤치"]) {
     const parts = found.get(label) || [];
     assert.equal(parts.length > 0, true, label);
     for (const part of parts) assertZoomThumb(part);
   }
-  const hands = found.get("패") || [];
-  assert.equal(hands.length, 2);
-  assert.equal(hands[0].includes("<img"), false);
-  assertZoomThumb(hands[1]);
+  assert.match(html, /ptcg-pile--trash/);
+  assert.match(html, /data-pile-open="pile-you-trash"/);
+  assert.match(html, /data-pile-body="pile-you-trash"[\s\S]*data-zoom-open/);
+  assert.match(html, /ptcg-hand--backs/);
+  assert.match(html, /ptcg-zone--my-hand[\s\S]*data-zoom-open/);
 });
 
 test("a choice image enlarges without sitting inside the select button", () => {
@@ -125,7 +127,7 @@ test("a choice image enlarges without sitting inside the select button", () => {
   assert.doesNotMatch(buttons[1], /<img/);
   assert.match(buttons[2], /class="ptcg-enlarge"/);
   assert.match(buttons[2], />확대</);
-  assert.match(html, /data-option="1"[^>]*>[\s\S]*턴 종료/);
+  assert.match(html, /data-option="1"[^>]*>턴 종료</);
   assert.doesNotMatch(html, /data-option="1"[^>]*data-zoom-open/);
 });
 

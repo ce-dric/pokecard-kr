@@ -1,5 +1,15 @@
+import {
+  boardHtml,
+  closeLogDrawer,
+  closePileSheet,
+  openLogDrawer,
+  openPileSheet,
+  setBattleChrome,
+} from "./battle-board.ts";
 import { decks } from "./decks.ts";
-import type { FaceCard, GameView } from "./view.ts";
+import type { GameView } from "./view.ts";
+
+export { boardHtml } from "./battle-board.ts";
 
 interface WorkerIn {
   type: "start" | "restart" | "choose";
@@ -15,19 +25,6 @@ interface WorkerOut {
   message?: string;
 }
 
-const ENERGY_CLASS: Record<string, string> = {
-  colorless: "swatch-colorless",
-  grass: "swatch-grass",
-  fire: "swatch-fire",
-  water: "swatch-water",
-  electric: "swatch-electric",
-  psychic: "swatch-psychic",
-  fighting: "swatch-fighting",
-  dark: "swatch-dark",
-  steel: "swatch-steel",
-  dragon: "swatch-dragon",
-};
-
 function esc(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => {
     if (ch === "&") return "&amp;";
@@ -36,14 +33,6 @@ function esc(value: string): string {
     if (ch === '"') return "&quot;";
     return "&#39;";
   });
-}
-
-function imageSrc(path: string | null): string | null {
-  if (!path || !/^(?:images\/cards\/[a-z0-9-]+\/[A-Za-z0-9.-]+|game\/cards\/\d+(?:-thumb)?\.webp)$/.test(path)) return null;
-  const base = import.meta.env?.BASE_URL || "/";
-  const root = base.endsWith("/") ? base : `${base}/`;
-  const origin = typeof window === "undefined" ? "http://localhost" : window.location.origin;
-  return new URL(path, origin + root).href;
 }
 
 interface Control {
@@ -109,117 +98,6 @@ export function actionFromKey(event: {
   return { type: "zoom", full, alt: zoom.getAttribute("data-alt") || "" };
 }
 
-function zoomButton(src: string, full: string, label: string, width: number, height: number): string {
-  return `<button type="button" class="ptcg-zoom-image" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대"><img src="${esc(src)}" alt="" width="${width}" height="${height}" loading="lazy" decoding="async" /></button>`;
-}
-
-function cardHtml(card: FaceCard, caption: boolean): string {
-  if (card.hidden) return `<div class="ptcg-card"><div class="ptcg-back" aria-label="뒷면"></div></div>`;
-  const src = imageSrc(card.image);
-  const full = imageSrc(card.fullImage || card.image);
-  const name = esc(card.name);
-  const hp = card.hp != null && card.maxHp != null ? `${card.hp}/${card.maxHp}` : "";
-  const energies = card.energies
-    .map((energy) => `<i class="swatch ${ENERGY_CLASS[energy] || "swatch-colorless"}"></i>`)
-    .join("");
-  const body =
-    src && full
-      ? zoomButton(src, full, name, 120, 168)
-      : src
-        ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
-        : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
-  const meta = caption ? `<span class="ptcg-caption">${name}${hp ? ` ${esc(hp)}` : ""}</span>${energies ? `<span class="ptcg-energies">${energies}</span>` : ""}` : "";
-  return `<div class="ptcg-card">${body}${meta}</div>`;
-}
-
-function emptySlot(label: string): string {
-  return `<div class="ptcg-card"><div class="ptcg-empty ptcg-slot" aria-label="${esc(label)}">${esc(label)}</div></div>`;
-}
-
-function prizeGrid(count: number): string {
-  const capped = Math.max(0, Math.min(6, count));
-  const cells = Array.from({ length: 6 }, (_, index) => {
-    if (index < capped) {
-      return `<div class="ptcg-card ptcg-prize-card"><div class="ptcg-back" aria-hidden="true"></div></div>`;
-    }
-    return `<div class="ptcg-card ptcg-prize-card ptcg-prize-card--gone"><div class="ptcg-empty" aria-hidden="true"></div></div>`;
-  }).join("");
-  return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
-}
-
-function benchSlots(cards: FaceCard[]): string {
-  return Array.from({ length: 5 }, (_, index) => {
-    const card = cards[index];
-    return card ? cardHtml(card, true) : emptySlot("빈자리");
-  }).join("");
-}
-
-function sideHtml(title: string, side: GameView["you"], showHand: boolean, role: "you" | "opp"): string {
-  const status = side.conditions.length ? side.conditions.join(" ") : "";
-  const hand =
-    showHand && side.hand
-      ? side.hand.map((card) => cardHtml(card, false)).join("")
-      : `<p class="ptcg-count">패 ${side.handCount}</p>`;
-  const discard =
-    side.discard.map((card) => cardHtml(card, false)).join("") ||
-    `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
-  const active =
-    side.active.map((card) => cardHtml(card, true)).join("") ||
-    `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
-  return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
-    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2>${status ? `<p class="ptcg-status">${esc(status)}</p>` : ""}</header>
-    <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
-    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench)}</div></div>
-    <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
-    <div class="ptcg-zone ptcg-zone--active"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
-    <div class="ptcg-zone ptcg-zone--trash"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
-    <div class="ptcg-zone ptcg-zone--hand"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
-  </section>`;
-}
-
-function optionHtml(option: GameView["options"][number]): string {
-  const src = imageSrc(option.image);
-  const full = imageSrc(option.fullImage || option.image);
-  const label = esc(option.label);
-  const select = `<button type="button" data-option="${option.index}"><span>${label}</span></button>`;
-  if (!src || !full) return select;
-  const image = zoomButton(src, full, label, 72, 100);
-  const zoom = `<button type="button" class="ptcg-enlarge" data-zoom-open data-full="${esc(full)}" data-alt="${label}" aria-label="${label} 확대">확대</button>`;
-  return `<div class="ptcg-option">${image}${select}${zoom}</div>`;
-}
-
-function viewHtml(view: GameView, note: string): string {
-  const options = view.options.map((option) => optionHtml(option)).join("");
-  const multi = view.phase === "choose" && view.maxCount >= 1 && !(view.maxCount === 1 && view.minCount >= 1);
-  const confirm = multi
-    ? `<button type="button" data-confirm${view.minCount > 0 ? " disabled" : ""}>${view.minCount === 0 ? "넘기기" : "결정"}</button>`
-    : "";
-  const banner = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
-  const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
-  const stadium = view.stadium
-    ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
-    : "";
-  return `${banner}
-    <div class="ptcg-controls">
-      <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
-      <p class="ptcg-turn">턴 ${view.turn}</p>
-      <div class="ptcg-options" role="group" aria-label="선택">${options}${confirm}</div>
-    </div>
-    <div class="ptcg-table">
-      ${sideHtml("상대", view.opp, false, "opp")}
-      ${stadium}
-      ${sideHtml("나", view.you, true, "you")}
-    </div>
-    <details class="ptcg-log-panel" open>
-      <summary class="ptcg-log-title">기록</summary>
-      <ol class="ptcg-log">${log}</ol>
-    </details>`;
-}
-
-export function boardHtml(view: GameView, note = ""): string {
-  return viewHtml(view, note);
-}
-
 export function mountGame(root: Element | null): void {
   if (!root) return;
   let worker: Worker | null = null;
@@ -242,7 +120,18 @@ export function mountGame(root: Element | null): void {
       })
       .join("");
 
+  const showLobby = (): void => {
+    setBattleChrome(false);
+    root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
+    const board = root.querySelector("[data-board]");
+    if (board) {
+      board.setAttribute("hidden", "");
+      board.innerHTML = "";
+    }
+  };
+
   const paintLobby = (): void => {
+    setBattleChrome(false);
     root.innerHTML = `<div class="ptcg-setup">
       <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
       <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
@@ -254,12 +143,10 @@ export function mountGame(root: Element | null): void {
   const paintBoard = (view: GameView, note = ""): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
+    setBattleChrome(true);
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(view, note)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
-    const log = board.querySelector(".ptcg-log");
-    if (log) log.scrollTop = log.scrollHeight;
-    board.scrollIntoView({ block: "start" });
+    board.innerHTML = boardHtml(view, note);
   };
 
   const ensureWorker = (): Worker => {
@@ -271,9 +158,10 @@ export function mountGame(root: Element | null): void {
       if (data.type === "error") {
         const board = root.querySelector("[data-board]");
         if (board) {
+          setBattleChrome(true);
           root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
           board.removeAttribute("hidden");
-          board.innerHTML = `<p class="ptcg-result" role="status">${esc(data.message || "대전을 진행하지 못했습니다")}</p><p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+          board.innerHTML = `<div class="ptcg-battle" data-battle><div class="ptcg-battle-hud"><button type="button" class="ptcg-hud-exit" data-exit>나가기</button></div><p class="ptcg-result" role="status">${esc(data.message || "대전을 진행하지 못했습니다")}</p><p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p></div>`;
         }
         return;
       }
@@ -287,8 +175,9 @@ export function mountGame(root: Element | null): void {
       busy = false;
       const board = root.querySelector("[data-board]");
       if (board) {
+        setBattleChrome(true);
         board.removeAttribute("hidden");
-        board.innerHTML = `<p class="ptcg-result" role="status">엔진을 읽지 못했습니다</p>`;
+        board.innerHTML = `<div class="ptcg-battle" data-battle><p class="ptcg-result" role="status">엔진을 읽지 못했습니다</p></div>`;
       }
     };
     return worker;
@@ -300,11 +189,11 @@ export function mountGame(root: Element | null): void {
     if (!deck0 || !deck1) return;
     busy = true;
     const board = root.querySelector("[data-board]");
+    setBattleChrome(true);
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     if (board) {
       board.removeAttribute("hidden");
-      board.innerHTML = `<p class="ptcg-prompt" role="status">엔진을 읽고 있습니다</p>`;
-      board.scrollIntoView({ block: "start" });
+      board.innerHTML = `<div class="ptcg-battle" data-battle><p class="ptcg-prompt" role="status">엔진을 읽고 있습니다</p></div>`;
     }
     ensureWorker().postMessage({
       type: latest ? "restart" : "start",
@@ -346,8 +235,17 @@ export function mountGame(root: Element | null): void {
   root.addEventListener("keydown", (event) => {
     const action = actionFromKey(event);
     if (action?.type === "close") {
-      const dialog = root.querySelector("[data-zoom]");
-      if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+      const zoom = root.querySelector("[data-zoom]");
+      if (zoom instanceof HTMLDialogElement && zoom.open) {
+        zoom.close();
+        return;
+      }
+      const pile = root.querySelector("[data-pile-sheet]");
+      if (pile instanceof HTMLDialogElement && pile.open) {
+        pile.close();
+        return;
+      }
+      closeLogDrawer(root);
       return;
     }
     if (action?.type === "zoom") openZoom(action.full, action.alt);
@@ -361,6 +259,29 @@ export function mountGame(root: Element | null): void {
     }
     const target = event.target;
     if (!(target instanceof Element)) return;
+    if (target.closest("[data-log-open]")) {
+      openLogDrawer(root);
+      return;
+    }
+    if (target.closest("[data-log-close]")) {
+      closeLogDrawer(root);
+      return;
+    }
+    const pileOpen = target.closest("[data-pile-open]");
+    if (pileOpen instanceof HTMLElement) {
+      const pileId = pileOpen.getAttribute("data-pile-open");
+      if (pileId) openPileSheet(root, pileId);
+      return;
+    }
+    if (target.closest("[data-pile-sheet-close]")) {
+      closePileSheet(root);
+      return;
+    }
+    const pileSheet = root.querySelector("[data-pile-sheet]");
+    if (pileSheet instanceof HTMLDialogElement && target === pileSheet) {
+      pileSheet.close();
+      return;
+    }
     const deckButton = target.closest("[data-deck]");
     if (deckButton instanceof HTMLButtonElement) {
       const group = deckButton.dataset.deck;
@@ -377,9 +298,8 @@ export function mountGame(root: Element | null): void {
       start();
       return;
     }
-    if (target.closest("[data-decks]")) {
-      root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
-      root.querySelector(".ptcg-setup")?.scrollIntoView({ block: "start" });
+    if (target.closest("[data-exit]") || target.closest("[data-decks]")) {
+      showLobby();
       return;
     }
     if (busy || !latest || latest.phase !== "choose") return;

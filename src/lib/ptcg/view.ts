@@ -59,6 +59,7 @@ export function cardName(id: number | undefined, cards: Map<number, CardData>, m
 }
 
 export interface FaceCard {
+  id?: number | null;
   hidden?: boolean;
   name: string;
   nameKo: string | null;
@@ -78,6 +79,7 @@ function fullFromThumb(path: string | null | undefined): string | null {
 }
 
 const EMPTY_FACE: FaceCard = {
+  id: null,
   hidden: true,
   name: "뒷면",
   nameKo: null,
@@ -104,6 +106,7 @@ export function cardFace(
   const energyType = data?.energyType;
   const thumb = link?.image || row?.picture?.thumb || null;
   return {
+    id,
     name,
     nameKo,
     image: thumb,

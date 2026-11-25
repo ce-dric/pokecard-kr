@@ -7,7 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "node scripts/check-data.mjs",
-    "test": "node --experimental-strip-types --test src/lib/opinions.test.mjs src/lib/external-links.test.mjs src/lib/centering.test.mjs src/lib/hits.test.mjs src/lib/rarity-index.test.mjs src/lib/regulation.test.mjs src/lib/ptcg/bot.test.ts src/lib/ptcg/cards.test.ts src/lib/ptcg/ui.test.ts src/lib/ptcg/game.test.ts scripts/copy-limit.test.mjs"
+    "test": "node --experimental-strip-types --test src/lib/opinions.test.mjs src/lib/external-links.test.mjs src/lib/centering.test.mjs src/lib/hits.test.mjs src/lib/rarity-index.test.mjs src/lib/regulation.test.mjs src/lib/ptcg/bot.test.ts src/lib/ptcg/cards.test.ts src/lib/ptcg/battle-board.test.ts src/lib/ptcg/ui.test.ts src/lib/ptcg/game.test.ts scripts/copy-limit.test.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.6.0",
