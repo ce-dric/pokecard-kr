@@ -562,10 +562,51 @@ const sealedHref = glossary.find((term) => term.slug === "sealed")?.external?.[0
 if (!sealedHref.includes("/menu830")) errors.push(`glossary sealed href ${sealedHref || "(none)"}`);
 if (sealedHref.includes("menu785")) errors.push("glossary sealed still cites menu785");
 
+const gameCards = JSON.parse(readFileSync(new URL("../src/data/game-cards.json", import.meta.url), "utf8"));
+const gameDecks = JSON.parse(readFileSync(new URL("../src/lib/ptcg/decks.json", import.meta.url), "utf8"));
+const setsById = new Map(allSets.map((item) => [item.id, item]));
+const basicEnergy = new Set(["GRA", "FIR", "WAT", "LIG", "PSY", "FIG", "DAR", "MET"]);
+const standardMarks = new Set(["H", "I", "J"]);
+const gameDeckIds = new Set();
+for (const deck of gameDecks) {
+  if (deck.cards.length !== 60) errors.push(`game deck ${deck.id} has ${deck.cards.length} cards`);
+  if (`${deck.titleKo}${deck.faceEn}`.includes("\u00b7")) errors.push(`game deck ${deck.id} contains a middle dot`);
+  for (const id of deck.cards) {
+    gameDeckIds.add(id);
+    const row = gameCards.cards?.[String(id)];
+    if (!row) {
+      errors.push(`game deck ${deck.id} missing mapping for ${id}`);
+      continue;
+    }
+    if (!row.link?.nameKo || !row.link.image) {
+      errors.push(`game deck ${deck.id} card ${id} missing Korean link`);
+      continue;
+    }
+    if (row.link.nameKo.includes("\u00b7")) errors.push(`game card ${id} Korean name has a middle dot`);
+    const linkedSet = setsById.get(row.link.setId);
+    const linkedCard = linkedSet?.cards.find((card) => card.number === row.link.number);
+    if (!linkedSet || !linkedCard || linkedCard.nameStatus !== "verified-kr" || linkedCard.nameKo !== row.link.nameKo) {
+      errors.push(`game card ${id} link is not a verified Korean name`);
+      continue;
+    }
+    const basic = !row.setCode && basicEnergy.has(row.number);
+    const mark = linkedCard.regulation == null ? "" : String(linkedCard.regulation);
+    const setMarks = String(linkedSet.regulation || "")
+      .split(/[,\s]+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    const setOk = setMarks.length > 0 && setMarks.every((item) => standardMarks.has(item));
+    if (!(basic || standardMarks.has(mark) || ((mark === "" || mark == null) && setOk))) {
+      errors.push(`game deck card ${id} is not Standard H/I/J (${mark || linkedSet.regulation})`);
+    }
+  }
+}
+if (gameDeckIds.size < 20) errors.push(`game decks cover too few unique cards (${gameDeckIds.size})`);
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
 }
 console.log(
-  `ok m6 ${set.cards.length} cards, ${files.length} webp; m6a ${m6a.cards.length} cards, ${m6aFiles.length} webp; mem ${mem.cards.length} cards, ${memFiles.length} webp; mee ${mee.cards.length} cards, ${meeFiles.length} webp; mez ${mez.cards.length} cards, ${mezFiles.length} webp; glossary ${glossary.length} terms`,
+  `ok m6 ${set.cards.length} cards, ${files.length} webp; m6a ${m6a.cards.length} cards, ${m6aFiles.length} webp; mem ${mem.cards.length} cards, ${memFiles.length} webp; mee ${mee.cards.length} cards, ${meeFiles.length} webp; mez ${mez.cards.length} cards, ${mezFiles.length} webp; glossary ${glossary.length} terms; game decks ${gameDecks.length}`,
 );

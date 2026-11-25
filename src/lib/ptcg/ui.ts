@@ -215,7 +215,7 @@ export function mountGame(root: Element | null): void {
     root.innerHTML = `<div class="ptcg-setup">
       <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
       <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
-      <p class="ptcg-note">한국판 목록에 있는 카드는 우리 이름과 이미지를 씁니다. 없는 카드는 영문 이름과 일본 공식 이미지를 쓰고, 이미지가 없으면 글자로 보여 줍니다.</p>
+      <p class="ptcg-note">샘플 덱은 공식 스탠다드 레귤레이션(마크 H, I, J)을 따릅니다. 규정은 <a href="https://pokemoncard.co.kr/card/play_qna" rel="noopener noreferrer">포켓몬 카드 게임 공식 플레이 안내</a>를 보세요. 한국판 목록에 확인된 카드는 우리 이름과 이미지를 쓰고, 아직 없는 카드는 영문 이름과 일본 공식 이미지를 씁니다.</p>
       <button type="button" data-start>대전 시작</button>
     </div><div data-board hidden></div>`;
   };
