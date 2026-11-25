@@ -333,18 +333,18 @@ function sideHtml(
       .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   const handBlock =
     role === "opp"
-      ? `<div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패 ${side.handCount}</span>${oppHandBacks(side.handCount)}</div>`
+      ? `<div class="ptcg-zone ptcg-zone--hand${flashClass(highlights, role, "hand")}" data-tutorial-target="${role}-hand" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">패 ${side.handCount}</span>${oppHandBacks(side.handCount)}</div>`
       : "";
-  const deckBlock = `<div class="ptcg-rail-item ptcg-zone--deck${flashClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>`;
-  const trashBlock = `<div class="ptcg-rail-item ptcg-zone--trash${flashClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role, opts)}</div>`;
+  const deckBlock = `<div class="ptcg-rail-item ptcg-zone--deck${flashClass(highlights, role, "deck")}" data-tutorial-target="${role}-deck" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">덱</span>${deckPile(side.deckCount, role)}</div>`;
+  const trashBlock = `<div class="ptcg-rail-item ptcg-zone--trash${flashClass(highlights, role, "trash")}" data-tutorial-target="${role}-discard" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">트래쉬</span>${trashPile(side, role, opts)}</div>`;
   const rails = `<div class="ptcg-zone ptcg-zone--rails">${deckBlock}${trashBlock}</div>`;
-  return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
+  return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}" data-tutorial-target="${role}-playmat" data-tutorial-zone tabindex="-1">
     <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
     ${handBlock}
-    <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}"><span class="ptcg-zone-label">프라이즈</span>${prizePile(side.prizeCount, role)}</div>
-    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
+    <div class="ptcg-zone ptcg-zone--prizes${flashClass(highlights, role, "prizes")}" data-tutorial-target="${role}-prize" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">프라이즈</span>${prizePile(side.prizeCount, role)}</div>
+    <div class="ptcg-zone ptcg-zone--bench" data-tutorial-target="${role}-bench" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts, highlights, role)}</div></div>
     ${rails}
-    <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
+    <div class="ptcg-zone ptcg-zone--active${flashClass(highlights, role, "active")}" data-tutorial-target="${role}-active" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
   </section>`;
 }
 
@@ -477,7 +477,7 @@ function battleBoardHtml(
           ${stadium}
           ${sideHtml("나", view.you, "you", youOpts, highlights)}
         </div>
-        <div class="ptcg-zone ptcg-zone--hand ptcg-zone--my-hand${flashClass(highlights, "you", "hand")}"><span class="ptcg-zone-label">패</span>${myHand}</div>
+        <div class="ptcg-zone ptcg-zone--hand ptcg-zone--my-hand${flashClass(highlights, "you", "hand")}" data-tutorial-target="you-hand" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">패</span>${myHand}</div>
       </div>
     </div>
     <div class="ptcg-controls ptcg-battle-controls">

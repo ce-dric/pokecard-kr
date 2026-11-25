@@ -1532,3 +1532,132 @@ button.ptcg-pre-card[aria-pressed="true"] {
     min-height: 100%;
   }
 }
+/* Guided tutorial overlay (issue #81). Keep tokens aligned with the album page. */
+.ptcg-tutorial-entry {
+  margin: 0 0 0.85rem;
+}
+
+.ptcg-tutorial-offer {
+  margin: 0 0 0.55rem;
+  color: var(--ptcg-muted);
+  font-size: 0.95rem;
+}
+
+.ptcg-tutorial-entry button,
+.ptcg-tutorial-offer button,
+.ptcg-tutorial-actions button,
+.ptcg-tutorial-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--ptcg-rule-strong);
+  border-radius: calc(var(--ptcg-radius) - 2px);
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ptcg-tutorial-entry button,
+.ptcg-tutorial-actions .ptcg-tutorial-primary,
+.ptcg-tutorial-actions button[data-tutorial-next],
+.ptcg-tutorial-actions button[data-tutorial-finish] {
+  background: var(--ptcg-accent);
+  border-color: var(--ptcg-accent);
+  color: #fff;
+}
+
+.ptcg-tutorial-entry button:hover,
+.ptcg-tutorial-actions .ptcg-tutorial-primary:hover,
+.ptcg-tutorial-actions button[data-tutorial-next]:hover,
+.ptcg-tutorial-actions button[data-tutorial-finish]:hover {
+  background: var(--ptcg-accent-press);
+  border-color: var(--ptcg-accent-press);
+}
+
+.ptcg-tutorial-host {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.ptcg-tutorial-overlay {
+  pointer-events: none;
+}
+
+.ptcg-tutorial-coach {
+  margin: 0 auto max(1rem, env(safe-area-inset-bottom));
+  width: min(34rem, calc(100% - 1.5rem));
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid var(--ptcg-rule-strong);
+  border-radius: var(--ptcg-radius);
+  background: var(--ptcg-surface);
+  color: var(--ptcg-ink);
+  box-shadow: 0 10px 28px rgba(22, 24, 29, 0.18);
+  pointer-events: auto;
+}
+
+[data-ptcg]:has([data-tutorial-host]) [data-board] {
+  position: relative;
+  z-index: 45;
+}
+
+.ptcg-tutorial-progress {
+  margin: 0 0 0.35rem;
+  color: var(--ptcg-faint);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ptcg-tutorial-caption {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.ptcg-tutorial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+[data-tutorial-target][data-tutorial-active="true"] {
+  position: relative;
+  z-index: 41;
+  outline: 3px solid var(--ptcg-yellow);
+  outline-offset: 3px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(22, 24, 29, 0.45);
+  pointer-events: auto;
+}
+
+[data-board]:has([data-tutorial-active="true"]) .ptcg-controls,
+[data-board]:has([data-tutorial-active="true"]) .ptcg-battle-controls,
+[data-board]:has([data-tutorial-active="true"]) .ptcg-options,
+[data-board]:has([data-tutorial-active="true"]) .ptcg-picker,
+[data-board]:has([data-tutorial-active="true"]) .ptcg-playmat,
+[data-board]:has([data-tutorial-active="true"]) .ptcg-battle-board {
+  pointer-events: none;
+}
+
+[data-board]:has([data-tutorial-active="true"]) [data-tutorial-active="true"],
+[data-board]:has([data-tutorial-active="true"]) [data-tutorial-active="true"] * {
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-tutorial-target][data-tutorial-active="true"] {
+    transition: none;
+  }
+
+  .ptcg-tutorial-coach {
+    box-shadow: none;
+  }
+}

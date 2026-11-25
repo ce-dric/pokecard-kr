@@ -1,6 +1,7 @@
 import type { ChoiceOption, GameView } from "./view.ts";
 import type { CardSpot } from "./actions.ts";
 import { playableSpots, sameSpot } from "./actions.ts";
+import { imageSrc } from "./html.ts";
 
 const ENERGY_CLASS: Record<string, string> = {
   colorless: "swatch-colorless",
@@ -123,8 +124,9 @@ export function pickerHtml(view: GameView): string {
   const cards = view.options
     .filter((option) => option.kind === "select" || option.source)
     .map((option) => {
-      const image = option.image
-        ? `<img src="${esc(option.image)}" alt="" width="72" height="100" loading="lazy" decoding="async" />`
+      const src = imageSrc(option.image);
+      const image = src
+        ? `<img src="${esc(src)}" alt="" width="72" height="100" loading="lazy" decoding="async" />`
         : `<span class="ptcg-picker-fallback">${esc(option.label)}</span>`;
       return `<button type="button" class="ptcg-picker-card" data-option="${option.index}" aria-pressed="false">
         ${image}

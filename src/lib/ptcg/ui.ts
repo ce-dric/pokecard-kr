@@ -14,6 +14,7 @@ import { boardHighlights } from "./bot-highlight.ts";
 import { botStepDelayMs, playBotSteps, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
 import { type BotDifficulty, parseBotDifficulty } from "./difficulty.ts";
+import { insertTutorialLobbyControls, mountTutorial } from "./tutorial-ui.ts";
 import {
   applyBoardFx,
   collectFxEvents,
@@ -176,7 +177,22 @@ export function mountGame(root: Element | null): void {
     coinSide = null;
     wasSetup = false;
     root.innerHTML = lobbyHtml({ mine, theirs, difficulty });
+    const setup = root.querySelector(".ptcg-setup");
+    if (setup) insertTutorialLobbyControls(setup);
   };
+
+  const tutorial = mountTutorial(root, {
+    renderBoard(view) {
+      // Ensure a board host exists (lobby markup includes [data-board]).
+      if (!root.querySelector("[data-board]")) {
+        root.insertAdjacentHTML("beforeend", `<div data-board hidden></div>`);
+      }
+      paintBoard(view);
+    },
+    showLobby() {
+      showLobby();
+    },
+  });
 
   const syncPressed = (): void => {
     for (const button of root.querySelectorAll("[data-option]")) {
@@ -388,6 +404,7 @@ export function mountGame(root: Element | null): void {
   };
 
   root.addEventListener("keydown", (event) => {
+    if (tutorial.isActive()) return;
     const action = actionFromKey(event);
     if (action?.type === "close") {
       const zoom = root.querySelector("[data-zoom]");
@@ -556,8 +573,13 @@ export function mountGame(root: Element | null): void {
       event.stopPropagation();
       return;
     }
-    const action = actionFromPointer(event);
     const target = event.target;
+    if (target instanceof Element && target.closest("[data-tutorial-start]")) {
+      tutorial.start();
+      return;
+    }
+    if (tutorial.isActive()) return;
+    const action = actionFromPointer(event);
     if (!(target instanceof Element)) return;
     const acting = target.closest("[data-card-act]");
     if (acting instanceof HTMLElement && action?.type === "zoom") {
@@ -705,4 +727,9 @@ export function mountGame(root: Element | null): void {
   });
 
   paintLobby();
+
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tutorial") === "1") tutorial.start();
+  }
 }
