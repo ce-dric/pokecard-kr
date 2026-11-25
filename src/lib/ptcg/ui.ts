@@ -1,5 +1,12 @@
 import { playCardHtml } from "./board-card.ts";
 import { decks } from "./decks.ts";
+import {
+  BOT_DIFFICULTIES,
+  BOT_DIFFICULTY_LABELS,
+  type BotDifficulty,
+  readStoredBotDifficulty,
+  writeStoredBotDifficulty,
+} from "./difficulty.ts";
 import type { FaceCard, GameView } from "./view.ts";
 
 interface WorkerIn {
@@ -8,6 +15,7 @@ interface WorkerIn {
   deck0?: number[];
   deck1?: number[];
   indices?: number[];
+  difficulty?: BotDifficulty;
 }
 
 interface WorkerOut {
@@ -225,6 +233,7 @@ export function mountGame(root: Element | null): void {
   let worker: Worker | null = null;
   let mine = decks[0]?.id ?? "sample";
   let theirs = decks[1]?.id ?? decks[0]?.id ?? "sample";
+  let difficulty: BotDifficulty = readStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage);
   let picked = new Set<number>();
   let latest: GameView | null = null;
   let busy = false;
@@ -242,10 +251,17 @@ export function mountGame(root: Element | null): void {
       })
       .join("");
 
+  const difficultyButtons = (): string =>
+    BOT_DIFFICULTIES.map((id) => {
+      const pressed = id === difficulty ? "true" : "false";
+      return `<button type="button" data-difficulty="${id}" aria-pressed="${pressed}">${esc(BOT_DIFFICULTY_LABELS[id])}</button>`;
+    }).join("");
+
   const paintLobby = (): void => {
     root.innerHTML = `<div class="ptcg-setup">
       <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
       <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
+      <fieldset><legend>봇 난이도</legend><div class="ptcg-choices">${difficultyButtons()}</div></fieldset>
       <p class="ptcg-note">샘플 덱은 공식 스탠다드 레귤레이션(마크 H, I, J)을 따릅니다. 규정은 <a href="https://pokemoncard.co.kr/card/play_qna" rel="noopener noreferrer">포켓몬 카드 게임 공식 플레이 안내</a>를 보세요. 한국판 목록에 확인된 카드는 우리 이름과 이미지를 쓰고, 아직 없는 카드는 영문 이름과 일본 공식 이미지를 씁니다.</p>
       <button type="button" data-start>대전 시작</button>
     </div><div data-board hidden></div>`;
@@ -311,6 +327,7 @@ export function mountGame(root: Element | null): void {
       engineUrl: engineUrl(),
       deck0: deck0.cards,
       deck1: deck1.cards,
+      difficulty,
     } satisfies WorkerIn);
   };
 
@@ -405,6 +422,17 @@ export function mountGame(root: Element | null): void {
       if (group === "theirs") theirs = id;
       for (const button of root.querySelectorAll(`[data-deck="${group}"]`)) {
         button.setAttribute("aria-pressed", button.getAttribute("data-id") === id ? "true" : "false");
+      }
+      return;
+    }
+    const difficultyButton = target.closest("[data-difficulty]");
+    if (difficultyButton instanceof HTMLButtonElement) {
+      const id = difficultyButton.dataset.difficulty;
+      if (id !== "easy" && id !== "normal" && id !== "hard") return;
+      difficulty = id;
+      writeStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage, difficulty);
+      for (const button of root.querySelectorAll("[data-difficulty]")) {
+        button.setAttribute("aria-pressed", button.getAttribute("data-difficulty") === id ? "true" : "false");
       }
       return;
     }

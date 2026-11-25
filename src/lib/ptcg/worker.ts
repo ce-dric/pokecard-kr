@@ -1,5 +1,7 @@
 import mappingFile from "../../data/game-cards.json" with { type: "json" };
-import { greedyChoice } from "./bot.ts";
+import { botChoice } from "./bot-choice.ts";
+import type { BotDifficulty } from "./difficulty.ts";
+import { parseBotDifficulty } from "./difficulty.ts";
 import { applySelect, finishBattle, loadCatalogs, loadEngine, readObservation, startBattle, startErrors } from "./engine.ts";
 import type { BattleLog, CardMapping, Catalogs, Observation, PtcgModule } from "./types.ts";
 import { buildView, formatLog, redactLogs, type GameView } from "./view.ts";
@@ -14,6 +16,7 @@ let obs: Observation | null = null;
 let committed: BattleLog[] = [];
 let pending: BattleLog[] = [];
 let endReason: number | undefined;
+let botDifficulty: BotDifficulty = "normal";
 
 function lines(): string[] {
   if (!catalogs) return [];
@@ -49,7 +52,7 @@ function runBots(): void {
   if (!engine || !catalogs || !obs) return;
   let guard = 0;
   while (obs.current.result === -1 && obs.current.yourIndex !== HUMAN && guard < 5000) {
-    const choice = greedyChoice(obs, catalogs);
+    const choice = botChoice(obs, catalogs, botDifficulty);
     const error = applySelect(engine, battlePtr, choice);
     if (error) {
       self.postMessage({ type: "error", message: "봇이 고르지 못했습니다" });
@@ -65,7 +68,8 @@ function runBots(): void {
   publish();
 }
 
-async function boot(engineUrl: string, deck0: number[], deck1: number[]): Promise<void> {
+async function boot(engineUrl: string, deck0: number[], deck1: number[], difficulty?: string): Promise<void> {
+  botDifficulty = parseBotDifficulty(difficulty);
   if (!engine) {
     engine = await loadEngine(engineUrl);
     catalogs = loadCatalogs(engine);
@@ -109,11 +113,11 @@ function choose(indices: number[]): void {
   runBots();
 }
 
-self.onmessage = (event: MessageEvent<{ type: string; engineUrl?: string; deck0?: number[]; deck1?: number[]; indices?: number[] }>) => {
+self.onmessage = (event: MessageEvent<{ type: string; engineUrl?: string; deck0?: number[]; deck1?: number[]; indices?: number[]; difficulty?: string }>) => {
   const message = event.data;
   const run = async () => {
     if ((message.type === "start" || message.type === "restart") && message.engineUrl && message.deck0 && message.deck1) {
-      await boot(message.engineUrl, message.deck0, message.deck1);
+      await boot(message.engineUrl, message.deck0, message.deck1, message.difficulty);
       return;
     }
     if (message.type === "choose" && message.indices) choose(message.indices);
