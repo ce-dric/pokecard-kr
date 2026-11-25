@@ -8,6 +8,7 @@ export interface PokemonState extends CardRef {
   hp: number;
   maxHp: number;
   energies: number[];
+  tools?: CardRef[];
 }
 
 export interface PlayerView {

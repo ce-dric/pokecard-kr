@@ -499,6 +499,16 @@
   width: 5.1rem;
 }
 
+.ptcg-zone--active .ptcg-cards {
+  overflow: visible;
+  padding: 0.55rem 0.35rem;
+}
+
+.ptcg-card--tilt-sleep,
+.ptcg-card--tilt-paralyze {
+  margin: 0.55rem 0.35rem;
+}
+
 .ptcg-zone--deck .ptcg-card,
 .ptcg-zone--trash .ptcg-card {
   width: 3.6rem;
@@ -586,6 +596,209 @@
 
 .ptcg-energies .swatch {
   margin: 0;
+}
+
+/* In-play board card overlays (HP, damage, energy, tool, status) */
+.ptcg-card--play {
+  position: relative;
+}
+
+.ptcg-card__face {
+  position: relative;
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.ptcg-card__face .ptcg-zoom-image,
+.ptcg-card__face > img,
+.ptcg-card__face > .ptcg-textcard {
+  width: 100%;
+}
+
+.ptcg-card--play .ptcg-hp {
+  position: absolute;
+  top: 0.18rem;
+  right: 0.18rem;
+  z-index: 2;
+  min-width: 1.35rem;
+  padding: 0.08rem 0.22rem;
+  border-radius: 4px;
+  background: rgba(22, 24, 29, 0.82);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-damage {
+  position: absolute;
+  top: 0.18rem;
+  left: 0.18rem;
+  z-index: 2;
+  min-width: 1.1rem;
+  padding: 0.08rem 0.2rem;
+  border-radius: 4px;
+  background: var(--ptcg-cta);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-hp-bar {
+  position: absolute;
+  left: 0.2rem;
+  right: 0.2rem;
+  bottom: 0.2rem;
+  z-index: 2;
+  height: 0.28rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(22, 24, 29, 0.35);
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-hp-bar__fill {
+  display: block;
+  height: 100%;
+  background: #3d9a4a;
+}
+
+.ptcg-card--play .ptcg-energies {
+  position: absolute;
+  left: 0.12rem;
+  top: 1.35rem;
+  z-index: 2;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+  max-height: calc(100% - 2.4rem);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-energies .swatch {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+
+.ptcg-card--play .ptcg-tool {
+  position: absolute;
+  right: 0.12rem;
+  bottom: 0.55rem;
+  z-index: 2;
+  max-width: 85%;
+  padding: 0.06rem 0.2rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ptcg-ink);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-prize-mark {
+  position: absolute;
+  left: 0.12rem;
+  bottom: 0.55rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.04rem;
+  max-width: 70%;
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-prize-mark__tag,
+.ptcg-card--play .ptcg-prize-mark__value {
+  padding: 0.04rem 0.18rem;
+  border-radius: 3px;
+  background: rgba(22, 24, 29, 0.82);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.ptcg-card--play .ptcg-conditions {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ptcg-card--play .ptcg-condition {
+  padding: 0.1rem 0.28rem;
+  border-radius: 4px;
+  background: rgba(240, 196, 25, 0.95);
+  color: #16181d;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.ptcg-card--play .ptcg-condition[data-condition="독"] {
+  background: #7b4ea3;
+  color: #fff;
+}
+
+.ptcg-card--play .ptcg-condition[data-condition="화상"] {
+  background: #d62828;
+  color: #fff;
+}
+
+.ptcg-card--play .ptcg-condition[data-condition="잠듦"] {
+  background: #3c7ec2;
+  color: #fff;
+}
+
+.ptcg-card--play .ptcg-condition[data-condition="마비"] {
+  background: #c6a227;
+  color: #16181d;
+}
+
+.ptcg-card--play .ptcg-condition[data-condition="혼란"] {
+  background: #b15eaf;
+  color: #fff;
+}
+
+.ptcg-card--tilt-sleep .ptcg-card__face,
+.ptcg-card--tilt-paralyze .ptcg-card__face {
+  transform: rotate(90deg);
+  transform-origin: center center;
+}
+
+.ptcg-card--tilt-confuse .ptcg-card__face {
+  transform: rotate(180deg);
+  transform-origin: center center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptcg-card--tilt-sleep .ptcg-card__face,
+  .ptcg-card--tilt-paralyze .ptcg-card__face,
+  .ptcg-card--tilt-confuse .ptcg-card__face {
+    transform: none;
+  }
 }
 
 .ptcg-empty,

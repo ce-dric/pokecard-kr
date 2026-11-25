@@ -76,6 +76,11 @@ export interface FaceCard {
   energies: string[];
   kind: string | null;
   typeLabel: string | null;
+  tools: string[];
+  conditions: string[];
+  ex: boolean;
+  megaEx: boolean;
+  prizeValue: number | null;
 }
 
 function fullFromThumb(path: string | null | undefined): string | null {
@@ -95,7 +100,19 @@ const EMPTY_FACE: FaceCard = {
   energies: [],
   kind: null,
   typeLabel: null,
+  tools: [],
+  conditions: [],
+  ex: false,
+  megaEx: false,
+  prizeValue: null,
 };
+
+export function prizeValueFor(data: CardData | undefined): number | null {
+  if (!data) return null;
+  if (data.megaEx) return 3;
+  if (data.ex) return 2;
+  return null;
+}
 
 export function cardFace(
   id: number,
@@ -110,6 +127,9 @@ export function cardFace(
   const name = nameKo || (data?.name ? cleanText(data.name) : `카드 ${id}`);
   const energyType = data?.energyType;
   const thumb = link?.image || row?.picture?.thumb || null;
+  const tools = (poke?.tools || []).map((tool) => cardName(tool.id, cards, mapping));
+  const ex = Boolean(data?.ex);
+  const megaEx = Boolean(data?.megaEx);
   return {
     name,
     nameKo,
@@ -120,6 +140,11 @@ export function cardFace(
     energies: (poke?.energies || []).map((type) => SWATCH[type] || "colorless"),
     kind: data ? KIND_KO[data.cardType] || null : null,
     typeLabel: energyType != null && TYPE_KO[energyType] ? TYPE_KO[energyType] : null,
+    tools,
+    conditions: [],
+    ex,
+    megaEx,
+    prizeValue: prizeValueFor(data),
   };
 }
 
@@ -127,16 +152,18 @@ function pokemonFace(
   poke: PokemonState | null,
   cards: Map<number, CardData>,
   mapping: CardMapping,
+  activeConditions: string[] = [],
 ): FaceCard {
   if (!poke) return EMPTY_FACE;
-  return cardFace(poke.id, cards, mapping, poke);
+  const face = cardFace(poke.id, cards, mapping, poke);
+  return activeConditions.length ? { ...face, conditions: activeConditions } : face;
 }
 
 function conditions(player: PlayerView): string[] {
   const names: string[] = [];
   if (player.poisoned) names.push("독");
   if (player.burned) names.push("화상");
-  if (player.asleep) names.push("잠");
+  if (player.asleep) names.push("잠듦");
   if (player.paralyzed) names.push("마비");
   if (player.confused) names.push("혼란");
   return names;
@@ -165,8 +192,9 @@ function sideView(
     playerIndex === humanSeat && player.hand
       ? player.hand.map((card) => cardFace(card.id, cards, mapping))
       : null;
+  const status = conditions(player);
   return {
-    active: (player.active || []).map((poke) => pokemonFace(poke, cards, mapping)),
+    active: (player.active || []).map((poke) => pokemonFace(poke, cards, mapping, status)),
     bench: (player.bench || []).map((poke) => pokemonFace(poke, cards, mapping)),
     hand,
     handCount: player.handCount,
@@ -174,7 +202,7 @@ function sideView(
     discard: (player.discard || []).map((card) => cardFace(card.id, cards, mapping)),
     discardCount: player.discard?.length || 0,
     deckCount: player.deckCount,
-    conditions: conditions(player),
+    conditions: status,
   };
 }
 

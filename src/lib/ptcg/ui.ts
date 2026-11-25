@@ -1,4 +1,5 @@
 import { findDropOption, handActions, targetsFor, type CardSpot } from "./actions.ts";
+import { playCardHtml } from "./board-card.ts";
 import { decks } from "./decks.ts";
 import {
   attackSheetHtml,
@@ -135,15 +136,54 @@ interface CardRenderOpts {
   draggable?: boolean;
 }
 
+interface SideRenderOpts {
+  playable: CardSpot[];
+  selected: CardSpot | null;
+  targets: CardSpot[];
+  playerIndex: number;
+  interactive: boolean;
+}
+
+function spotCanAct(
+  spot: CardSpot | null | undefined,
+  playable: CardSpot[],
+  targets: CardSpot[],
+  draggable?: boolean,
+): boolean {
+  if (!spot) return false;
+  if (draggable) return true;
+  return (
+    playable.some((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex) ||
+    targets.some((row) => row.area === spot.area && row.index === spot.index && row.playerIndex === spot.playerIndex)
+  );
+}
+
+function spotAttrs(spot: CardSpot | null | undefined, canAct: boolean, draggable: boolean): string {
+  if (!spot) return "";
+  const parts = [` data-spot="${spotKey(spot)}"`];
+  if (draggable) parts.push(` draggable="true" tabindex="0" data-card-act`);
+  else if (canAct) parts.push(` tabindex="0" data-card-act`);
+  return parts.join("");
+}
+
+function playSpotHtml(card: FaceCard, active: boolean, spot: CardSpot, opts: SideRenderOpts): string {
+  const hi = highlightClass(spot, opts.playable, opts.selected, opts.targets);
+  const canAct = spotCanAct(spot, opts.playable, opts.targets, false);
+  return playCardHtml(card, {
+    active,
+    className: hi,
+    attrs: spotAttrs(spot, canAct, false),
+  });
+}
+
 function cardHtml(card: FaceCard, opts: CardRenderOpts): string {
   const playable = opts.playable || [];
   const targets = opts.targets || [];
   const hi = highlightClass(opts.spot, playable, opts.selected || null, targets);
-  const spotAttr = opts.spot ? ` data-spot="${spotKey(opts.spot)}"` : "";
-  const canAct = Boolean(opts.spot && (opts.draggable || playable.some((row) => row.area === opts.spot!.area && row.index === opts.spot!.index && row.playerIndex === opts.spot!.playerIndex) || targets.some((row) => row.area === opts.spot!.area && row.index === opts.spot!.index && row.playerIndex === opts.spot!.playerIndex)));
-  const dragAttr = opts.draggable && opts.spot ? ` draggable="true" tabindex="0" data-card-act` : canAct ? ` tabindex="0" data-card-act` : "";
+  const canAct = spotCanAct(opts.spot, playable, targets, opts.draggable);
+  const shell = spotAttrs(opts.spot, canAct, Boolean(opts.draggable));
   if (card.hidden) {
-    return `<div class="ptcg-card ${hi}"${spotAttr}><div class="ptcg-back" aria-label="뒷면"></div></div>`;
+    return `<div class="ptcg-card ${hi}"${shell}><div class="ptcg-back" aria-label="뒷면"></div></div>`;
   }
   const src = imageSrc(card.image);
   const full = imageSrc(card.fullImage || card.image);
@@ -152,21 +192,15 @@ function cardHtml(card: FaceCard, opts: CardRenderOpts): string {
   const energies = card.energies
     .map((energy) => `<i class="swatch ${ENERGY_CLASS[energy] || "swatch-colorless"}"></i>`)
     .join("");
-  let body: string;
-  if (canAct && src) {
-    const zoom = full
-      ? `<button type="button" class="ptcg-card-zoom" data-zoom-open data-full="${esc(full)}" data-alt="${name}" aria-label="${name} 확대">확대</button>`
-      : "";
-    body = `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />${zoom}`;
-  } else if (src && full) {
-    body = zoomButton(src, full, name, 120, 168);
-  } else if (src) {
-    body = `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`;
-  } else {
-    body = `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
-  }
+  // Keep data-zoom-open so long-press / right-click can enlarge; short click acts when data-card-act is set.
+  const body =
+    src && full
+      ? zoomButton(src, full, name, 120, 168)
+      : src
+        ? `<img src="${esc(src)}" alt="${name}" width="120" height="168" loading="lazy" decoding="async" />`
+        : `<div class="ptcg-textcard"><span>${esc(card.typeLabel || card.kind || "카드")}</span><strong>${name}</strong><span>${hp ? `HP ${esc(hp.split("/")[1] || hp)}` : ""}</span></div>`;
   const meta = opts.caption ? `<span class="ptcg-caption">${name}${hp ? ` ${esc(hp)}` : ""}</span>${energies ? `<span class="ptcg-energies">${energies}</span>` : ""}` : "";
-  return `<div class="ptcg-card ${hi}"${spotAttr}${dragAttr}>${body}${meta}</div>`;
+  return `<div class="ptcg-card ${hi}"${shell}>${body}${meta}</div>`;
 }
 
 function emptySlot(label: string, spot?: CardSpot | null, targets: CardSpot[] = []): string {
@@ -186,28 +220,11 @@ function prizeGrid(count: number): string {
   return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
 }
 
-interface SideRenderOpts {
-  playable: CardSpot[];
-  selected: CardSpot | null;
-  targets: CardSpot[];
-  playerIndex: number;
-  interactive: boolean;
-}
-
 function benchSlots(cards: FaceCard[], opts: SideRenderOpts): string {
   return Array.from({ length: 5 }, (_, index) => {
     const spot = { playerIndex: opts.playerIndex, area: 5, index };
     const card = cards[index];
-    return card
-      ? cardHtml(card, {
-          caption: true,
-          spot,
-          playable: opts.playable,
-          selected: opts.selected,
-          targets: opts.targets,
-          draggable: false,
-        })
-      : emptySlot("빈자리", spot, opts.targets);
+    return card ? playSpotHtml(card, false, spot, opts) : emptySlot("빈자리", spot, opts.targets);
   }).join("");
 }
 
@@ -218,7 +235,6 @@ function sideHtml(
   role: "you" | "opp",
   opts: SideRenderOpts,
 ): string {
-  const status = side.conditions.length ? side.conditions.join(" ") : "";
   const hand =
     showHand && side.hand
       ? side.hand
@@ -253,18 +269,11 @@ function sideHtml(
   const active =
     side.active
       .map((card, index) =>
-        cardHtml(card, {
-          caption: true,
-          spot: { playerIndex: opts.playerIndex, area: 4, index },
-          playable: opts.playable,
-          selected: opts.selected,
-          targets: opts.targets,
-          draggable: false,
-        }),
+        playSpotHtml(card, true, { playerIndex: opts.playerIndex, area: 4, index }, opts),
       )
       .join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
-    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2>${status ? `<p class="ptcg-status">${esc(status)}</p>` : ""}</header>
+    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2></header>
     <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
     <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, opts)}</div></div>
     <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
@@ -518,6 +527,13 @@ export function mountGame(root: Element | null): void {
     if (image instanceof HTMLImageElement) image.focus();
   };
 
+  let pressTimer: ReturnType<typeof setTimeout> | null = null;
+  let longPressed = false;
+  const clearPress = (): void => {
+    if (pressTimer != null) clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+
   root.addEventListener("keydown", (event) => {
     const action = actionFromKey(event);
     if (action?.type === "close") {
@@ -532,18 +548,18 @@ export function mountGame(root: Element | null): void {
       }
       return;
     }
-    if (action?.type === "zoom") {
+    const keyTarget = event.target;
+    const acting =
+      keyTarget instanceof Element ? keyTarget.closest("[data-card-act]") : null;
+    if (action?.type === "zoom" && !(acting instanceof HTMLElement)) {
       openZoom(action.full, action.alt);
       return;
     }
     if (busy || !latest || latest.phase !== "choose") return;
     if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return;
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const card = target.closest("[data-card-act]");
-    if (!(card instanceof HTMLElement)) return;
+    if (!(acting instanceof HTMLElement)) return;
     event.preventDefault();
-    activateCard(parseSpot(card.getAttribute("data-spot")));
+    activateCard(parseSpot(acting.getAttribute("data-spot")));
   });
 
   const activateCard = (spot: CardSpot | null): void => {
@@ -647,14 +663,48 @@ export function mountGame(root: Element | null): void {
     dragSource = null;
   });
 
-  root.addEventListener("click", (event) => {
+  root.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const target = asControl(event.target);
+    if (!target) return;
+    const zoom = closestButton(target, "[data-zoom-open]");
+    if (!zoom) return;
+    longPressed = false;
+    clearPress();
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      openZoom(zoom.getAttribute("data-full") || "", zoom.getAttribute("data-alt") || "");
+    }, 450);
+  });
+  root.addEventListener("pointerup", clearPress);
+  root.addEventListener("pointercancel", clearPress);
+  root.addEventListener("pointerleave", clearPress);
+  root.addEventListener("contextmenu", (event) => {
     const action = actionFromPointer(event);
+    if (action?.type !== "zoom") return;
+    event.preventDefault();
+    openZoom(action.full, action.alt);
+  });
+
+  root.addEventListener("click", (event) => {
+    if (longPressed) {
+      longPressed = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    const action = actionFromPointer(event);
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const acting = target.closest("[data-card-act]");
+    if (acting instanceof HTMLElement && action?.type === "zoom") {
+      activateCard(parseSpot(acting.getAttribute("data-spot")));
+      return;
+    }
     if (action?.type === "zoom") {
       openZoom(action.full, action.alt);
       return;
     }
-    const target = event.target;
-    if (!(target instanceof Element)) return;
     const deckButton = target.closest("[data-deck]");
     if (deckButton instanceof HTMLButtonElement) {
       const group = deckButton.dataset.deck;
