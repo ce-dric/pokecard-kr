@@ -132,23 +132,48 @@ function cardHtml(card: FaceCard, caption: boolean): string {
   return `<div class="ptcg-card">${body}${meta}</div>`;
 }
 
-function slots(count: number): string {
-  const icons = Array.from({ length: count }, () => `<i class="ptcg-prize"></i>`).join("");
-  return `<span class="ptcg-prizes" aria-label="프라이즈 ${count}">프라이즈 ${count} ${icons}</span>`;
+function emptySlot(label: string): string {
+  return `<div class="ptcg-card"><div class="ptcg-empty ptcg-slot" aria-label="${esc(label)}">${esc(label)}</div></div>`;
 }
 
-function sideHtml(title: string, side: GameView["you"], showHand: boolean): string {
+function prizeGrid(count: number): string {
+  const capped = Math.max(0, Math.min(6, count));
+  const cells = Array.from({ length: 6 }, (_, index) => {
+    if (index < capped) {
+      return `<div class="ptcg-card ptcg-prize-card"><div class="ptcg-back" aria-hidden="true"></div></div>`;
+    }
+    return `<div class="ptcg-card ptcg-prize-card ptcg-prize-card--gone"><div class="ptcg-empty" aria-hidden="true"></div></div>`;
+  }).join("");
+  return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
+}
+
+function benchSlots(cards: FaceCard[]): string {
+  return Array.from({ length: 5 }, (_, index) => {
+    const card = cards[index];
+    return card ? cardHtml(card, true) : emptySlot("빈자리");
+  }).join("");
+}
+
+function sideHtml(title: string, side: GameView["you"], showHand: boolean, role: "you" | "opp"): string {
   const status = side.conditions.length ? side.conditions.join(" ") : "";
-  const hand = showHand && side.hand
-    ? side.hand.map((card) => cardHtml(card, false)).join("")
-    : `<p class="ptcg-count">손패 ${side.handCount}</p>`;
-  const discard = side.discard.map((card) => cardHtml(card, false)).join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
-  return `<section class="ptcg-side">
-    <header><h2>${esc(title)}</h2><p>${slots(side.prizeCount)} <span>덱 ${side.deckCount}</span> <span>트래시 ${side.discardCount}</span> ${status ? `<span>${esc(status)}</span>` : ""}</p></header>
-    <div class="ptcg-zone"><span>배틀</span><div class="ptcg-cards">${side.active.map((card) => cardHtml(card, true)).join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`}</div></div>
-    <div class="ptcg-zone"><span>벤치</span><div class="ptcg-cards">${side.bench.map((card) => cardHtml(card, true)).join("") || `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`}</div></div>
-    <div class="ptcg-zone"><span>손패</span><div class="ptcg-cards">${hand}</div></div>
-    <div class="ptcg-zone"><span>트래시</span><div class="ptcg-cards">${discard}</div></div>
+  const hand =
+    showHand && side.hand
+      ? side.hand.map((card) => cardHtml(card, false)).join("")
+      : `<p class="ptcg-count">패 ${side.handCount}</p>`;
+  const discard =
+    side.discard.map((card) => cardHtml(card, false)).join("") ||
+    `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
+  const active =
+    side.active.map((card) => cardHtml(card, true)).join("") ||
+    `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
+  return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
+    <header class="ptcg-playmat-head"><h2>${esc(title)}</h2>${status ? `<p class="ptcg-status">${esc(status)}</p>` : ""}</header>
+    <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
+    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench)}</div></div>
+    <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
+    <div class="ptcg-zone ptcg-zone--active"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
+    <div class="ptcg-zone ptcg-zone--trash"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
+    <div class="ptcg-zone ptcg-zone--hand"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
   </section>`;
 }
 
@@ -172,17 +197,23 @@ function viewHtml(view: GameView, note: string): string {
   const banner = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
   const stadium = view.stadium
-    ? `<div class="ptcg-zone"><span>스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
+    ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
     : "";
   return `${banner}
-    <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
-    <p class="ptcg-turn">턴 ${view.turn}</p>
-    ${stadium}
-    <div class="ptcg-options" role="group" aria-label="선택">${options}${confirm}</div>
-    ${sideHtml("나", view.you, true)}
-    ${sideHtml("상대", view.opp, false)}
-    <h2 class="ptcg-log-title">기록</h2>
-    <ol class="ptcg-log">${log}</ol>`;
+    <div class="ptcg-controls">
+      <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
+      <p class="ptcg-turn">턴 ${view.turn}</p>
+      <div class="ptcg-options" role="group" aria-label="선택">${options}${confirm}</div>
+    </div>
+    <div class="ptcg-table">
+      ${sideHtml("상대", view.opp, false, "opp")}
+      ${stadium}
+      ${sideHtml("나", view.you, true, "you")}
+    </div>
+    <details class="ptcg-log-panel" open>
+      <summary class="ptcg-log-title">기록</summary>
+      <ol class="ptcg-log">${log}</ol>
+    </details>`;
 }
 
 export function boardHtml(view: GameView, note = ""): string {

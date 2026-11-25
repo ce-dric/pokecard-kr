@@ -15,9 +15,9 @@ const KIND_KO = ["포켓몬", "아이템", "도구", "서포터", "스타디움"
 const SWATCH = ["colorless", "grass", "fire", "water", "electric", "psychic", "fighting", "dark", "steel", "dragon"];
 const AREA_KO: Record<number, string> = {
   1: "덱",
-  2: "손패",
-  3: "트래시",
-  4: "배틀",
+  2: "패",
+  3: "트래쉬",
+  4: "배틀필드",
   5: "벤치",
   6: "프라이즈",
   7: "스타디움",
@@ -269,9 +269,9 @@ export function formatLog(
     case 5:
       return `${who} 드로우`;
     case 6:
-      return log.toArea === 3 ? `${name} 트래시` : "";
+      return log.toArea === 3 ? `${name} 트래쉬` : "";
     case 7:
-      return log.toArea === 3 ? "카드가 트래시로 갔습니다" : "";
+      return log.toArea === 3 ? "카드가 트래쉬로 갔습니다" : "";
     case 8:
       return `${who} 교체`;
     case 10:

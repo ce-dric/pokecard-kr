@@ -12,13 +12,17 @@ const description =
 <Base title={title} description={description}>
   <div class="wrap ptcg-page">
     <Fragment set:html={`<style>${gameCss}</style>`} />
-    <header class="mast">
-      <p class="crumbs">비공식 팬 페이지</p>
-      <div class="mast-row">
+    <header class="ptcg-hero">
+      <p class="ptcg-kicker">비공식 팬 페이지</p>
+      <div class="ptcg-title-block">
+        <span class="ptcg-marker" aria-hidden="true"></span>
         <h1>대전</h1>
-        <a class="mast-aside" href={withBase("game/rules/")}>놀이방법</a>
       </div>
-      <p class="lede">봇과 한 판 둡니다. 엔진이 보여 주는 선택지만 누를 수 있습니다.</p>
+      <p class="ptcg-lede">봇과 한 판 둡니다. 엔진이 보여 주는 선택지만 누를 수 있습니다.</p>
+      <nav class="ptcg-tabs" aria-label="대전 구역">
+        <a class="is-active" href={withBase("game/")} aria-current="page">대전</a>
+        <a href={withBase("game/rules/")}>놀이방법</a>
+      </nav>
     </header>
     <div data-ptcg>
       <p class="ptcg-wait">덱을 고르면 대전이 시작됩니다.</p>
