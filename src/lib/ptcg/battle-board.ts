@@ -462,6 +462,18 @@ function battleBoardHtml(
       );
   const prompt = botTurn ? "상대가 두는 중" : note || view.prompt;
   const who = botTurn ? "상대 턴" : turnOwnerLabel(view);
+  const sheetOpen =
+    !botTurn &&
+    Boolean(
+      handMenu ||
+        attackSheet ||
+        picker ||
+        (view.interaction === "buttons" && quick) ||
+        view.phase === "over" ||
+        ui.sheet === "hand" ||
+        ui.sheet === "attack",
+    );
+  const sheetBody = `${handHint}${quick}${handMenu}${attackSheet}${picker}${fallback}${actions}`;
   const logDrawer = botTurn
     ? ""
     : `<aside id="ptcg-log-drawer" class="ptcg-log-drawer" data-log-drawer hidden>
@@ -472,7 +484,7 @@ function battleBoardHtml(
       <ol class="ptcg-log">${log}</ol>
     </aside>`;
 
-  return `<div class="ptcg-battle" data-battle>
+  return `<div class="ptcg-battle" data-battle${botTurn ? ' data-bot-turn="true"' : ""}>
     <div class="ptcg-battle-hud" role="toolbar" aria-label="대전 정보">
       <button type="button" class="ptcg-hud-exit" data-exit>나가기</button>
       <div class="ptcg-hud-meta">
@@ -484,7 +496,7 @@ function battleBoardHtml(
       <button type="button" class="ptcg-hud-log" data-log-open aria-expanded="false" aria-controls="ptcg-log-drawer" ${botTurn ? "disabled" : ""}>기록</button>
     </div>
     ${banner}${botBanner}
-    <div class="ptcg-battle-stage">
+    <div class="ptcg-battle-stage" data-battle-stage>
       <div class="ptcg-battle-board">
         <div class="ptcg-table">
           ${sideHtml("상대", view.opp, "opp", oppOpts, highlights)}
@@ -494,16 +506,21 @@ function battleBoardHtml(
         <div class="ptcg-zone ptcg-zone--hand ptcg-zone--my-hand${flashClass(highlights, "you", "hand")}" data-tutorial-target="you-hand" data-tutorial-zone tabindex="-1"><span class="ptcg-zone-label">패</span>${myHand}</div>
       </div>
     </div>
-    <div class="ptcg-controls ptcg-battle-controls">
-      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
+    <div class="ptcg-battle-dock" data-battle-dock>
       <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
-      ${handHint}
-      ${quick}
-      ${handMenu}
-      ${attackSheet}
-      ${picker}
-      ${fallback}
-      ${actions}
+      ${
+        !botTurn && !sheetOpen && view.interaction !== "none" && view.phase !== "over"
+          ? `<button type="button" class="ptcg-dock-sheet" data-action-sheet-open>선택</button>`
+          : ""
+      }
+      <div class="ptcg-fx-toolbar">${muteToggleHtml(muted)}</div>
+    </div>
+    <div class="ptcg-action-sheet ptcg-controls ptcg-battle-controls" data-action-sheet ${sheetOpen ? "" : "hidden"}>
+      <div class="ptcg-action-sheet-head">
+        <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
+        <button type="button" data-action-sheet-close>닫기</button>
+      </div>
+      ${sheetBody}
     </div>
     ${logDrawer}
     <dialog class="ptcg-pile-sheet" data-pile-sheet aria-label="카드 더미">

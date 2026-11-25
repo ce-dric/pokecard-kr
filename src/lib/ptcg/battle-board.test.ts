@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { boardHtml, groupHandCards, turnOwnerLabel } from "./battle-board.ts";
+import { boardHtml, EMPTY_UI, groupHandCards, turnOwnerLabel } from "./battle-board.ts";
 import type { FaceCard, GameView, SideView } from "./view.ts";
 
 const card: FaceCard = {
@@ -93,6 +93,8 @@ test("battle board is a fixed app shell with HUD, fan hand, and log drawer", () 
   assert.equal(html.includes("\u00b7"), false);
   assert.match(html, /class="ptcg-battle"/);
   assert.match(html, /data-battle/);
+  assert.match(html, /data-battle-dock/);
+  assert.match(html, /data-action-sheet/);
   assert.match(html, /class="ptcg-battle-hud"/);
   assert.match(html, /턴 3/);
   assert.match(html, /내 턴/);
@@ -151,7 +153,9 @@ test("turn owner label follows the prompt and phase", () => {
 test("battle CSS puts active toward the center and bench toward each edge", () => {
   const css = readFileSync(new URL("../../pages/game/battle.css", import.meta.url), "utf8");
   assert.equal(css.includes("\u00b7"), false);
-  assert.match(css, /100dvh/);
+  assert.match(css, /100dvh|100svh/);
+  assert.match(css, /safe-area-inset-top/);
+  assert.match(css, /ptcg-action-sheet/);
   assert.match(css, /body\.ptcg-battle-active \.site-header/);
   assert.match(css, /body\.ptcg-battle-active \.site-footer/);
   assert.match(css, /\.ptcg-hand--fan/);
@@ -166,6 +170,14 @@ test("battle CSS puts active toward the center and bench toward each edge", () =
     /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"rails bench prizes"[\s\S]*"rails active prizes"/,
   );
   assert.match(css, /ptcg-zone--rails/);
+});
+
+test("bot turn keeps the action sheet closed and marks the battle shell", () => {
+  const html = boardHtml(view, "", { botTurn: true, ui: EMPTY_UI });
+  assert.match(html, /data-bot-turn="true"/);
+  assert.match(html, /data-action-sheet[^>]*hidden/);
+  assert.match(html, /상대 턴/);
+  assert.doesNotMatch(html, /ptcg-fallback/);
 });
 
 test("the game page loads battle CSS next to the lobby styles", () => {

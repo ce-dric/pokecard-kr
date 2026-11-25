@@ -119,8 +119,10 @@ export function mountTutorial(root: Element, options: TutorialMountOptions): Tut
       const key = optionKeyForLabel(label);
       if (key) button.setAttribute("data-tutorial-target", `option-${key}`);
     }
-    // Keep the text fallback open so option highlights stay reachable.
+    // Keep the text fallback and action sheet open so option highlights stay reachable.
     board.querySelector(".ptcg-fallback")?.setAttribute("open", "");
+    const sheet = board.querySelector("[data-action-sheet]");
+    if (sheet instanceof HTMLElement) sheet.hidden = false;
   };
 
   const paint = (): void => {

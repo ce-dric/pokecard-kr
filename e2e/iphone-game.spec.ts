@@ -87,7 +87,7 @@ test.describe("iPhone 13 /game Safari fixes (#90)", () => {
 
     // Step 8 done
     await expect(page.locator("[data-tutorial-step='done']")).toBeVisible();
-    await page.getByRole("button", { name: "닫기" }).click();
+    await page.locator("[data-tutorial-finish]").click();
     await expect(page.locator(".ptcg-lobby-card").first()).toBeVisible();
 
     // Setup + choice modal screenshots from fixture HTML injection on the live page shell
