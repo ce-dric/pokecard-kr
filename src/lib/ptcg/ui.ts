@@ -1,3 +1,4 @@
+import { boardHighlights, highlightClass, type BoardHighlight } from "./bot-highlight.ts";
 import { botStepDelayMs, playBotSteps, prefersReducedMotion, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
 import type { FaceCard, GameView } from "./view.ts";
@@ -149,14 +150,22 @@ function prizeGrid(count: number): string {
   return `<div class="ptcg-prize-grid" aria-label="프라이즈 ${capped}">${cells}</div>`;
 }
 
-function benchSlots(cards: FaceCard[]): string {
+function benchSlots(cards: FaceCard[], highlights: BoardHighlight[], role: "you" | "opp"): string {
   return Array.from({ length: 5 }, (_, index) => {
     const card = cards[index];
-    return card ? cardHtml(card, true) : emptySlot("빈자리");
+    const flash = highlightClass(highlights, role, "bench", index);
+    const body = card ? cardHtml(card, true) : emptySlot("빈자리");
+    return flash ? `<div class="ptcg-flash-wrap${flash}">${body}</div>` : body;
   }).join("");
 }
 
-function sideHtml(title: string, side: GameView["you"], showHand: boolean, role: "you" | "opp"): string {
+function sideHtml(
+  title: string,
+  side: GameView["you"],
+  showHand: boolean,
+  role: "you" | "opp",
+  highlights: BoardHighlight[] = [],
+): string {
   const status = side.conditions.length ? side.conditions.join(" ") : "";
   const hand =
     showHand && side.hand
@@ -170,12 +179,12 @@ function sideHtml(title: string, side: GameView["you"], showHand: boolean, role:
     `<div class="ptcg-card"><div class="ptcg-empty">없음</div></div>`;
   return `<section class="ptcg-playmat ptcg-playmat--${role}" aria-label="${esc(title)}">
     <header class="ptcg-playmat-head"><h2>${esc(title)}</h2>${status ? `<p class="ptcg-status">${esc(status)}</p>` : ""}</header>
-    <div class="ptcg-zone ptcg-zone--prizes"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
-    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench)}</div></div>
-    <div class="ptcg-zone ptcg-zone--deck"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
-    <div class="ptcg-zone ptcg-zone--active"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
-    <div class="ptcg-zone ptcg-zone--trash"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
-    <div class="ptcg-zone ptcg-zone--hand"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
+    <div class="ptcg-zone ptcg-zone--prizes${highlightClass(highlights, role, "prizes")}"><span class="ptcg-zone-label">프라이즈</span>${prizeGrid(side.prizeCount)}</div>
+    <div class="ptcg-zone ptcg-zone--bench"><span class="ptcg-zone-label">벤치</span><div class="ptcg-cards ptcg-bench">${benchSlots(side.bench, highlights, role)}</div></div>
+    <div class="ptcg-zone ptcg-zone--deck${highlightClass(highlights, role, "deck")}"><span class="ptcg-zone-label">덱</span><div class="ptcg-cards"><div class="ptcg-card"><div class="ptcg-back" aria-label="덱 ${side.deckCount}"><span class="ptcg-stack-count">${side.deckCount}</span></div></div></div></div>
+    <div class="ptcg-zone ptcg-zone--active${highlightClass(highlights, role, "active")}"><span class="ptcg-zone-label">배틀필드</span><div class="ptcg-cards">${active}</div></div>
+    <div class="ptcg-zone ptcg-zone--trash${highlightClass(highlights, role, "trash")}"><span class="ptcg-zone-label">트래쉬</span><div class="ptcg-cards">${discard}</div></div>
+    <div class="ptcg-zone ptcg-zone--hand${highlightClass(highlights, role, "hand")}"><span class="ptcg-zone-label">패</span><div class="ptcg-cards ptcg-hand">${hand}</div></div>
   </section>`;
 }
 
@@ -193,11 +202,12 @@ function optionHtml(option: GameView["options"][number]): string {
 export interface BoardPaintOptions {
   note?: string;
   botTurn?: boolean;
-  caption?: string;
+  highlights?: BoardHighlight[];
 }
 
 function viewHtml(view: GameView, options: BoardPaintOptions = {}): string {
   const note = options.note || "";
+  const highlights = options.highlights || [];
   const choiceOptions = options.botTurn ? "" : view.options.map((option) => optionHtml(option)).join("");
   const multi = !options.botTurn && view.phase === "choose" && view.maxCount >= 1 && !(view.maxCount === 1 && view.minCount >= 1);
   const confirm = multi
@@ -207,11 +217,18 @@ function viewHtml(view: GameView, options: BoardPaintOptions = {}): string {
   const botBanner = options.botTurn
     ? `<div class="ptcg-bot-banner" role="status"><span>상대 턴</span><button type="button" data-skip-bot>건너뛰기</button></div>`
     : "";
-  const prompt = options.botTurn ? options.caption || "상대가 고르는 중" : note || view.prompt;
+  const prompt = options.botTurn ? "상대가 두는 중" : note || view.prompt;
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
+  const stadiumFlash = highlightClass(highlights, "table", "stadium");
   const stadium = view.stadium
-    ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
+    ? `<div class="ptcg-stadium${stadiumFlash}"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
     : "";
+  const logPanel = options.botTurn
+    ? ""
+    : `<details class="ptcg-log-panel" open>
+      <summary class="ptcg-log-title">기록</summary>
+      <ol class="ptcg-log">${log}</ol>
+    </details>`;
   return `${result}${botBanner}
     <div class="ptcg-controls">
       <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
@@ -219,14 +236,11 @@ function viewHtml(view: GameView, options: BoardPaintOptions = {}): string {
       <div class="ptcg-options" role="group" aria-label="선택">${choiceOptions}${confirm}</div>
     </div>
     <div class="ptcg-table">
-      ${sideHtml("상대", view.opp, false, "opp")}
+      ${sideHtml("상대", view.opp, false, "opp", highlights)}
       ${stadium}
-      ${sideHtml("나", view.you, true, "you")}
+      ${sideHtml("나", view.you, true, "you", highlights)}
     </div>
-    <details class="ptcg-log-panel" open>
-      <summary class="ptcg-log-title">기록</summary>
-      <ol class="ptcg-log">${log}</ol>
-    </details>`;
+    ${logPanel}`;
 }
 
 export function boardHtml(view: GameView, note = "", paint: BoardPaintOptions = {}): string {
@@ -296,6 +310,7 @@ export function mountGame(root: Element | null): void {
       typeof window !== "undefined" && "matchMedia" in window
         ? prefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)"))
         : false;
+    let previous: GameView | null = latest;
     await playBotSteps(steps, view, {
       delayMs: botStepDelayMs(reduced),
       onStep: (step, controls) => {
@@ -304,7 +319,11 @@ export function mountGame(root: Element | null): void {
           return;
         }
         skipBot = () => controls.skip();
-        paintBoard(step.view, { botTurn: true, caption: step.caption });
+        paintBoard(step.view, {
+          botTurn: true,
+          highlights: boardHighlights(previous, step.view),
+        });
+        previous = step.view;
       },
       onDone: (done) => {
         if (token !== playbackToken) return;

@@ -305,6 +305,32 @@
   border-color: var(--ptcg-accent);
 }
 
+.ptcg-flash,
+.ptcg-flash-wrap.ptcg-flash {
+  border-radius: calc(var(--ptcg-radius) - 2px);
+  box-shadow: 0 0 0 2px var(--ptcg-accent);
+  animation: ptcg-flash-cue 0.7s ease-out;
+}
+
+@keyframes ptcg-flash-cue {
+  0% {
+    box-shadow: 0 0 0 3px var(--ptcg-accent);
+    background-color: color-mix(in srgb, var(--ptcg-accent) 18%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptcg-flash,
+  .ptcg-flash-wrap.ptcg-flash {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--ptcg-accent);
+  }
+}
+
 .ptcg-controls {
   margin: 0 0 0.85rem;
   padding: 0.85rem 1rem;
