@@ -1,6 +1,7 @@
 ---
 import gameCss from "./game.css?raw";
 import Base from "../../layouts/Base.astro";
+import { withBase } from "../../lib/sets";
 import { SITE_NAME } from "../../lib/site";
 
 const title = `대전 | ${SITE_NAME}`;
@@ -15,6 +16,7 @@ const description =
       <p class="crumbs">비공식 팬 페이지</p>
       <div class="mast-row">
         <h1>대전</h1>
+        <a class="mast-aside" href={withBase("game/rules/")}>놀이방법</a>
       </div>
       <p class="lede">봇과 한 판 둡니다. 엔진이 보여 주는 선택지만 누를 수 있습니다.</p>
     </header>
