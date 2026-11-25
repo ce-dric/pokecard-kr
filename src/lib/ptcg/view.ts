@@ -371,6 +371,8 @@ export interface ChoiceOption {
 export interface GameView {
   phase: "choose" | "over";
   prompt: string;
+  /** Engine select.context when the human is choosing; null otherwise. */
+  context: number | null;
   minCount: number;
   maxCount: number;
   options: ChoiceOption[];
@@ -401,6 +403,7 @@ export function buildView(
   return {
     phase: over ? "over" : "choose",
     prompt: choosing && obs.select ? selectionPrompt(obs.select) : over ? "대전이 끝났습니다" : "상대가 고르는 중",
+    context: choosing && obs.select ? obs.select.context : null,
     minCount: choosing && obs.select ? obs.select.minCount : 0,
     maxCount: choosing && obs.select ? obs.select.maxCount : 0,
     options:

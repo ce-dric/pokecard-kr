@@ -13,13 +13,7 @@ import {
 import { boardHighlights } from "./bot-highlight.ts";
 import { botStepDelayMs, playBotSteps, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
-import {
-  BOT_DIFFICULTIES,
-  BOT_DIFFICULTY_LABELS,
-  type BotDifficulty,
-  readStoredBotDifficulty,
-  writeStoredBotDifficulty,
-} from "./difficulty.ts";
+import { type BotDifficulty, parseBotDifficulty } from "./difficulty.ts";
 import {
   applyBoardFx,
   collectFxEvents,
@@ -28,6 +22,15 @@ import {
   writeSfxMuted,
 } from "./fx.ts";
 import { mappedFromView, parseSpot } from "./interact-ui.ts";
+import { loadPrefs, lobbyHtml, resolveOpponentDeck, savePrefs, type LobbyPrefs } from "./lobby.ts";
+import {
+  coinMapsToFirst,
+  goFirstOptionIndex,
+  prebattleHtml,
+  prebattlePhase,
+  revealNote,
+  type CoinSide,
+} from "./prebattle.ts";
 import type { GameView } from "./view.ts";
 
 export { boardHtml } from "./battle-board.ts";
@@ -127,9 +130,10 @@ export function actionFromKey(event: {
 export function mountGame(root: Element | null): void {
   if (!root) return;
   let worker: Worker | null = null;
-  let mine = decks[0]?.id ?? "sample";
-  let theirs = decks[1]?.id ?? decks[0]?.id ?? "sample";
-  let difficulty: BotDifficulty = readStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage);
+  let prefs: LobbyPrefs = loadPrefs();
+  let mine = prefs.mine;
+  let theirs = prefs.theirs;
+  let difficulty: BotDifficulty = prefs.difficulty;
   let picked = new Set<number>();
   let latest: GameView | null = null;
   let previous: GameView | null = null;
@@ -140,47 +144,38 @@ export function mountGame(root: Element | null): void {
   let noteText = "";
   let skipBot: (() => void) | null = null;
   let playbackToken = 0;
+  let coinFlipped = false;
+  let coinSide: CoinSide | null = null;
+  let wasSetup = false;
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
     return new URL("game/ptcg.mjs", window.location.origin + base).href;
   };
 
-  const deckButtons = (group: "mine" | "theirs", current: string): string =>
-    decks
-      .map((deck) => {
-        const pressed = deck.id === current ? "true" : "false";
-        return `<button type="button" data-deck="${group}" data-id="${esc(deck.id)}" aria-pressed="${pressed}">${esc(deck.titleKo)} <small>${esc(deck.faceEn)}</small></button>`;
-      })
-      .join("");
-
-  const difficultyButtons = (): string =>
-    BOT_DIFFICULTIES.map((id) => {
-      const pressed = id === difficulty ? "true" : "false";
-      return `<button type="button" data-difficulty="${id}" aria-pressed="${pressed}">${esc(BOT_DIFFICULTY_LABELS[id])}</button>`;
-    }).join("");
+  const persist = (): void => {
+    prefs = { mine, theirs, difficulty };
+    savePrefs(prefs);
+  };
 
   const showLobby = (): void => {
     setBattleChrome(false);
     skipBot?.();
     playbackToken += 1;
-    root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
-    const board = root.querySelector("[data-board]");
-    if (board) {
-      board.setAttribute("hidden", "");
-      board.innerHTML = "";
-    }
+    latest = null;
+    previous = null;
+    coinFlipped = false;
+    coinSide = null;
+    wasSetup = false;
+    paintLobby();
   };
 
   const paintLobby = (): void => {
     setBattleChrome(false);
-    root.innerHTML = `<div class="ptcg-setup">
-      <fieldset><legend>내 덱</legend><div class="ptcg-choices">${deckButtons("mine", mine)}</div></fieldset>
-      <fieldset><legend>상대 덱</legend><div class="ptcg-choices">${deckButtons("theirs", theirs)}</div></fieldset>
-      <fieldset><legend>봇 난이도</legend><div class="ptcg-choices">${difficultyButtons()}</div></fieldset>
-      <p class="ptcg-note">샘플 덱은 공식 스탠다드 레귤레이션(마크 H, I, J)을 따릅니다. 규정은 <a href="https://pokemoncard.co.kr/card/play_qna" rel="noopener noreferrer">포켓몬 카드 게임 공식 플레이 안내</a>를 보세요. 한국판 목록에 확인된 카드는 우리 이름과 이미지를 쓰고, 아직 없는 카드는 영문 이름과 일본 공식 이미지를 씁니다.</p>
-      <button type="button" data-start>대전 시작</button>
-    </div><div data-board hidden></div>`;
+    coinFlipped = false;
+    coinSide = null;
+    wasSetup = false;
+    root.innerHTML = lobbyHtml({ mine, theirs, difficulty });
   };
 
   const syncPressed = (): void => {
@@ -200,14 +195,42 @@ export function mountGame(root: Element | null): void {
   const paintBoard = (view: GameView, note = "", paint: BoardPaintOptions = {}): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
-    const events = collectFxEvents(previous, view);
-    previous = view;
-    noteText = note;
-    setBattleChrome(true);
+    const phase = prebattlePhase(view);
+    if (phase === "setup") wasSetup = true;
+    let banner = note;
+    if (!phase && wasSetup && view.turn >= 1) {
+      banner = banner || revealNote();
+      wasSetup = false;
+    }
+    noteText = banner;
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = boardHtml(view, note, {
-      note,
+
+    if (phase === "coin" || phase === "mulligan" || phase === "setup") {
+      setBattleChrome(false);
+      previous = view;
+      if (phase === "coin") {
+        board.innerHTML = `${prebattleHtml(view, {
+          flipped: coinFlipped,
+          side: coinSide,
+          reducedMotion: prefersReducedMotion(),
+        }) || ""}<p class="ptcg-actions"><button type="button" data-decks>덱 고르기</button></p>`;
+      } else {
+        coinFlipped = false;
+        coinSide = null;
+        board.innerHTML = `${prebattleHtml(view) || ""}<p class="ptcg-actions"><button type="button" data-decks>덱 고르기</button></p>`;
+      }
+      board.scrollIntoView({ block: "start" });
+      return;
+    }
+
+    const events = collectFxEvents(previous, view);
+    previous = view;
+    setBattleChrome(true);
+    coinFlipped = false;
+    coinSide = null;
+    board.innerHTML = boardHtml(view, banner, {
+      note: banner,
       botTurn: Boolean(paint.botTurn),
       highlights: paint.highlights || [],
       ui: paint.ui || uiState,
@@ -303,15 +326,21 @@ export function mountGame(root: Element | null): void {
 
   const start = (): void => {
     const deck0 = decks.find((deck) => deck.id === mine);
-    const deck1 = decks.find((deck) => deck.id === theirs);
+    const theirId = resolveOpponentDeck(theirs, mine);
+    const deck1 = decks.find((deck) => deck.id === theirId);
     if (!deck0 || !deck1) return;
+    persist();
     busy = true;
+    coinFlipped = false;
+    coinSide = null;
+    wasSetup = false;
     const board = root.querySelector("[data-board]");
-    setBattleChrome(true);
+    setBattleChrome(false);
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     if (board) {
       board.removeAttribute("hidden");
-      board.innerHTML = `<div class="ptcg-battle" data-battle><p class="ptcg-prompt" role="status">엔진을 읽고 있습니다</p></div>`;
+      board.innerHTML = `<p class="ptcg-prompt" role="status">엔진을 읽고 있습니다</p>`;
+      board.scrollIntoView({ block: "start" });
     }
     ensureWorker().postMessage({
       type: latest ? "restart" : "start",
@@ -569,6 +598,7 @@ export function mountGame(root: Element | null): void {
       if (!id) return;
       if (group === "mine") mine = id;
       if (group === "theirs") theirs = id;
+      persist();
       for (const button of root.querySelectorAll(`[data-deck="${group}"]`)) {
         button.setAttribute("aria-pressed", button.getAttribute("data-id") === id ? "true" : "false");
       }
@@ -578,8 +608,8 @@ export function mountGame(root: Element | null): void {
     if (difficultyButton instanceof HTMLButtonElement) {
       const id = difficultyButton.dataset.difficulty;
       if (id !== "easy" && id !== "normal" && id !== "hard") return;
-      difficulty = id;
-      writeStoredBotDifficulty(typeof localStorage === "undefined" ? null : localStorage, difficulty);
+      difficulty = parseBotDifficulty(id);
+      persist();
       for (const button of root.querySelectorAll("[data-difficulty]")) {
         button.setAttribute("aria-pressed", button.getAttribute("data-difficulty") === id ? "true" : "false");
       }
@@ -612,6 +642,18 @@ export function mountGame(root: Element | null): void {
     }
     if (target.closest("[data-clear-selection]")) {
       clearUi();
+      return;
+    }
+    if (target.closest("[data-coin-flip]") && latest && prebattlePhase(latest) === "coin" && !busy) {
+      coinFlipped = true;
+      coinSide = Math.random() < 0.5 ? "heads" : "tails";
+      paintBoard(latest);
+      return;
+    }
+    if (target.closest("[data-coin-confirm]") && latest && prebattlePhase(latest) === "coin" && coinSide && !busy) {
+      const goFirst = coinMapsToFirst(coinSide);
+      const index = goFirstOptionIndex(latest.options, goFirst);
+      choose([index]);
       return;
     }
     if (busy || !latest || latest.phase !== "choose") return;
