@@ -95,6 +95,17 @@ function assertZoomThumb(fragment: string): void {
   assert.doesNotMatch(button[0], /data-option=/);
 }
 
+test("bot turn board shows a banner, caption, and skip control without choices", () => {
+  const html = boardHtml(view, "", { botTurn: true, caption: "상대가 이브이에 에너지를 붙였습니다" });
+  assert.match(html, /class="ptcg-bot-banner"/);
+  assert.match(html, /상대 턴/);
+  assert.match(html, /data-skip-bot/);
+  assert.match(html, /건너뛰기/);
+  assert.match(html, /상대가 이브이에 에너지를 붙였습니다/);
+  assert.doesNotMatch(html, /data-option=/);
+  assert.equal(html.includes("\u00b7"), false);
+});
+
 test("board card images are zoom controls in every zone", () => {
   const html = boardHtml(view);
   assert.equal(html.includes("\u00b7"), false);

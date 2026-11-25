@@ -1,3 +1,4 @@
+import { botStepDelayMs, playBotSteps, prefersReducedMotion, type BotPlaybackStep } from "./bot-playback.ts";
 import { decks } from "./decks.ts";
 import type { FaceCard, GameView } from "./view.ts";
 
@@ -13,6 +14,7 @@ interface WorkerOut {
   type: "view" | "error";
   view?: GameView;
   message?: string;
+  steps?: BotPlaybackStep[];
 }
 
 const ENERGY_CLASS: Record<string, string> = {
@@ -188,22 +190,33 @@ function optionHtml(option: GameView["options"][number]): string {
   return `<div class="ptcg-option">${image}${select}${zoom}</div>`;
 }
 
-function viewHtml(view: GameView, note: string): string {
-  const options = view.options.map((option) => optionHtml(option)).join("");
-  const multi = view.phase === "choose" && view.maxCount >= 1 && !(view.maxCount === 1 && view.minCount >= 1);
+export interface BoardPaintOptions {
+  note?: string;
+  botTurn?: boolean;
+  caption?: string;
+}
+
+function viewHtml(view: GameView, options: BoardPaintOptions = {}): string {
+  const note = options.note || "";
+  const choiceOptions = options.botTurn ? "" : view.options.map((option) => optionHtml(option)).join("");
+  const multi = !options.botTurn && view.phase === "choose" && view.maxCount >= 1 && !(view.maxCount === 1 && view.minCount >= 1);
   const confirm = multi
     ? `<button type="button" data-confirm${view.minCount > 0 ? " disabled" : ""}>${view.minCount === 0 ? "넘기기" : "결정"}</button>`
     : "";
-  const banner = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
+  const result = view.resultText ? `<p class="ptcg-result" role="status">${esc(view.resultText)}</p>` : "";
+  const botBanner = options.botTurn
+    ? `<div class="ptcg-bot-banner" role="status"><span>상대 턴</span><button type="button" data-skip-bot>건너뛰기</button></div>`
+    : "";
+  const prompt = options.botTurn ? options.caption || "상대가 고르는 중" : note || view.prompt;
   const log = view.log.map((line) => `<li>${esc(line)}</li>`).join("");
   const stadium = view.stadium
     ? `<div class="ptcg-stadium"><span class="ptcg-zone-label">스타디움</span><div class="ptcg-cards">${cardHtml(view.stadium, true)}</div></div>`
     : "";
-  return `${banner}
+  return `${result}${botBanner}
     <div class="ptcg-controls">
-      <p class="ptcg-prompt" role="status">${esc(note || view.prompt)}</p>
+      <p class="ptcg-prompt" role="status">${esc(prompt)}</p>
       <p class="ptcg-turn">턴 ${view.turn}</p>
-      <div class="ptcg-options" role="group" aria-label="선택">${options}${confirm}</div>
+      <div class="ptcg-options" role="group" aria-label="선택">${choiceOptions}${confirm}</div>
     </div>
     <div class="ptcg-table">
       ${sideHtml("상대", view.opp, false, "opp")}
@@ -216,8 +229,8 @@ function viewHtml(view: GameView, note: string): string {
     </details>`;
 }
 
-export function boardHtml(view: GameView, note = ""): string {
-  return viewHtml(view, note);
+export function boardHtml(view: GameView, note = "", paint: BoardPaintOptions = {}): string {
+  return viewHtml(view, { ...paint, note: note || paint.note });
 }
 
 export function mountGame(root: Element | null): void {
@@ -228,6 +241,8 @@ export function mountGame(root: Element | null): void {
   let picked = new Set<number>();
   let latest: GameView | null = null;
   let busy = false;
+  let skipBot: (() => void) | null = null;
+  let playbackToken = 0;
 
   const engineUrl = (): string => {
     const base = import.meta.env.BASE_URL || "/";
@@ -251,24 +266,61 @@ export function mountGame(root: Element | null): void {
     </div><div data-board hidden></div>`;
   };
 
-  const paintBoard = (view: GameView, note = ""): void => {
+  const paintBoard = (view: GameView, paint: BoardPaintOptions = {}): void => {
     const board = root.querySelector("[data-board]");
     if (!board) return;
     root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
     board.removeAttribute("hidden");
-    board.innerHTML = `${viewHtml(view, note)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
+    board.innerHTML = `${viewHtml(view, paint)}<p class="ptcg-actions"><button type="button" data-restart>다시 하기</button> <button type="button" data-decks>덱 고르기</button></p>`;
     const log = board.querySelector(".ptcg-log");
     if (log) log.scrollTop = log.scrollHeight;
     board.scrollIntoView({ block: "start" });
+  };
+
+  const finishHumanView = (view: GameView, note = ""): void => {
+    latest = view;
+    picked = new Set();
+    skipBot = null;
+    busy = false;
+    paintBoard(view, { note });
+  };
+
+  const playIncoming = async (view: GameView, steps: BotPlaybackStep[] | undefined, note: string): Promise<void> => {
+    const token = ++playbackToken;
+    if (!steps || steps.length === 0) {
+      finishHumanView(view, note);
+      return;
+    }
+    busy = true;
+    const reduced =
+      typeof window !== "undefined" && "matchMedia" in window
+        ? prefersReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)"))
+        : false;
+    await playBotSteps(steps, view, {
+      delayMs: botStepDelayMs(reduced),
+      onStep: (step, controls) => {
+        if (token !== playbackToken) {
+          controls.skip();
+          return;
+        }
+        skipBot = () => controls.skip();
+        paintBoard(step.view, { botTurn: true, caption: step.caption });
+      },
+      onDone: (done) => {
+        if (token !== playbackToken) return;
+        finishHumanView(done, note);
+      },
+    });
   };
 
   const ensureWorker = (): Worker => {
     if (worker) return worker;
     worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     worker.onmessage = (event: MessageEvent<WorkerOut>) => {
-      busy = false;
       const data = event.data;
       if (data.type === "error") {
+        busy = false;
+        skipBot = null;
         const board = root.querySelector("[data-board]");
         if (board) {
           root.querySelector(".ptcg-setup")?.setAttribute("hidden", "");
@@ -278,9 +330,7 @@ export function mountGame(root: Element | null): void {
         return;
       }
       if (data.view) {
-        latest = data.view;
-        picked = new Set();
-        paintBoard(data.view, data.message || "");
+        void playIncoming(data.view, data.steps, data.message || "");
       }
     };
     worker.onerror = () => {
@@ -373,11 +423,19 @@ export function mountGame(root: Element | null): void {
       }
       return;
     }
+    if (target.closest("[data-skip-bot]")) {
+      skipBot?.();
+      return;
+    }
     if (target.closest("[data-start]") || target.closest("[data-restart]")) {
+      skipBot?.();
+      playbackToken += 1;
       start();
       return;
     }
     if (target.closest("[data-decks]")) {
+      skipBot?.();
+      playbackToken += 1;
       root.querySelector(".ptcg-setup")?.removeAttribute("hidden");
       root.querySelector(".ptcg-setup")?.scrollIntoView({ block: "start" });
       return;
