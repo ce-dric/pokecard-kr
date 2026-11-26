@@ -47,14 +47,23 @@ export function existingOdds(record) {
   return "";
 }
 
+function hasKoreanName(card) {
+  return Boolean(
+    card?.nameKo &&
+      (card.nameStatus === "verified-kr" ||
+        card.nameStatus === "kr-store" ||
+        card.nameStatus === "owner-blog"),
+  );
+}
+
 export function cardTitle(card) {
   const half = card?.halfKo ? ` ${card.halfKo}` : "";
-  if (card?.nameStatus === "verified-kr" && card.nameKo) return `${card.nameKo}${half}`;
+  if (hasKoreanName(card)) return `${card.nameKo}${half}`;
   return `${card?.nameJa || "이름 미확인"}${half}`;
 }
 
 export function usesJapaneseName(card) {
-  return !(card && card.nameStatus === "verified-kr" && card.nameKo);
+  return !hasKoreanName(card);
 }
 
 export function collectorNumber(card) {

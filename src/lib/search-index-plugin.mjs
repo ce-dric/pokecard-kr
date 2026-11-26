@@ -15,7 +15,14 @@ function fold(value) {
 }
 
 function displayName(card) {
-  if (card.nameStatus === "verified-kr" && card.nameKo) return clean(card.nameKo);
+  if (
+    card.nameKo &&
+    (card.nameStatus === "verified-kr" ||
+      card.nameStatus === "kr-store" ||
+      card.nameStatus === "owner-blog")
+  ) {
+    return clean(card.nameKo);
+  }
   return clean(card.nameJa || "이름 미확인");
 }
 
