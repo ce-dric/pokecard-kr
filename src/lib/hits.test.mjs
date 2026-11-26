@@ -78,8 +78,8 @@ test("hit rarities are the high symbols in the data, highest first", () => {
     hitGroups(m6a).map((group) => [group.code, group.cards.length]),
     [
       ["FUR", 2],
-      ["SAR", 7],
-      ["AR", 19],
+      ["SAR", 10],
+      ["AR", 20],
     ],
   );
   for (const set of [m6, m6a]) {

@@ -38,20 +38,21 @@ if (files.length !== 226) errors.push(`webp count ${files.length}`);
 
 const m6aFile = new URL("../src/data/sets/m6a.json", import.meta.url);
 const m6a = JSON.parse(readFileSync(m6aFile, "utf8"));
-const m6aExpected = { "": 101, RR: 10, AR: 19, SAR: 7, FUR: 2 };
+const m6aExpected = { "": 134, RR: 10, AR: 20, SAR: 10, FUR: 2 };
 const m6aCounts = {};
-if (m6a.cardCount !== 139 || m6a.cards.length !== 139) {
+if (m6a.cardCount !== 176 || m6a.cards.length !== 176) {
   errors.push(`m6a card count ${m6a.cards.length}`);
 }
 if (m6a.printedTotal !== 103) errors.push(`m6a printed total ${m6a.printedTotal}`);
 if (m6a.krProductUrl !== "https://pokemoncard.co.kr/card/960") {
   errors.push("m6a product url");
 }
+const m6aAllowedStatus = new Set(["verified-kr", "kr-store", "owner-blog"]);
 const m6aNumbers = new Set();
 for (const card of m6a.cards) {
   m6aCounts[card.rarity] = (m6aCounts[card.rarity] || 0) + 1;
-  if (card.nameStatus !== "verified-kr" || !card.nameKo) {
-    errors.push(`m6a ${card.number} missing verified Korean name`);
+  if (!m6aAllowedStatus.has(card.nameStatus) || !card.nameKo) {
+    errors.push(`m6a ${card.number} missing Korean name`);
   }
   if (!card.category || !card.stage) errors.push(`m6a ${card.number} missing category`);
   if (m6aNumbers.has(card.number)) errors.push(`m6a duplicate ${card.number}`);
@@ -61,6 +62,12 @@ for (const card of m6a.cards) {
   }
   if (!card.krUrl.startsWith("https://pokemoncard.co.kr/cards/detail/BS2026006")) {
     errors.push(`m6a ${card.number} missing official url`);
+  }
+  if (card.nameStatus === "verified-kr" && card.imageSource) {
+    errors.push(`m6a ${card.number} verified card should not set imageSource`);
+  }
+  if (card.nameStatus !== "verified-kr" && !card.imageSource) {
+    errors.push(`m6a ${card.number} interim card missing imageSource`);
   }
   const full = join("public/images/cards/m6a", card.image);
   const thumb = join("public/images/cards/m6a", card.thumb);
@@ -98,7 +105,20 @@ for (const [code, count] of Object.entries(m6aExpected)) {
   }
 }
 const m6aFiles = readdirSync("public/images/cards/m6a").filter((name) => name.endsWith(".webp"));
-if (m6aFiles.length !== 278) errors.push(`m6a webp count ${m6aFiles.length}`);
+if (m6aFiles.length !== 352) errors.push(`m6a webp count ${m6aFiles.length}`);
+for (const code of ["119", "128", "129", "131"]) {
+  if (!m6aNumbers.has(code)) errors.push(`m6a missing verified secret ${code}`);
+}
+for (let n = 136; n <= 165; n++) {
+  const code = String(n).padStart(3, "0");
+  if (!m6aNumbers.has(code)) errors.push(`m6a missing reprint ${code}`);
+}
+for (const code of ["R", "G", "B"]) {
+  const card = m6a.cards.find((item) => item.number === code);
+  if (!card || card.printedIn !== "RGB" || card.nameKo !== "뮤" || card.nameStatus !== "owner-blog") {
+    errors.push(`m6a missing ${code}/RGB Mew`);
+  }
+}
 
 const memFile = new URL("../src/data/sets/mem.json", import.meta.url);
 const mem = JSON.parse(readFileSync(memFile, "utf8"));

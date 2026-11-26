@@ -3,7 +3,7 @@ export interface Card {
   number: string;
   printedIn: string;
   nameKo: string | null;
-  nameStatus: "verified-kr" | "ja-fallback";
+  nameStatus: "verified-kr" | "ja-fallback" | "kr-store" | "owner-blog";
   nameJa: string | null;
   rarity: string;
   type: string | null;
@@ -27,6 +27,8 @@ export interface Card {
   jpStage: string | null;
   image: string;
   thumb: string;
+  /** Where the card image came from when the official Korean detail page was not usable. */
+  imageSource?: string | null;
 }
 
 export interface ExternalLink {
@@ -121,13 +123,22 @@ export function absoluteUrl(path: string): string {
   return new URL(path, site.endsWith("/") ? site : `${site}/`).href;
 }
 
+function hasKoreanName(card: Card): boolean {
+  return Boolean(
+    card.nameKo &&
+      (card.nameStatus === "verified-kr" ||
+        card.nameStatus === "kr-store" ||
+        card.nameStatus === "owner-blog"),
+  );
+}
+
 export function displayName(card: Card): string {
-  if (card.nameStatus === "verified-kr" && card.nameKo) return card.nameKo;
+  if (hasKoreanName(card)) return card.nameKo as string;
   return card.nameJa || "이름 미확인";
 }
 
 export function usesJapaneseName(card: Card): boolean {
-  return !(card.nameStatus === "verified-kr" && card.nameKo);
+  return !hasKoreanName(card);
 }
 
 export function cardHeading(card: Card): string {
