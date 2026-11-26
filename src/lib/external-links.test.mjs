@@ -38,7 +38,7 @@ test("external links keep http labels and drop everything else", () => {
   );
 });
 
-test("Storm Emeralda links the Naver info post and other sets do not", () => {
+test("only sets with a Naver info post have external links", () => {
   const dir = new URL("../data/sets/", import.meta.url);
   const names = readdirSync(dir).filter((name) => name.endsWith(".json"));
   assert.ok(names.includes("m6.json"));
@@ -49,6 +49,8 @@ test("Storm Emeralda links the Naver info post and other sets do not", () => {
     const links = externalLinks(set);
     if (set.id === "m6") {
       assert.deepEqual(links, [{ label: "추가 정보", href: naverInfo }]);
+    } else if (set.id === "m6a") {
+      assert.deepEqual(links, [{ label: "추가 정보", href: "https://blog.naver.com/mdsd12/224489113605" }]);
     } else {
       assert.deepEqual(links, [], set.id);
     }
