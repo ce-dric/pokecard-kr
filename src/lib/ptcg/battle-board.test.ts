@@ -163,14 +163,16 @@ test("battle CSS puts active toward the center and bench toward each edge", () =
   assert.match(css, /aspect-ratio:\s*10\s*\/\s*16/);
   assert.match(
     css,
-    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"head"[\s\S]*"field"/,
+    /ptcg-playmat--you[\s\S]*grid-template-areas:[\s\S]*"head head head"[\s\S]*"\. field \."/,
   );
   assert.match(
     css,
-    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"head"[\s\S]*"hand"[\s\S]*"field"/,
+    /ptcg-playmat--opp[\s\S]*grid-template-areas:[\s\S]*"head head head"[\s\S]*"hand hand hand"[\s\S]*"\. field \."/,
   );
+  assert.match(css, /grid-template-columns:\s*var\(--pile-gutter\)\s*minmax\(0,\s*1fr\)\s*var\(--pile-gutter\)/);
   assert.match(css, /ptcg-zone--rails/);
   assert.match(css, /\.ptcg-field/);
+  assert.match(css, /--pile-gutter/);
   assert.match(css, /--card-edge-w:\s*clamp\(3\.[45]rem/);
   assert.match(css, /--card-hand-w/);
   assert.match(css, /ptcg-hud-skip/);

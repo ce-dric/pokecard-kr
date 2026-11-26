@@ -4,7 +4,7 @@ import path from "node:path";
 import { boardHtml, EMPTY_UI } from "../src/lib/ptcg/battle-board.ts";
 import type { FaceCard, GameView, SideView } from "../src/lib/ptcg/view.ts";
 
-const SHOT_DIR = path.resolve("artifacts/issue-92");
+const SHOT_DIR = path.resolve("artifacts/issue-104");
 
 async function shot(page: Page, name: string): Promise<void> {
   mkdirSync(SHOT_DIR, { recursive: true });
@@ -161,6 +161,21 @@ async function assertNoOverlap(page: Page, a: string, b: string) {
   expect(hit, `${a} overlaps ${b}`).toBeFalsy();
 }
 
+async function assertInsidePlaymat(page: Page, sel: string, matSel: string) {
+  const ok = await page.evaluate(
+    ({ sel, matSel }) => {
+      const el = document.querySelector(sel);
+      const mat = document.querySelector(matSel);
+      if (!(el instanceof HTMLElement) || !(mat instanceof HTMLElement)) return false;
+      const A = el.getBoundingClientRect();
+      const M = mat.getBoundingClientRect();
+      return A.left >= M.left - 1 && A.right <= M.right + 1 && A.top >= M.top - 1 && A.bottom <= M.bottom + 1;
+    },
+    { sel, matSel },
+  );
+  expect(ok, `${sel} must stay inside ${matSel}`).toBeTruthy();
+}
+
 for (const { name, width, height } of [
   { name: "390x664", width: 390, height: 664 },
   { name: "390x750", width: 390, height: 750 },
@@ -191,7 +206,7 @@ for (const { name, width, height } of [
       const exitTop = await page.locator(".ptcg-hud-exit").evaluate((el) => el.getBoundingClientRect().top);
       expect(exitTop).toBeGreaterThanOrEqual(40);
 
-      // Hand must sit below the you playmat (bench may pack tightly inside the mat).
+      // Hand must sit below the you playmat.
       const handBelowBoard = await page.evaluate(() => {
         const mat = document.querySelector(".ptcg-playmat--you");
         const hand = document.querySelector(".ptcg-zone--my-hand");
@@ -200,30 +215,41 @@ for (const { name, width, height } of [
       });
       expect(handBelowBoard).toBeTruthy();
 
-      const oppCardsVisible = await page.locator(".ptcg-playmat--opp .ptcg-zone--active .ptcg-card").evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return r.height > 60 && r.width > 70;
-      });
-      expect(oppCardsVisible).toBeTruthy();
-
-      const trash = page.locator(".ptcg-playmat--you .ptcg-zone--trash, .ptcg-playmat--you .ptcg-rail-item.ptcg-zone--trash");
-      await expect(trash.first()).toBeVisible();
-      const trashBox = await trash.first().boundingBox();
-      expect(trashBox?.height || 0).toBeGreaterThan(20);
-
-      const handCards = page.locator(".ptcg-zone--my-hand .ptcg-fan-card, .ptcg-zone--my-hand .ptcg-card");
-      await expect(handCards.first()).toBeVisible();
-      const handCardBox = await handCards.first().boundingBox();
-      expect(handCardBox?.width || 0).toBeGreaterThanOrEqual(54);
-      expect(handCardBox?.height || 0).toBeGreaterThan(48);
-
+      // Keep #93 sizes; shrink gaps, not cards.
       const benchCard = page.locator(".ptcg-playmat--you .ptcg-bench .ptcg-card").first();
       const benchBox = await benchCard.boundingBox();
-      expect(benchBox?.width || 0).toBeGreaterThanOrEqual(60);
+      expect(benchBox?.width || 0).toBeGreaterThanOrEqual(64);
 
       const activeCard = page.locator(".ptcg-playmat--you .ptcg-zone--active .ptcg-card").first();
       const activeBox = await activeCard.boundingBox();
-      expect(activeBox?.width || 0).toBeGreaterThanOrEqual(84);
+      expect(activeBox?.width || 0).toBeGreaterThanOrEqual(92);
+
+      const handCards = page.locator(".ptcg-zone--my-hand .ptcg-fan-card");
+      await expect(handCards.first()).toBeVisible();
+      const handCardBox = await handCards.first().boundingBox();
+      expect(handCardBox?.width || 0).toBeGreaterThanOrEqual(60);
+
+      const pile = page.locator(".ptcg-playmat--you .ptcg-zone--deck .ptcg-pile-wrap").first();
+      const pileBox = await pile.boundingBox();
+      expect(pileBox?.width || 0).toBeGreaterThanOrEqual(56);
+
+      // Piles must not cover bench edge cards.
+      await assertNoOverlap(
+        page,
+        ".ptcg-playmat--opp .ptcg-zone--deck .ptcg-pile-wrap",
+        ".ptcg-playmat--opp .ptcg-bench .ptcg-card:first-child",
+      );
+      await assertNoOverlap(
+        page,
+        ".ptcg-playmat--you .ptcg-zone--trash .ptcg-pile-wrap",
+        ".ptcg-playmat--you .ptcg-bench .ptcg-card:last-child",
+      );
+
+      // Bench/active/trash stay fully inside each half (no edge clip).
+      await assertInsidePlaymat(page, ".ptcg-playmat--you .ptcg-bench .ptcg-card:last-child", ".ptcg-playmat--you");
+      await assertInsidePlaymat(page, ".ptcg-playmat--you .ptcg-zone--active .ptcg-card", ".ptcg-playmat--you");
+      await assertInsidePlaymat(page, ".ptcg-playmat--opp .ptcg-zone--trash .ptcg-pile-wrap", ".ptcg-playmat--opp");
+      await assertInsidePlaymat(page, ".ptcg-playmat--opp .ptcg-zone--deck .ptcg-pile-wrap", ".ptcg-playmat--opp");
 
       const activeCenter = await page.evaluate(() => {
         const card = document.querySelector(".ptcg-playmat--you .ptcg-zone--active .ptcg-card");
@@ -235,10 +261,6 @@ for (const { name, width, height } of [
       });
       expect(activeCenter).not.toBeNull();
       expect(activeCenter!).toBeLessThan(40);
-
-      const pile = page.locator(".ptcg-playmat--you .ptcg-pile-wrap, .ptcg-playmat--you .ptcg-zone--deck .ptcg-pile-wrap").first();
-      const pileBox = await pile.boundingBox();
-      expect(pileBox?.width || 0).toBeGreaterThanOrEqual(50);
 
       await expect(page.locator(".ptcg-playmat--you .ptcg-playmat-head h2")).toBeVisible();
       await expect(page.locator(".ptcg-playmat--opp .ptcg-playmat-head h2")).toBeVisible();
