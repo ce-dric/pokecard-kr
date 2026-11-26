@@ -1,6 +1,7 @@
 ---
 import Base from "../../../layouts/Base.astro";
 import AdSlot from "../../../components/AdSlot.astro";
+import { externalLinks } from "../../../lib/external-links.mjs";
 import CardTile from "../../../components/CardTile.astro";
 import OpinionLine from "../../../components/OpinionLine.astro";
 import { presentCardOpinion } from "../../../lib/opinions.mjs";
@@ -49,6 +50,7 @@ const description = `${set.productNameKo} ${collector(card)} ${card.rarity} ${ra
 const imagePath = imageHref(set, card.image);
 const { prev, next } = neighbors(set, card);
 const related = siblings(set, card);
+const infoLinks = externalLinks(card);
 const pageUrl = Astro.url.href;
 const official = card.verifiedUrl || card.krUrl;
 const regulation = regulationStatus(card, set);
@@ -123,6 +125,16 @@ const jsonLd = {
           {heading}.
           카드 종류는 {card.categoryKo}{card.tags.length ? `, ${card.tags.join(", ")}` : ""}입니다.
         </p>
+        {infoLinks.length > 0 && (
+          <p class="more-info">
+            {infoLinks.map((link) => (
+              <a href={link.href} target="_blank" rel="noopener">
+                {link.label}
+                <span class="sr-only"> (새 창)</span>
+              </a>
+            ))}
+          </p>
+        )}
         <dl class="specs">
           <dt>한국 이름</dt>
           <dd>

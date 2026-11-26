@@ -1,4 +1,5 @@
 export interface Card {
+  externalLinks?: ExternalLink[];
   number: string;
   printedIn: string;
   nameKo: string | null;

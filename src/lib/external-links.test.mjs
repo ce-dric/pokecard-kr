@@ -50,7 +50,15 @@ test("only sets with a Naver info post have external links", () => {
     if (set.id === "m6") {
       assert.deepEqual(links, [{ label: "추가 정보", href: naverInfo }]);
     } else if (set.id === "m6a") {
-      assert.deepEqual(links, [{ label: "추가 정보", href: "https://blog.naver.com/mdsd12/224489113605" }]);
+      assert.deepEqual(links, [
+        { label: "수록 카드 전체 리스트", href: "https://blog.naver.com/mdsd12/224489113605" },
+        { label: "30주년 피카츄 30종", href: "https://blog.naver.com/mdsd12/224493258840" },
+      ]);
+      for (const card of set.cards) {
+        const n = Number(card.number);
+        const expected = n >= 17 && n <= 46 ? [{ label: "30주년 피카츄 30종 정보", href: "https://blog.naver.com/mdsd12/224493258840" }] : [];
+        assert.deepEqual(externalLinks(card), expected, card.number);
+      }
     } else {
       assert.deepEqual(links, [], set.id);
     }
